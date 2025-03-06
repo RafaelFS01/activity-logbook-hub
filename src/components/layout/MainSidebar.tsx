@@ -24,12 +24,18 @@ import {
   Users 
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MainSidebar = () => {
+  const { logout, user } = useAuth();
+  
   // Função para determinar se um link está ativo
   const activeClass = ({ isActive }: { isActive: boolean }) => {
     return isActive ? "sidebar-active" : "";
   };
+
+  // Verificar se o usuário tem permissão para ver a seção de relatórios
+  const canAccessReports = user?.role === "admin" || user?.role === "manager";
 
   return (
     <Sidebar>
@@ -85,37 +91,42 @@ const MainSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         
-        <SidebarGroup>
-          <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/reports" className={activeClass}>
-                    <BarChart3 />
-                    <span>Relatórios</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/settings" className={activeClass}>
-                    <Settings />
-                    <span>Configurações</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {canAccessReports && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/reports" className={activeClass}>
+                      <BarChart3 />
+                      <span>Relatórios</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/settings" className={activeClass}>
+                      <Settings />
+                      <span>Configurações</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <button className="w-full flex items-center gap-2">
+              <button 
+                className="w-full flex items-center gap-2"
+                onClick={logout}
+              >
                 <LogOut />
                 <span>Sair</span>
               </button>
