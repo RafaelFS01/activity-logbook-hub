@@ -14,8 +14,11 @@ import AppLayout from "@/components/layout/AppLayout";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Index";
 import ActivitiesPage from "@/pages/activities/ActivitiesPage";
+import NewActivityPage from "@/pages/activities/NewActivityPage";
 import ClientsPage from "@/pages/clients/ClientsPage";
+import NewClientPage from "@/pages/clients/NewClientPage";
 import CollaboratorsPage from "@/pages/collaborators/CollaboratorsPage";
+import NewCollaboratorPage from "@/pages/collaborators/NewCollaboratorPage";
 import AdminSetup from "@/pages/AdminSetup";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
@@ -46,13 +49,13 @@ const App = () => (
               
               {/* Atividades */}
               <Route path="activities" element={<ActivitiesPage />} />
-              <Route path="activities/new" element={<div>Nova Atividade (A implementar)</div>} />
+              <Route path="activities/new" element={<NewActivityPage />} />
               <Route path="activities/:id" element={<div>Detalhes da Atividade (A implementar)</div>} />
               <Route path="activities/edit/:id" element={<div>Editar Atividade (A implementar)</div>} />
               
               {/* Clientes */}
               <Route path="clients" element={<ClientsPage />} />
-              <Route path="clients/new" element={<div>Novo Cliente (A implementar)</div>} />
+              <Route path="clients/new" element={<NewClientPage />} />
               <Route path="clients/:id" element={<div>Detalhes do Cliente (A implementar)</div>} />
               <Route path="clients/edit/:id" element={<div>Editar Cliente (A implementar)</div>} />
               
@@ -64,7 +67,7 @@ const App = () => (
               } />
               <Route path="collaborators/new" element={
                 <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                  <div>Novo Colaborador (A implementar)</div>
+                  <NewCollaboratorPage />
                 </ProtectedRoute>
               } />
               <Route path="collaborators/:id" element={
