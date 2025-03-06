@@ -127,7 +127,7 @@ const CollaboratorsPage = () => {
                   <div>
                     {getRoleBadge(collaborator.role)}
                     {collaborator.active ? (
-                      <Badge variant="success" className="ml-2 bg-green-100 text-green-800 hover:bg-green-200">
+                      <Badge variant="outline" className="ml-2 bg-green-100 text-green-800 hover:bg-green-200">
                         <UserCheck className="h-3 w-3 mr-1" /> Ativo
                       </Badge>
                     ) : (
