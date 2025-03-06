@@ -1,68 +1,72 @@
 
-import { ref, set, get, remove, query, orderByChild, equalTo, update } from 'firebase/database';
 import { db } from '@/lib/firebase';
+import { ref, set, get, push, query, orderByChild, remove, update } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
 
-export type ActivityStatus = 'concluded' | 'inProgress' | 'future';
+export type ActivityStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled';
+export type ActivityPriority = 'low' | 'medium' | 'high';
 
 export interface Activity {
   id: string;
-  clientId: string;
-  startDate: string; // ISO format
-  endDate: string;   // ISO format
-  startTime: string; // HH:mm format
-  endTime: string;   // HH:mm format
+  title: string;
   description: string;
+  clientId: string;
+  assignedTo: string[];
   status: ActivityStatus;
-  createdBy: string; // UID do colaborador que registrou
-  createdAt: string; // ISO format
-  updatedAt: string; // ISO format
+  priority: ActivityPriority;
+  startDate: string;
+  endDate?: string;
+  completedDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
 }
 
-// Função para criar uma nova atividade
-export const createActivity = async (
-  activityData: Omit<Activity, 'id' | 'createdAt' | 'updatedAt'>,
-) => {
+// Create a new activity
+export const createActivity = async (data: Omit<Activity, 'id' | 'createdAt' | 'updatedAt'>, userId: string) => {
   try {
-    const id = uuidv4();
-    const now = new Date().toISOString();
+    const activitiesRef = ref(db, 'activities');
+    const newActivityRef = push(activitiesRef);
+    const activityId = newActivityRef.key;
     
-    const newActivity: Activity = {
-      ...activityData,
-      id,
-      createdAt: now,
-      updatedAt: now
+    const activityData: Activity = {
+      ...data,
+      id: activityId || uuidv4(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: userId
     };
     
-    await set(ref(db, `activities/${id}`), newActivity);
-    return newActivity;
+    await set(newActivityRef, activityData);
+    return activityData;
   } catch (error) {
     console.error('Erro ao criar atividade:', error);
     throw error;
   }
 };
 
-// Função para obter todas as atividades
-export const getAllActivities = async (): Promise<Activity[]> => {
+// Get all activities
+export const getActivities = async (): Promise<Activity[]> => {
   try {
     const activitiesRef = ref(db, 'activities');
     const snapshot = await get(activitiesRef);
     
     if (snapshot.exists()) {
-      return Object.values(snapshot.val()) as Activity[];
+      const activitiesData = snapshot.val();
+      return Object.values(activitiesData) as Activity[];
     }
     
     return [];
   } catch (error) {
-    console.error('Erro ao obter atividades:', error);
+    console.error('Erro ao buscar atividades:', error);
     throw error;
   }
 };
 
-// Função para obter atividade por ID
-export const getActivityById = async (id: string): Promise<Activity | null> => {
+// Get activity by ID
+export const getActivityById = async (activityId: string): Promise<Activity | null> => {
   try {
-    const activityRef = ref(db, `activities/${id}`);
+    const activityRef = ref(db, `activities/${activityId}`);
     const snapshot = await get(activityRef);
     
     if (snapshot.exists()) {
@@ -71,20 +75,66 @@ export const getActivityById = async (id: string): Promise<Activity | null> => {
     
     return null;
   } catch (error) {
-    console.error('Erro ao obter atividade:', error);
+    console.error('Erro ao buscar atividade:', error);
     throw error;
   }
 };
 
-// Função para atualizar uma atividade
-export const updateActivity = async (id: string, activityData: Partial<Activity>) => {
+// Get activities by client
+export const getActivitiesByClient = async (clientId: string): Promise<Activity[]> => {
   try {
-    const updates = {
-      ...activityData,
+    const activitiesRef = ref(db, 'activities');
+    const snapshot = await get(activitiesRef);
+    
+    if (snapshot.exists()) {
+      const activitiesData = snapshot.val();
+      const activities = Object.values(activitiesData) as Activity[];
+      return activities.filter(activity => activity.clientId === clientId);
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Erro ao buscar atividades do cliente:', error);
+    throw error;
+  }
+};
+
+// Get activities by assignee
+export const getActivitiesByAssignee = async (userId: string): Promise<Activity[]> => {
+  try {
+    const activitiesRef = ref(db, 'activities');
+    const snapshot = await get(activitiesRef);
+    
+    if (snapshot.exists()) {
+      const activitiesData = snapshot.val();
+      const activities = Object.values(activitiesData) as Activity[];
+      return activities.filter(activity => activity.assignedTo.includes(userId));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Erro ao buscar atividades do colaborador:', error);
+    throw error;
+  }
+};
+
+// Update activity
+export const updateActivity = async (activityId: string, data: Partial<Omit<Activity, 'id' | 'createdAt' | 'createdBy'>>) => {
+  try {
+    const activityRef = ref(db, `activities/${activityId}`);
+    
+    // Get current activity data
+    const snapshot = await get(activityRef);
+    if (!snapshot.exists()) {
+      throw new Error('Atividade não encontrada');
+    }
+    
+    const updatedData = {
+      ...data,
       updatedAt: new Date().toISOString()
     };
     
-    await update(ref(db, `activities/${id}`), updates);
+    await update(activityRef, updatedData);
     return true;
   } catch (error) {
     console.error('Erro ao atualizar atividade:', error);
@@ -92,79 +142,31 @@ export const updateActivity = async (id: string, activityData: Partial<Activity>
   }
 };
 
-// Função para excluir uma atividade (para gerentes e administradores)
-export const deleteActivity = async (id: string) => {
+// Update activity status
+export const updateActivityStatus = async (activityId: string, status: ActivityStatus, userId: string) => {
   try {
-    await remove(ref(db, `activities/${id}`));
+    const activityRef = ref(db, `activities/${activityId}`);
+    
+    // Get current activity data
+    const snapshot = await get(activityRef);
+    if (!snapshot.exists()) {
+      throw new Error('Atividade não encontrada');
+    }
+    
+    const updatedData: Partial<Activity> = {
+      status,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // If status is completed, add completed date
+    if (status === 'completed') {
+      updatedData.completedDate = new Date().toISOString();
+    }
+    
+    await update(activityRef, updatedData);
     return true;
   } catch (error) {
-    console.error('Erro ao excluir atividade:', error);
-    throw error;
-  }
-};
-
-// Função para buscar atividades por status
-export const getActivitiesByStatus = async (status: ActivityStatus): Promise<Activity[]> => {
-  try {
-    const activitiesQuery = query(
-      ref(db, 'activities'),
-      orderByChild('status'),
-      equalTo(status)
-    );
-    
-    const snapshot = await get(activitiesQuery);
-    
-    if (snapshot.exists()) {
-      return Object.values(snapshot.val()) as Activity[];
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Erro ao buscar atividades por status:', error);
-    throw error;
-  }
-};
-
-// Função para buscar atividades por cliente
-export const getActivitiesByClient = async (clientId: string): Promise<Activity[]> => {
-  try {
-    const activitiesQuery = query(
-      ref(db, 'activities'),
-      orderByChild('clientId'),
-      equalTo(clientId)
-    );
-    
-    const snapshot = await get(activitiesQuery);
-    
-    if (snapshot.exists()) {
-      return Object.values(snapshot.val()) as Activity[];
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Erro ao buscar atividades por cliente:', error);
-    throw error;
-  }
-};
-
-// Função para buscar atividades por colaborador
-export const getActivitiesByCollaborator = async (createdBy: string): Promise<Activity[]> => {
-  try {
-    const activitiesQuery = query(
-      ref(db, 'activities'),
-      orderByChild('createdBy'),
-      equalTo(createdBy)
-    );
-    
-    const snapshot = await get(activitiesQuery);
-    
-    if (snapshot.exists()) {
-      return Object.values(snapshot.val()) as Activity[];
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Erro ao buscar atividades por colaborador:', error);
+    console.error('Erro ao atualizar status da atividade:', error);
     throw error;
   }
 };

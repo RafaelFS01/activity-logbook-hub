@@ -19,6 +19,7 @@ import CollaboratorsPage from "@/pages/collaborators/CollaboratorsPage";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
 
+// Let's create a QueryClient
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -40,12 +41,51 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={<Dashboard />} />
+              
+              {/* Atividades */}
               <Route path="activities" element={<ActivitiesPage />} />
+              <Route path="activities/new" element={<div>Nova Atividade (A implementar)</div>} />
+              <Route path="activities/:id" element={<div>Detalhes da Atividade (A implementar)</div>} />
+              <Route path="activities/edit/:id" element={<div>Editar Atividade (A implementar)</div>} />
+              
+              {/* Clientes */}
               <Route path="clients" element={<ClientsPage />} />
+              <Route path="clients/new" element={<div>Novo Cliente (A implementar)</div>} />
+              <Route path="clients/:id" element={<div>Detalhes do Cliente (A implementar)</div>} />
+              <Route path="clients/edit/:id" element={<div>Editar Cliente (A implementar)</div>} />
+              
+              {/* Colaboradores - apenas admin e manager podem acessar */}
               <Route path="collaborators" element={
                 <ProtectedRoute allowedRoles={["admin", "manager"]}>
                   <CollaboratorsPage />
                 </ProtectedRoute>
+              } />
+              <Route path="collaborators/new" element={
+                <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                  <div>Novo Colaborador (A implementar)</div>
+                </ProtectedRoute>
+              } />
+              <Route path="collaborators/:id" element={
+                <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                  <div>Detalhes do Colaborador (A implementar)</div>
+                </ProtectedRoute>
+              } />
+              <Route path="collaborators/edit/:id" element={
+                <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                  <div>Editar Colaborador (A implementar)</div>
+                </ProtectedRoute>
+              } />
+              
+              {/* Reports - to be implemented */}
+              <Route path="reports" element={
+                <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                  <div>Relatórios (A implementar)</div>
+                </ProtectedRoute>
+              } />
+              
+              {/* Settings - to be implemented */}
+              <Route path="settings" element={
+                <div>Configurações (A implementar)</div>
               } />
             </Route>
             

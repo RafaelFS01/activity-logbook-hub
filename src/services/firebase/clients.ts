@@ -1,96 +1,96 @@
 
-import { ref, set, get, remove, query, orderByChild, equalTo, update } from 'firebase/database';
 import { db } from '@/lib/firebase';
+import { ref, set, get, push, query, orderByChild, remove, update } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
 
+// Define client types
 export type ClientType = 'fisica' | 'juridica';
 
-export interface BaseClientData {
+export interface BaseClient {
   id: string;
+  name: string;
   type: ClientType;
-  phone: string;
   email: string;
+  phone: string;
+  address?: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;
-  createdBy: string; // UID do colaborador que criou
+  createdBy: string;
 }
 
-export interface PessoaFisicaClient extends BaseClientData {
+export interface PessoaFisicaClient extends BaseClient {
   type: 'fisica';
-  fullName: string;
   cpf: string;
+  rg?: string;
 }
 
-export interface PessoaJuridicaClient extends BaseClientData {
+export interface PessoaJuridicaClient extends BaseClient {
   type: 'juridica';
-  companyName: string;
   cnpj: string;
+  companyName: string;
+  responsibleName?: string;
 }
 
 export type Client = PessoaFisicaClient | PessoaJuridicaClient;
 
-// Função para criar um novo cliente
-export const createClient = async (
-  clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>,
-  userId: string
-) => {
+// Create a new client
+export const createClient = async (data: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>, userId: string) => {
   try {
-    const id = uuidv4();
-    const now = new Date().toISOString();
-    
-    // Criamos o client com base no tipo
-    let newClient: Client;
-    
-    if (clientData.type === 'fisica') {
-      const fisicaData = clientData as Omit<PessoaFisicaClient, 'id' | 'createdAt' | 'updatedAt'>;
-      newClient = {
-        ...fisicaData,
-        id,
-        createdAt: now,
-        updatedAt: now,
+    const clientRef = ref(db, 'clients');
+    const newClientRef = push(clientRef);
+    const clientId = newClientRef.key;
+
+    let clientData: Client;
+
+    if (data.type === 'fisica') {
+      clientData = {
+        ...(data as Omit<PessoaFisicaClient, 'id' | 'createdAt' | 'updatedAt'>),
+        id: clientId || uuidv4(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         createdBy: userId
-      };
+      } as PessoaFisicaClient;
     } else {
-      const juridicaData = clientData as Omit<PessoaJuridicaClient, 'id' | 'createdAt' | 'updatedAt'>;
-      newClient = {
-        ...juridicaData,
-        id,
-        createdAt: now,
-        updatedAt: now,
+      clientData = {
+        ...(data as Omit<PessoaJuridicaClient, 'id' | 'createdAt' | 'updatedAt'>),
+        id: clientId || uuidv4(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         createdBy: userId
-      };
+      } as PessoaJuridicaClient;
     }
-    
-    await set(ref(db, `clients/${id}`), newClient);
-    return newClient;
+
+    await set(newClientRef, clientData);
+    return clientData;
   } catch (error) {
     console.error('Erro ao criar cliente:', error);
     throw error;
   }
 };
 
-// Função para obter todos os clientes
-export const getAllClients = async (): Promise<Client[]> => {
+// Get all clients
+export const getClients = async (): Promise<Client[]> => {
   try {
     const clientsRef = ref(db, 'clients');
     const snapshot = await get(clientsRef);
     
     if (snapshot.exists()) {
-      return Object.values(snapshot.val()) as Client[];
+      const clientsData = snapshot.val();
+      return Object.values(clientsData) as Client[];
     }
     
     return [];
   } catch (error) {
-    console.error('Erro ao obter clientes:', error);
+    console.error('Erro ao buscar clientes:', error);
     throw error;
   }
 };
 
-// Função para obter cliente por ID
-export const getClientById = async (id: string): Promise<Client | null> => {
+// Get client by ID
+export const getClientById = async (clientId: string): Promise<Client | null> => {
   try {
-    const clientRef = ref(db, `clients/${id}`);
+    const clientRef = ref(db, `clients/${clientId}`);
     const snapshot = await get(clientRef);
     
     if (snapshot.exists()) {
@@ -99,20 +99,28 @@ export const getClientById = async (id: string): Promise<Client | null> => {
     
     return null;
   } catch (error) {
-    console.error('Erro ao obter cliente:', error);
+    console.error('Erro ao buscar cliente:', error);
     throw error;
   }
 };
 
-// Função para atualizar um cliente
-export const updateClient = async (id: string, clientData: Partial<Client>) => {
+// Update client
+export const updateClient = async (clientId: string, data: Partial<Omit<Client, 'id' | 'createdAt' | 'createdBy'>>) => {
   try {
-    const updates = {
-      ...clientData,
+    const clientRef = ref(db, `clients/${clientId}`);
+    
+    // Get current client data
+    const snapshot = await get(clientRef);
+    if (!snapshot.exists()) {
+      throw new Error('Cliente não encontrado');
+    }
+    
+    const updatedData = {
+      ...data,
       updatedAt: new Date().toISOString()
     };
     
-    await update(ref(db, `clients/${id}`), updates);
+    await update(clientRef, updatedData);
     return true;
   } catch (error) {
     console.error('Erro ao atualizar cliente:', error);
@@ -120,49 +128,18 @@ export const updateClient = async (id: string, clientData: Partial<Client>) => {
   }
 };
 
-// Função para desativar um cliente (exclusão lógica)
-export const deactivateClient = async (id: string) => {
+// Delete client (or set inactive)
+export const deleteClient = async (clientId: string) => {
   try {
-    await update(ref(db, `clients/${id}`), {
+    // Instead of deleting, we set the client to inactive
+    const clientRef = ref(db, `clients/${clientId}`);
+    await update(clientRef, { 
       active: false,
       updatedAt: new Date().toISOString()
     });
     return true;
   } catch (error) {
     console.error('Erro ao desativar cliente:', error);
-    throw error;
-  }
-};
-
-// Função para excluir um cliente (apenas para administradores)
-export const deleteClient = async (id: string) => {
-  try {
-    await remove(ref(db, `clients/${id}`));
-    return true;
-  } catch (error) {
-    console.error('Erro ao excluir cliente:', error);
-    throw error;
-  }
-};
-
-// Função para buscar clientes por tipo
-export const getClientsByType = async (type: ClientType): Promise<Client[]> => {
-  try {
-    const clientsQuery = query(
-      ref(db, 'clients'),
-      orderByChild('type'),
-      equalTo(type)
-    );
-    
-    const snapshot = await get(clientsQuery);
-    
-    if (snapshot.exists()) {
-      return Object.values(snapshot.val()) as Client[];
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Erro ao buscar clientes por tipo:', error);
     throw error;
   }
 };

@@ -1,24 +1,388 @@
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { 
+  PlusCircle, 
+  Search, 
+  Calendar, 
+  Clock, 
+  CheckCircle2, 
+  AlertCircle, 
+  RotateCcw,
+  XCircle
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  getActivities, 
+  Activity, 
+  ActivityStatus, 
+  updateActivityStatus 
+} from "@/services/firebase/activities";
+import { getClients, Client } from "@/services/firebase/clients";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const ActivitiesPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [filteredActivities, setFilteredActivities] = useState<Activity[]>([]);
+  const [clients, setClients] = useState<Record<string, Client>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<ActivityStatus | "all">("all");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        // Fetch activities
+        const fetchedActivities = await getActivities();
+        setActivities(fetchedActivities);
+        setFilteredActivities(fetchedActivities);
+        
+        // Fetch clients to get their names
+        const fetchedClients = await getClients();
+        const clientsMap: Record<string, Client> = {};
+        fetchedClients.forEach(client => {
+          clientsMap[client.id] = client;
+        });
+        setClients(clientsMap);
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível carregar as atividades."
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
+
+  useEffect(() => {
+    // Filter by search term and status
+    let filtered = activities;
+    
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(activity => activity.status === statusFilter);
+    }
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(activity => {
+        const clientName = clients[activity.clientId] 
+          ? (clients[activity.clientId].type === 'juridica' 
+            ? (clients[activity.clientId] as any).companyName 
+            : clients[activity.clientId].name)
+          : '';
+          
+        return activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          clientName.toLowerCase().includes(searchTerm.toLowerCase());
+      });
+    }
+    
+    // Sort by date and status (pending first, then in-progress, then completed, then cancelled)
+    filtered = [...filtered].sort((a, b) => {
+      // First by status priority
+      const statusPriority: Record<ActivityStatus, number> = {
+        'pending': 0,
+        'in-progress': 1,
+        'completed': 2,
+        'cancelled': 3
+      };
+      
+      const statusDiff = statusPriority[a.status] - statusPriority[b.status];
+      if (statusDiff !== 0) return statusDiff;
+      
+      // Then by start date (most recent first)
+      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+    });
+    
+    setFilteredActivities(filtered);
+  }, [searchTerm, statusFilter, activities, clients]);
+
+  const getStatusBadge = (status: ActivityStatus) => {
+    switch (status) {
+      case "pending":
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+            <Clock className="h-3 w-3 mr-1" /> Pendente
+          </Badge>
+        );
+      case "in-progress":
+        return (
+          <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+            <RotateCcw className="h-3 w-3 mr-1" /> Em Progresso
+          </Badge>
+        );
+      case "completed":
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-200">
+            <CheckCircle2 className="h-3 w-3 mr-1" /> Concluída
+          </Badge>
+        );
+      case "cancelled":
+        return (
+          <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-200">
+            <XCircle className="h-3 w-3 mr-1" /> Cancelada
+          </Badge>
+        );
+    }
+  };
+
+  const getPriorityBadge = (priority: Activity["priority"]) => {
+    switch (priority) {
+      case "low":
+        return <Badge variant="outline">Baixa</Badge>;
+      case "medium":
+        return <Badge variant="secondary">Média</Badge>;
+      case "high":
+        return <Badge variant="destructive">Alta</Badge>;
+    }
+  };
+
+  const getClientName = (clientId: string) => {
+    const client = clients[clientId];
+    if (!client) return "Cliente não encontrado";
+    
+    return client.type === 'juridica' 
+      ? (client as any).companyName 
+      : client.name;
+  };
+
+  const handleStatusChange = async (activityId: string, newStatus: ActivityStatus) => {
+    if (!user?.uid) return;
+    
+    try {
+      await updateActivityStatus(activityId, newStatus, user.uid);
+      
+      // Update the activities list
+      setActivities(prevActivities => 
+        prevActivities.map(activity => 
+          activity.id === activityId 
+            ? { ...activity, status: newStatus, updatedAt: new Date().toISOString() } 
+            : activity
+        )
+      );
+      
+      toast({
+        title: "Status atualizado",
+        description: `A atividade foi marcada como ${
+          newStatus === 'pending' ? 'pendente' : 
+          newStatus === 'in-progress' ? 'em progresso' : 
+          newStatus === 'completed' ? 'concluída' : 
+          'cancelada'
+        }.`
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar o status da atividade."
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold">Gerenciamento de Atividades</h1>
         <Button onClick={() => navigate("/activities/new")}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Nova Atividade
         </Button>
       </div>
-      
-      <div className="p-8 text-center text-muted-foreground">
-        <p>A funcionalidade de gerenciamento de atividades será implementada em breve.</p>
+
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar atividades..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant={statusFilter === "all" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setStatusFilter("all")}
+          >
+            Todas
+          </Button>
+          <Button 
+            variant={statusFilter === "pending" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setStatusFilter("pending")}
+          >
+            <Clock className="h-4 w-4 mr-1" />
+            Pendentes
+          </Button>
+          <Button 
+            variant={statusFilter === "in-progress" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setStatusFilter("in-progress")}
+          >
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Em Progresso
+          </Button>
+          <Button 
+            variant={statusFilter === "completed" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setStatusFilter("completed")}
+          >
+            <CheckCircle2 className="h-4 w-4 mr-1" />
+            Concluídas
+          </Button>
+          <Button 
+            variant={statusFilter === "cancelled" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setStatusFilter("cancelled")}
+          >
+            <XCircle className="h-4 w-4 mr-1" />
+            Canceladas
+          </Button>
+        </div>
       </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, index) => (
+            <Card key={index} className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-10 w-full" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : filteredActivities.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredActivities.map((activity) => (
+            <Card key={activity.id} className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {activity.title}
+                      {getPriorityBadge(activity.priority)}
+                    </CardTitle>
+                    <CardDescription>
+                      Cliente: {getClientName(activity.clientId)}
+                    </CardDescription>
+                  </div>
+                  <div>
+                    {getStatusBadge(activity.status)}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <p className="text-sm line-clamp-2">{activity.description}</p>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    <span>
+                      {new Date(activity.startDate).toLocaleDateString('pt-BR')}
+                      {activity.endDate && ` - ${new Date(activity.endDate).toLocaleDateString('pt-BR')}`}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4">
+                <div className="flex justify-end w-full gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate(`/activities/${activity.id}`)}
+                  >
+                    Detalhes
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    onClick={() => navigate(`/activities/edit/${activity.id}`)}
+                  >
+                    Editar
+                  </Button>
+                </div>
+                
+                {activity.status !== 'completed' && activity.status !== 'cancelled' && (
+                  <div className="flex justify-between w-full">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="border-red-200 text-red-700 hover:bg-red-50"
+                      onClick={() => handleStatusChange(activity.id, 'cancelled')}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Cancelar
+                    </Button>
+                    
+                    {activity.status === 'pending' ? (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                        onClick={() => handleStatusChange(activity.id, 'in-progress')}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        Iniciar
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-green-200 text-green-700 hover:bg-green-50"
+                        onClick={() => handleStatusChange(activity.id, 'completed')}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        Concluir
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center p-10 border rounded-lg bg-muted/10">
+          <h3 className="text-lg font-medium mb-2">Nenhuma atividade encontrada</h3>
+          <p className="text-muted-foreground mb-4">
+            {searchTerm || statusFilter !== "all"
+              ? "Não encontramos resultados com os filtros aplicados."
+              : "Nenhuma atividade cadastrada no sistema."}
+          </p>
+          <Button onClick={() => navigate("/activities/new")}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Adicionar Atividade
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
