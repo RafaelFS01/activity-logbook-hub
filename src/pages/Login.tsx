@@ -7,44 +7,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulação de login - em uma aplicação real, isso seria uma chamada de API
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const success = await login(email, password);
       
-      // Lógica de simulação simples para o login
-      if (username && password) {
-        // Simular login bem-sucedido
-        localStorage.setItem("user", JSON.stringify({ 
-          name: "Usuário Demo",
-          role: "admin" // Pode ser: "collaborator", "manager", "admin"
-        }));
-        
-        toast({
-          title: "Login bem-sucedido",
-          description: "Bem-vindo ao sistema de registro de atividades!"
-        });
-        
+      if (success) {
         navigate("/");
-      } else {
-        // Simular erro de login
-        toast({
-          variant: "destructive",
-          title: "Falha no login",
-          description: "Nome de usuário ou senha incorretos."
-        });
       }
-    }, 1500);
+    } catch (error) {
+      console.error("Error during login:", error);
+      toast({
+        variant: "destructive",
+        title: "Falha no login",
+        description: "Erro ao tentar fazer login. Verifique suas credenciais."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,13 +54,13 @@ const Login = () => {
           <form onSubmit={handleLogin}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Nome de Usuário</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input 
-                  id="username" 
-                  type="text" 
-                  placeholder="Digite seu nome de usuário" 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email" 
+                  type="email" 
+                  placeholder="Digite seu email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -92,10 +83,18 @@ const Login = () => {
               </div>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
+              
+              <p className="text-center text-sm text-muted-foreground mt-2">
+                Para criar o primeiro usuário administrador, utilize:
+                <br />
+                <span className="font-semibold">Email: admin@activityhub.com</span>
+                <br />
+                <span className="font-semibold">Senha: admin123</span>
+              </p>
             </CardFooter>
           </form>
         </Card>

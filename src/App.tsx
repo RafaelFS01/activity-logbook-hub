@@ -16,6 +16,7 @@ import Dashboard from "@/pages/Index";
 import ActivitiesPage from "@/pages/activities/ActivitiesPage";
 import ClientsPage from "@/pages/clients/ClientsPage";
 import CollaboratorsPage from "@/pages/collaborators/CollaboratorsPage";
+import AdminSetup from "@/pages/AdminSetup";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
           <Routes>
             {/* Rota de Login */}
             <Route path="/login" element={<Login />} />
+            <Route path="/admin-setup" element={<AdminSetup />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             
             {/* Rotas protegidas */}
