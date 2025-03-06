@@ -39,13 +39,28 @@ export const createClient = async (
     const id = uuidv4();
     const now = new Date().toISOString();
     
-    const newClient: Client = {
-      ...clientData,
-      id,
-      createdAt: now,
-      updatedAt: now,
-      createdBy: userId
-    };
+    // Criamos o client com base no tipo
+    let newClient: Client;
+    
+    if (clientData.type === 'fisica') {
+      const fisicaData = clientData as Omit<PessoaFisicaClient, 'id' | 'createdAt' | 'updatedAt'>;
+      newClient = {
+        ...fisicaData,
+        id,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: userId
+      };
+    } else {
+      const juridicaData = clientData as Omit<PessoaJuridicaClient, 'id' | 'createdAt' | 'updatedAt'>;
+      newClient = {
+        ...juridicaData,
+        id,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: userId
+      };
+    }
     
     await set(ref(db, `clients/${id}`), newClient);
     return newClient;
