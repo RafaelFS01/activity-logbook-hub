@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient, ClientType } from "@/services/firebase/clients";
@@ -20,13 +20,6 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Tabs,
   TabsContent,
   TabsList,
@@ -34,7 +27,7 @@ import {
 } from "@/components/ui/tabs";
 import { ArrowLeft, Briefcase, Building2, User } from "lucide-react";
 
-// Esquema para cliente pessoa física
+// Schema for pessoa física
 const pessoaFisicaSchema = z.object({
   type: z.literal("fisica"),
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -45,7 +38,7 @@ const pessoaFisicaSchema = z.object({
   address: z.string().optional(),
 });
 
-// Esquema para cliente pessoa jurídica
+// Schema for pessoa jurídica
 const pessoaJuridicaSchema = z.object({
   type: z.literal("juridica"),
   companyName: z.string().min(3, "Razão social deve ter pelo menos 3 caracteres"),
@@ -57,13 +50,15 @@ const pessoaJuridicaSchema = z.object({
   address: z.string().optional(),
 });
 
-// União dos esquemas
+// Union of schemas with type discriminator
 const clientSchema = z.discriminatedUnion("type", [
   pessoaFisicaSchema,
   pessoaJuridicaSchema,
 ]);
 
-type ClientFormValues = z.infer<typeof clientSchema>;
+type PessoaFisicaFormValues = z.infer<typeof pessoaFisicaSchema>;
+type PessoaJuridicaFormValues = z.infer<typeof pessoaJuridicaSchema>;
+type ClientFormValues = PessoaFisicaFormValues | PessoaJuridicaFormValues;
 
 const NewClientPage = () => {
   const navigate = useNavigate();
@@ -76,28 +71,41 @@ const NewClientPage = () => {
     handleSubmit,
     formState: { errors },
     setValue,
-    watch,
     reset,
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       type: "fisica",
-    } as ClientFormValues,
+    } as PessoaFisicaFormValues,
   });
 
-  // Atualizar tipo do cliente quando a tab mudar
+  // Type guard functions
+  const isPessoaFisicaErrors = (
+    clientType: ClientType
+  ): clientType is "fisica" => {
+    return clientType === "fisica";
+  };
+
+  const isPessoaJuridicaErrors = (
+    clientType: ClientType
+  ): clientType is "juridica" => {
+    return clientType === "juridica";
+  };
+
+  // Update client type when tab changes
   const handleTabChange = (value: string) => {
-    setClientType(value as ClientType);
+    const newType = value as ClientType;
+    setClientType(newType);
     
-    // Reset the form with the new client type to ensure all fields are properly initialized
-    if (value === "fisica") {
-      reset({
-        type: "fisica",
-      } as ClientFormValues);
+    // Reset the form with the new client type
+    if (newType === "fisica") {
+      reset({ 
+        type: "fisica" 
+      } as PessoaFisicaFormValues);
     } else {
-      reset({
-        type: "juridica",
-      } as ClientFormValues);
+      reset({ 
+        type: "juridica" 
+      } as PessoaJuridicaFormValues);
     }
   };
 
@@ -114,14 +122,15 @@ const NewClientPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Ensure type is set correctly based on the active tab
+      // Make sure type is always set based on the active tab
       const clientData = {
         ...data,
+        type: clientType, // Ensure type is always set correctly
         active: true,
         createdBy: user.uid
       };
 
-      // Criar cliente no Firebase
+      // Create client in Firebase
       await createClient(clientData, user.uid);
 
       toast({
@@ -140,15 +149,6 @@ const NewClientPage = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Type guard functions for accessing type-specific errors
-  const isPessoaFisica = (errors: any): errors is typeof errors & { cpf?: any; rg?: any } => {
-    return clientType === "fisica";
-  };
-
-  const isPessoaJuridica = (errors: any): errors is typeof errors & { companyName?: any; cnpj?: any; responsibleName?: any } => {
-    return clientType === "juridica";
   };
 
   return (
@@ -219,8 +219,9 @@ const NewClientPage = () => {
                       placeholder="000.000.000-00"
                       {...register("cpf")}
                     />
-                    {isPessoaFisica(errors) && errors.cpf && (
-                      <p className="text-sm text-red-500">{errors.cpf.message}</p>
+                    {isPessoaFisicaErrors(clientType) && 
+                      'cpf' in errors && (
+                      <p className="text-sm text-red-500">{errors.cpf?.message}</p>
                     )}
                   </div>
 
@@ -231,8 +232,9 @@ const NewClientPage = () => {
                       placeholder="00.000.000-0"
                       {...register("rg")}
                     />
-                    {isPessoaFisica(errors) && errors.rg && (
-                      <p className="text-sm text-red-500">{errors.rg.message}</p>
+                    {isPessoaFisicaErrors(clientType) && 
+                      'rg' in errors && (
+                      <p className="text-sm text-red-500">{errors.rg?.message}</p>
                     )}
                   </div>
 
@@ -268,12 +270,12 @@ const NewClientPage = () => {
                       placeholder="Endereço completo"
                       {...register("address")}
                     />
-                    {isPessoaFisica(errors) && errors.address && (
+                    {errors.address && (
                       <p className="text-sm text-red-500">{errors.address.message}</p>
                     )}
                   </div>
                   
-                  {/* Hidden input to ensure type is always set */}
+                  {/* Hidden input to ensure type is always set correctly */}
                   <input type="hidden" {...register("type")} value="fisica" />
                 </div>
               </TabsContent>
@@ -287,8 +289,9 @@ const NewClientPage = () => {
                       placeholder="Razão Social"
                       {...register("companyName")}
                     />
-                    {isPessoaJuridica(errors) && errors.companyName && (
-                      <p className="text-sm text-red-500">{errors.companyName.message}</p>
+                    {isPessoaJuridicaErrors(clientType) && 
+                      'companyName' in errors && (
+                      <p className="text-sm text-red-500">{errors.companyName?.message}</p>
                     )}
                   </div>
 
@@ -311,8 +314,9 @@ const NewClientPage = () => {
                       placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
                     />
-                    {isPessoaJuridica(errors) && errors.cnpj && (
-                      <p className="text-sm text-red-500">{errors.cnpj.message}</p>
+                    {isPessoaJuridicaErrors(clientType) && 
+                      'cnpj' in errors && (
+                      <p className="text-sm text-red-500">{errors.cnpj?.message}</p>
                     )}
                   </div>
 
@@ -323,8 +327,9 @@ const NewClientPage = () => {
                       placeholder="Nome do responsável"
                       {...register("responsibleName")}
                     />
-                    {isPessoaJuridica(errors) && errors.responsibleName && (
-                      <p className="text-sm text-red-500">{errors.responsibleName.message}</p>
+                    {isPessoaJuridicaErrors(clientType) && 
+                      'responsibleName' in errors && (
+                      <p className="text-sm text-red-500">{errors.responsibleName?.message}</p>
                     )}
                   </div>
 
@@ -360,12 +365,12 @@ const NewClientPage = () => {
                       placeholder="Endereço completo"
                       {...register("address")}
                     />
-                    {isPessoaJuridica(errors) && errors.address && (
+                    {errors.address && (
                       <p className="text-sm text-red-500">{errors.address.message}</p>
                     )}
                   </div>
                   
-                  {/* Hidden input to ensure type is always set */}
+                  {/* Hidden input to ensure type is always set correctly */}
                   <input type="hidden" {...register("type")} value="juridica" />
                 </div>
               </TabsContent>
