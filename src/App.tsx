@@ -15,10 +15,13 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Index";
 import ActivitiesPage from "@/pages/activities/ActivitiesPage";
 import NewActivityPage from "@/pages/activities/NewActivityPage";
+import EditActivityPage from "@/pages/activities/EditActivityPage";
 import ClientsPage from "@/pages/clients/ClientsPage";
 import NewClientPage from "@/pages/clients/NewClientPage";
+import EditClientPage from "@/pages/clients/EditClientPage";
 import CollaboratorsPage from "@/pages/collaborators/CollaboratorsPage";
 import NewCollaboratorPage from "@/pages/collaborators/NewCollaboratorPage";
+import EditCollaboratorPage from "@/pages/collaborators/EditCollaboratorPage";
 import AdminSetup from "@/pages/AdminSetup";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
@@ -51,13 +54,13 @@ const App = () => (
               <Route path="activities" element={<ActivitiesPage />} />
               <Route path="activities/new" element={<NewActivityPage />} />
               <Route path="activities/:id" element={<div>Detalhes da Atividade (A implementar)</div>} />
-              <Route path="activities/edit/:id" element={<div>Editar Atividade (A implementar)</div>} />
+              <Route path="activities/edit/:id" element={<EditActivityPage />} />
               
               {/* Clientes */}
               <Route path="clients" element={<ClientsPage />} />
               <Route path="clients/new" element={<NewClientPage />} />
               <Route path="clients/:id" element={<div>Detalhes do Cliente (A implementar)</div>} />
-              <Route path="clients/edit/:id" element={<div>Editar Cliente (A implementar)</div>} />
+              <Route path="clients/edit/:id" element={<EditClientPage />} />
               
               {/* Colaboradores - apenas admin e manager podem acessar */}
               <Route path="collaborators" element={
@@ -77,7 +80,7 @@ const App = () => (
               } />
               <Route path="collaborators/edit/:id" element={
                 <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                  <div>Editar Colaborador (A implementar)</div>
+                  <EditCollaboratorPage />
                 </ProtectedRoute>
               } />
               
