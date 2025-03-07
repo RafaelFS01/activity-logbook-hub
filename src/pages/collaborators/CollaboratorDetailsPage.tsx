@@ -417,7 +417,7 @@ const CollaboratorDetailsPage = () => {
                                 {activity.description}
                               </p>
                               <div className="flex items-center text-xs text-muted-foreground mb-1">
-                                <Calendar className="h-3 w-3 mr-1" />
+                                <CalendarIcon className="h-3 w-3 mr-1" />
                                 <span>Início: {new Date(activity.startDate).toLocaleDateString('pt-BR')}</span>
                                 {activity.endDate && (
                                   <>

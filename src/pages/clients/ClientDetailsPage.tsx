@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  User, Building2, CheckCircle2, XCircle, Calendar as CalendarIcon, 
-  Clock, FileEdit, ArrowLeft, List, CircleAlert, 
-  Search, Filter
+  User, Building2, CheckCircle2, XCircle, Clock, FileEdit, 
+  ArrowLeft, List, CircleAlert, Search, Filter,
+  Calendar as CalendarIcon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -437,7 +437,7 @@ const ClientDetailsPage = () => {
                                 {activity.description}
                               </p>
                               <div className="flex items-center text-xs text-muted-foreground mb-1">
-                                <Calendar className="h-3 w-3 mr-1" />
+                                <CalendarIcon className="h-3 w-3 mr-1" />
                                 <span>Início: {new Date(activity.startDate).toLocaleDateString('pt-BR')}</span>
                                 {activity.endDate && (
                                   <>
@@ -555,4 +555,3 @@ const ClientDetailsPage = () => {
 };
 
 export default ClientDetailsPage;
-
