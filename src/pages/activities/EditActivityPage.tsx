@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -14,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DateInput } from "@/components/ui/date-input";
 import {
   Card,
   CardContent,
@@ -39,6 +39,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, CalendarClock, Save } from "lucide-react";
 
+// Definir interface para UserData
 interface UserData {
   uid?: string;
   name: string;
@@ -47,6 +48,7 @@ interface UserData {
   active: boolean;
 }
 
+// Definir o esquema de validação
 const activitySchema = z.object({
   title: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
   description: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
@@ -73,8 +75,6 @@ const EditActivityPage = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [selectedCollaborators, setSelectedCollaborators] = useState<string[]>([]);
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
 
   const {
     register,
@@ -91,12 +91,15 @@ const EditActivityPage = () => {
     },
   });
 
+  // Carregar dados iniciais (clientes e colaboradores)
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        // Carregar clientes
         const clientsData = await getClients();
         setClients(clientsData.filter(client => client.active));
 
+        // Carregar colaboradores
         const usersRef = ref(db, "users");
         const snapshot = await get(usersRef);
         if (snapshot.exists()) {
@@ -122,6 +125,7 @@ const EditActivityPage = () => {
     fetchInitialData();
   }, []);
 
+  // Carregar dados da atividade
   useEffect(() => {
     const fetchActivity = async () => {
       setIsLoading(true);
@@ -136,19 +140,12 @@ const EditActivityPage = () => {
           setValue("clientId", activity.clientId);
           setValue("priority", activity.priority);
           setValue("status", activity.status);
-          
-          if (activity.startDate) {
-            const startDateObj = new Date(activity.startDate);
-            setStartDate(startDateObj);
-            setValue("startDate", activity.startDate.split('T')[0]);
-          }
-          
+          setValue("startDate", activity.startDate.split('T')[0]);
           if (activity.endDate) {
-            const endDateObj = new Date(activity.endDate);
-            setEndDate(endDateObj);
             setValue("endDate", activity.endDate.split('T')[0]);
           }
           
+          // Configurar colaboradores selecionados
           setSelectedCollaborators(activity.assignedTo);
           setValue("assignedToIds", activity.assignedTo);
         } else {
@@ -174,23 +171,10 @@ const EditActivityPage = () => {
     fetchActivity();
   }, [id, setValue, navigate]);
 
+  // Atualizar assignedToIds quando selectedCollaborators mudar
   useEffect(() => {
     setValue("assignedToIds", selectedCollaborators);
   }, [selectedCollaborators, setValue]);
-
-  useEffect(() => {
-    if (startDate) {
-      setValue("startDate", startDate.toISOString().split("T")[0]);
-    }
-  }, [startDate, setValue]);
-
-  useEffect(() => {
-    if (endDate) {
-      setValue("endDate", endDate.toISOString().split("T")[0]);
-    } else {
-      setValue("endDate", undefined);
-    }
-  }, [endDate, setValue]);
 
   const handleCollaboratorChange = (collaboratorId: string, checked: boolean) => {
     if (checked) {
@@ -216,6 +200,7 @@ const EditActivityPage = () => {
     setIsSubmitting(true);
 
     try {
+      // Preparar dados da atividade para atualização
       const activityData = {
         title: data.title,
         description: data.description,
@@ -227,6 +212,7 @@ const EditActivityPage = () => {
         endDate: data.endDate,
       };
 
+      // Atualizar atividade no Firebase
       await updateActivity(id, activityData);
 
       toast({
@@ -248,6 +234,7 @@ const EditActivityPage = () => {
     }
   };
 
+  // Função para exibir o nome do cliente no formato correto
   const displayClientName = (client: Client) => {
     if (client.type === "fisica") {
       return `${client.name} (CPF: ${client.cpf})`;
@@ -401,24 +388,26 @@ const EditActivityPage = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="startDate">Data de Início *</Label>
-                <DateInput
-                  label="Data de Início *"
-                  value={startDate}
-                  onChange={setStartDate}
-                  placeholder="DD/MM/AAAA"
-                  error={errors.startDate?.message}
+                <Input
+                  id="startDate"
+                  type="date"
+                  {...register("startDate")}
                 />
+                {errors.startDate && (
+                  <p className="text-sm text-red-500">
+                    {errors.startDate.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="endDate">Data de Término</Label>
-                <DateInput
-                  label="Data de Término"
-                  value={endDate}
-                  onChange={setEndDate}
-                  placeholder="DD/MM/AAAA"
-                  error={errors.endDate?.message}
-                />
+                <Input id="endDate" type="date" {...register("endDate")} />
+                {errors.endDate && (
+                  <p className="text-sm text-red-500">
+                    {errors.endDate.message}
+                  </p>
+                )}
               </div>
             </div>
 

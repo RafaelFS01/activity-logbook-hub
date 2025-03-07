@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -15,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DateInput } from "@/components/ui/date-input";
 import {
   Card,
   CardContent,
@@ -64,8 +64,6 @@ const NewActivityPage = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [selectedCollaborators, setSelectedCollaborators] = useState<string[]>([]);
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-  const [endDate, setEndDate] = useState<Date | undefined>();
 
   const {
     register,
@@ -117,26 +115,10 @@ const NewActivityPage = () => {
     fetchData();
   }, []);
 
-  // Update assignedToIds when selectedCollaborators change
+  // Atualizar assignedToIds quando selectedCollaborators mudar
   useEffect(() => {
     setValue("assignedToIds", selectedCollaborators);
   }, [selectedCollaborators, setValue]);
-
-  // Update startDate in form when the date changes
-  useEffect(() => {
-    if (startDate) {
-      setValue("startDate", startDate.toISOString().split("T")[0]);
-    }
-  }, [startDate, setValue]);
-
-  // Update endDate in form when the date changes
-  useEffect(() => {
-    if (endDate) {
-      setValue("endDate", endDate.toISOString().split("T")[0]);
-    } else {
-      setValue("endDate", undefined);
-    }
-  }, [endDate, setValue]);
 
   const handleCollaboratorChange = (collaboratorId: string, checked: boolean) => {
     if (checked) {
@@ -335,21 +317,29 @@ const NewActivityPage = () => {
                 )}
               </div>
 
-              <DateInput
-                label="Data de Início *"
-                value={startDate}
-                onChange={setStartDate}
-                placeholder="DD/MM/AAAA"
-                error={errors.startDate?.message}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Data de Início *</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  {...register("startDate")}
+                />
+                {errors.startDate && (
+                  <p className="text-sm text-red-500">
+                    {errors.startDate.message}
+                  </p>
+                )}
+              </div>
 
-              <DateInput
-                label="Data de Término"
-                value={endDate}
-                onChange={setEndDate}
-                placeholder="DD/MM/AAAA"
-                error={errors.endDate?.message}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Data de Término</Label>
+                <Input id="endDate" type="date" {...register("endDate")} />
+                {errors.endDate && (
+                  <p className="text-sm text-red-500">
+                    {errors.endDate.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

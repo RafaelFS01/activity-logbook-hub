@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -12,7 +13,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Select,
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Save, UserCog } from "lucide-react";
 
+// Definir o esquema de validação (similar ao NewCollaboratorPage, mas sem senha)
 const collaboratorSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
@@ -42,8 +43,6 @@ const EditCollaboratorPage = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [birthDate, setBirthDate] = useState<Date | undefined>();
-  const [admissionDate, setAdmissionDate] = useState<Date | undefined>();
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CollaboratorFormValues>({
     resolver: zodResolver(collaboratorSchema),
@@ -53,6 +52,7 @@ const EditCollaboratorPage = () => {
     }
   });
 
+  // Carregar dados do colaborador
   useEffect(() => {
     const fetchCollaborator = async () => {
       setIsLoading(true);
@@ -68,20 +68,10 @@ const EditCollaboratorPage = () => {
           setValue("email", data.email);
           setValue("cpf", data.cpf);
           setValue("phone", data.phone);
+          setValue("birthDate", data.birthDate);
+          setValue("admissionDate", data.admissionDate);
           setValue("role", data.role);
           setValue("active", data.active);
-          
-          if (data.birthDate) {
-            const birthDateObj = new Date(data.birthDate);
-            setBirthDate(birthDateObj);
-            setValue("birthDate", data.birthDate);
-          }
-          
-          if (data.admissionDate) {
-            const admissionDateObj = new Date(data.admissionDate);
-            setAdmissionDate(admissionDateObj);
-            setValue("admissionDate", data.admissionDate);
-          }
         } else {
           toast({
             variant: "destructive",
@@ -105,16 +95,6 @@ const EditCollaboratorPage = () => {
     fetchCollaborator();
   }, [id, setValue, navigate]);
 
-  useEffect(() => {
-    if (birthDate) {
-      setValue("birthDate", birthDate.toISOString().split("T")[0]);
-    }
-    
-    if (admissionDate) {
-      setValue("admissionDate", admissionDate.toISOString().split("T")[0]);
-    }
-  }, [birthDate, admissionDate, setValue]);
-
   const onSubmit = async (data: CollaboratorFormValues) => {
     if (!user || !id) {
       toast({
@@ -128,6 +108,7 @@ const EditCollaboratorPage = () => {
     setIsSubmitting(true);
 
     try {
+      // Atualizar informações no Realtime Database
       await update(ref(db, `users/${id}`), {
         ...data,
         updatedAt: new Date().toISOString()
@@ -213,7 +194,7 @@ const EditCollaboratorPage = () => {
                   type="email"
                   placeholder="email@exemplo.com"
                   {...register("email")}
-                  disabled
+                  disabled // Email não pode ser alterado pois está vinculado à autenticação
                 />
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -244,21 +225,29 @@ const EditCollaboratorPage = () => {
                 )}
               </div>
               
-              <DateInput
-                label="Data de Nascimento *"
-                value={birthDate}
-                onChange={setBirthDate}
-                placeholder="DD/MM/AAAA"
-                error={errors.birthDate?.message}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="birthDate">Data de Nascimento *</Label>
+                <Input
+                  id="birthDate"
+                  type="date"
+                  {...register("birthDate")}
+                />
+                {errors.birthDate && (
+                  <p className="text-sm text-red-500">{errors.birthDate.message}</p>
+                )}
+              </div>
               
-              <DateInput
-                label="Data de Admissão *"
-                value={admissionDate}
-                onChange={setAdmissionDate}
-                placeholder="DD/MM/AAAA"
-                error={errors.admissionDate?.message}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="admissionDate">Data de Admissão *</Label>
+                <Input
+                  id="admissionDate"
+                  type="date"
+                  {...register("admissionDate")}
+                />
+                {errors.admissionDate && (
+                  <p className="text-sm text-red-500">{errors.admissionDate.message}</p>
+                )}
+              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="role">Função *</Label>

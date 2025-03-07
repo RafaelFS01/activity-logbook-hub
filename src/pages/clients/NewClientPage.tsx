@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -33,43 +34,26 @@ const pessoaFisicaSchema = z.object({
   email: z.string().email("Email inválido"),
   phone: z.string().min(10, "Telefone inválido"),
   cpf: z.string().min(11, "CPF inválido"),
-  rg: z.string().min(5, "RG inválido"),
-  address: z.string().min(5, "Endereço inválido"),
+  rg: z.string().optional(),
+  address: z.string().optional(),
 });
 
 // Schema for pessoa jurídica
 const pessoaJuridicaSchema = z.object({
   type: z.literal("juridica"),
-  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  email: z.string().email("Email inválido"),
-  cnpj: z.string().min(14, "CNPJ inválido"),
   companyName: z.string().min(3, "Razão social deve ter pelo menos 3 caracteres"),
-  responsibleName: z.string().min(3, "Nome do responsável deve ter pelo menos 3 caracteres"),
+  name: z.string().min(3, "Nome fantasia deve ter pelo menos 3 caracteres"),
+  email: z.string().email("Email inválido"),
   phone: z.string().min(10, "Telefone inválido"),
-  address: z.string().min(5, "Endereço inválido"),
+  cnpj: z.string().min(14, "CNPJ inválido"),
+  responsibleName: z.string().optional(),
+  address: z.string().optional(),
 });
 
 // Union of schemas with type discriminator
-const clientSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('fisica'),
-    name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-    email: z.string().email("Email inválido"),
-    cpf: z.string().min(11, "CPF inválido"),
-    rg: z.string().min(5, "RG inválido"),
-    phone: z.string().min(10, "Telefone inválido"),
-    address: z.string().min(5, "Endereço inválido"),
-  }),
-  z.object({
-    type: z.literal('juridica'),
-    name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-    email: z.string().email("Email inválido"),
-    cnpj: z.string().min(14, "CNPJ inválido"),
-    companyName: z.string().min(3, "Razão social deve ter pelo menos 3 caracteres"),
-    responsibleName: z.string().min(3, "Nome do responsável deve ter pelo menos 3 caracteres"),
-    phone: z.string().min(10, "Telefone inválido"),
-    address: z.string().min(5, "Endereço inválido"),
-  })
+const clientSchema = z.discriminatedUnion("type", [
+  pessoaFisicaSchema,
+  pessoaJuridicaSchema,
 ]);
 
 type PessoaFisicaFormValues = z.infer<typeof pessoaFisicaSchema>;
