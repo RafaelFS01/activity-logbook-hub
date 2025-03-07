@@ -79,17 +79,17 @@ const NewClientPage = () => {
     } as PessoaFisicaFormValues,
   });
 
-  // Type guard functions
-  const isPessoaFisicaErrors = (
-    clientType: ClientType
-  ): clientType is "fisica" => {
-    return clientType === "fisica";
+  // Type guard functions for proper error handling
+  const isPessoaFisica = (
+    data: ClientFormValues
+  ): data is PessoaFisicaFormValues => {
+    return data.type === "fisica";
   };
 
-  const isPessoaJuridicaErrors = (
-    clientType: ClientType
-  ): clientType is "juridica" => {
-    return clientType === "juridica";
+  const isPessoaJuridica = (
+    data: ClientFormValues
+  ): data is PessoaJuridicaFormValues => {
+    return data.type === "juridica";
   };
 
   // Update client type when tab changes
@@ -97,14 +97,23 @@ const NewClientPage = () => {
     const newType = value as ClientType;
     setClientType(newType);
     
-    // Reset the form with the new client type
+    // Reset the form with the new client type and required fields
     if (newType === "fisica") {
       reset({ 
-        type: "fisica" 
+        type: "fisica",
+        name: "",
+        email: "",
+        phone: "",
+        cpf: "",
       } as PessoaFisicaFormValues);
     } else {
       reset({ 
-        type: "juridica" 
+        type: "juridica",
+        name: "",
+        companyName: "",
+        email: "",
+        phone: "",
+        cnpj: "",
       } as PessoaJuridicaFormValues);
     }
   };
@@ -122,16 +131,37 @@ const NewClientPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Make sure type is always set based on the active tab
-      const clientData = {
-        ...data,
-        type: clientType, // Ensure type is always set correctly
-        active: true,
-        createdBy: user.uid
-      };
-
-      // Create client in Firebase
-      await createClient(clientData, user.uid);
+      // Create client in Firebase with properly typed data
+      if (isPessoaFisica(data)) {
+        const clientData = {
+          ...data,
+          active: true,
+          createdBy: user.uid,
+          // Ensure all required fields are present
+          type: "fisica" as const,
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          cpf: data.cpf
+        };
+        
+        await createClient(clientData, user.uid);
+      } else if (isPessoaJuridica(data)) {
+        const clientData = {
+          ...data,
+          active: true,
+          createdBy: user.uid,
+          // Ensure all required fields are present
+          type: "juridica" as const,
+          name: data.name,
+          companyName: data.companyName,
+          email: data.email,
+          phone: data.phone,
+          cnpj: data.cnpj
+        };
+        
+        await createClient(clientData, user.uid);
+      }
 
       toast({
         title: "Cliente criado com sucesso",
@@ -219,9 +249,9 @@ const NewClientPage = () => {
                       placeholder="000.000.000-00"
                       {...register("cpf")}
                     />
-                    {isPessoaFisicaErrors(clientType) && 
-                      'cpf' in errors && (
-                      <p className="text-sm text-red-500">{errors.cpf?.message}</p>
+                    {clientType === "fisica" && 
+                      errors.cpf && (
+                      <p className="text-sm text-red-500">{errors.cpf.message}</p>
                     )}
                   </div>
 
@@ -232,9 +262,9 @@ const NewClientPage = () => {
                       placeholder="00.000.000-0"
                       {...register("rg")}
                     />
-                    {isPessoaFisicaErrors(clientType) && 
-                      'rg' in errors && (
-                      <p className="text-sm text-red-500">{errors.rg?.message}</p>
+                    {clientType === "fisica" && 
+                      errors.rg && (
+                      <p className="text-sm text-red-500">{errors.rg.message}</p>
                     )}
                   </div>
 
@@ -289,9 +319,9 @@ const NewClientPage = () => {
                       placeholder="Razão Social"
                       {...register("companyName")}
                     />
-                    {isPessoaJuridicaErrors(clientType) && 
-                      'companyName' in errors && (
-                      <p className="text-sm text-red-500">{errors.companyName?.message}</p>
+                    {clientType === "juridica" && 
+                      errors.companyName && (
+                      <p className="text-sm text-red-500">{errors.companyName.message}</p>
                     )}
                   </div>
 
@@ -314,9 +344,9 @@ const NewClientPage = () => {
                       placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
                     />
-                    {isPessoaJuridicaErrors(clientType) && 
-                      'cnpj' in errors && (
-                      <p className="text-sm text-red-500">{errors.cnpj?.message}</p>
+                    {clientType === "juridica" && 
+                      errors.cnpj && (
+                      <p className="text-sm text-red-500">{errors.cnpj.message}</p>
                     )}
                   </div>
 
@@ -327,9 +357,9 @@ const NewClientPage = () => {
                       placeholder="Nome do responsável"
                       {...register("responsibleName")}
                     />
-                    {isPessoaJuridicaErrors(clientType) && 
-                      'responsibleName' in errors && (
-                      <p className="text-sm text-red-500">{errors.responsibleName?.message}</p>
+                    {clientType === "juridica" && 
+                      errors.responsibleName && (
+                      <p className="text-sm text-red-500">{errors.responsibleName.message}</p>
                     )}
                   </div>
 
