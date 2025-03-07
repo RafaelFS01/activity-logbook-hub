@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Select,
@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, UserPlus } from "lucide-react";
 
-// Definir o esquema de validação
 const collaboratorSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
@@ -47,6 +46,8 @@ const NewCollaboratorPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [birthDate, setBirthDate] = useState<Date | undefined>();
+  const [admissionDate, setAdmissionDate] = useState<Date | undefined>(new Date());
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CollaboratorFormValues>({
     resolver: zodResolver(collaboratorSchema),
@@ -55,6 +56,16 @@ const NewCollaboratorPage = () => {
       admissionDate: new Date().toISOString().split("T")[0],
     }
   });
+
+  useEffect(() => {
+    if (birthDate) {
+      setValue("birthDate", birthDate.toISOString().split("T")[0]);
+    }
+    
+    if (admissionDate) {
+      setValue("admissionDate", admissionDate.toISOString().split("T")[0]);
+    }
+  }, [birthDate, admissionDate, setValue]);
 
   const onSubmit = async (data: CollaboratorFormValues) => {
     if (!user) {
@@ -69,11 +80,9 @@ const NewCollaboratorPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Criar usuário no Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const newUser = userCredential.user;
 
-      // Salvar informações adicionais no Realtime Database
       await set(ref(db, `users/${newUser.uid}`), {
         name: data.name,
         email: data.email,
@@ -211,29 +220,21 @@ const NewCollaboratorPage = () => {
                 )}
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="birthDate">Data de Nascimento *</Label>
-                <Input
-                  id="birthDate"
-                  type="date"
-                  {...register("birthDate")}
-                />
-                {errors.birthDate && (
-                  <p className="text-sm text-red-500">{errors.birthDate.message}</p>
-                )}
-              </div>
+              <DateInput
+                label="Data de Nascimento *"
+                value={birthDate}
+                onChange={setBirthDate}
+                placeholder="DD/MM/AAAA"
+                error={errors.birthDate?.message}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="admissionDate">Data de Admissão *</Label>
-                <Input
-                  id="admissionDate"
-                  type="date"
-                  {...register("admissionDate")}
-                />
-                {errors.admissionDate && (
-                  <p className="text-sm text-red-500">{errors.admissionDate.message}</p>
-                )}
-              </div>
+              <DateInput
+                label="Data de Admissão *"
+                value={admissionDate}
+                onChange={setAdmissionDate}
+                placeholder="DD/MM/AAAA"
+                error={errors.admissionDate?.message}
+              />
               
               <div className="space-y-2">
                 <Label htmlFor="role">Função *</Label>

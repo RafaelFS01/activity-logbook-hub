@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -41,8 +40,8 @@ const pessoaFisicaSchema = z.object({
   email: z.string().email("Email inválido"),
   phone: z.string().min(10, "Telefone inválido"),
   cpf: z.string().min(11, "CPF inválido"),
-  rg: z.string().optional(),
-  address: z.string().optional(),
+  rg: z.string().min(5, "RG inválido"),
+  address: z.string().min(5, "Endereço inválido"),
   active: z.boolean().default(true),
 });
 
@@ -54,20 +53,37 @@ const pessoaJuridicaSchema = z.object({
   email: z.string().email("Email inválido"),
   phone: z.string().min(10, "Telefone inválido"),
   cnpj: z.string().min(14, "CNPJ inválido"),
-  responsibleName: z.string().optional(),
-  address: z.string().optional(),
+  responsibleName: z.string().min(3, "Nome do responsável deve ter pelo menos 3 caracteres"),
+  address: z.string().min(5, "Endereço inválido"),
   active: z.boolean().default(true),
 });
 
 // Union of schemas with type discriminator
-const clientSchema = z.discriminatedUnion("type", [
-  pessoaFisicaSchema,
-  pessoaJuridicaSchema,
+const clientSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('fisica'),
+    name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+    email: z.string().email("Email inválido"),
+    cpf: z.string().min(11, "CPF inválido"),
+    rg: z.string().min(5, "RG inválido"),
+    phone: z.string().min(10, "Telefone inválido"),
+    address: z.string().min(5, "Endereço inválido"),
+    active: z.boolean().default(true),
+  }),
+  z.object({
+    type: z.literal('juridica'),
+    name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+    email: z.string().email("Email inválido"),
+    cnpj: z.string().min(14, "CNPJ inválido"),
+    companyName: z.string().min(3, "Razão social deve ter pelo menos 3 caracteres"),
+    responsibleName: z.string().min(3, "Nome do responsável deve ter pelo menos 3 caracteres"),
+    phone: z.string().min(10, "Telefone inválido"),
+    address: z.string().min(5, "Endereço inválido"),
+    active: z.boolean().default(true),
+  })
 ]);
 
-type PessoaFisicaFormValues = z.infer<typeof pessoaFisicaSchema>;
-type PessoaJuridicaFormValues = z.infer<typeof pessoaJuridicaSchema>;
-type ClientFormValues = PessoaFisicaFormValues | PessoaJuridicaFormValues;
+type ClientFormValues = z.infer<typeof clientSchema>;
 
 const EditClientPage = () => {
   const navigate = useNavigate();
@@ -278,9 +294,8 @@ const EditClientPage = () => {
                       placeholder="000.000.000-00"
                       {...register("cpf")}
                     />
-                    {clientType === "fisica" && isPessoaFisica(watch()) && 
-                     errors.cpf && (
-                      <p className="text-sm text-red-500">{errors.cpf?.message}</p>
+                    {isFisica && errors.cpf && (
+                      <p className="text-sm text-red-500">{errors.cpf.message}</p>
                     )}
                   </div>
 
@@ -291,9 +306,8 @@ const EditClientPage = () => {
                       placeholder="00.000.000-0"
                       {...register("rg")}
                     />
-                    {clientType === "fisica" && isPessoaFisica(watch()) && 
-                     errors.rg && (
-                      <p className="text-sm text-red-500">{errors.rg?.message}</p>
+                    {isFisica && errors.rg && (
+                      <p className="text-sm text-red-500">{errors.rg.message}</p>
                     )}
                   </div>
 
@@ -364,9 +378,8 @@ const EditClientPage = () => {
                       placeholder="Razão Social"
                       {...register("companyName")}
                     />
-                    {clientType === "juridica" && isPessoaJuridica(watch()) && 
-                     errors.companyName && (
-                      <p className="text-sm text-red-500">{errors.companyName?.message}</p>
+                    {isJuridica && errors.companyName && (
+                      <p className="text-sm text-red-500">{errors.companyName.message}</p>
                     )}
                   </div>
 
@@ -389,9 +402,8 @@ const EditClientPage = () => {
                       placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
                     />
-                    {clientType === "juridica" && isPessoaJuridica(watch()) && 
-                     errors.cnpj && (
-                      <p className="text-sm text-red-500">{errors.cnpj?.message}</p>
+                    {isJuridica && errors.cnpj && (
+                      <p className="text-sm text-red-500">{errors.cnpj.message}</p>
                     )}
                   </div>
 
@@ -402,9 +414,8 @@ const EditClientPage = () => {
                       placeholder="Nome do responsável"
                       {...register("responsibleName")}
                     />
-                    {clientType === "juridica" && isPessoaJuridica(watch()) && 
-                     errors.responsibleName && (
-                      <p className="text-sm text-red-500">{errors.responsibleName?.message}</p>
+                    {isJuridica && errors.responsibleName && (
+                      <p className="text-sm text-red-500">{errors.responsibleName.message}</p>
                     )}
                   </div>
 
