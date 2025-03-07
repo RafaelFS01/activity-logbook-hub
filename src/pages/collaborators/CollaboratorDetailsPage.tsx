@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getUserData, UserData } from "@/services/firebase/auth";
-import { getActivitiesByAssignee, Activity } from "@/services/firebase/activities";
+import { getActivitiesByAssignee, Activity, ActivityStatus } from "@/services/firebase/activities";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   UserCheck, UserX, Calendar, Clock, FileEdit, ArrowLeft, 
-  List, CircleAlert, Briefcase, Mail, Phone, BadgeCheck
+  List, CircleAlert, Briefcase, Mail, Phone, BadgeCheck, 
+  Search, Filter, CalendarIcon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,13 +16,27 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { get, ref } from "firebase/database";
 import { db } from "@/lib/firebase";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 
 const CollaboratorDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [collaborator, setCollaborator] = useState<UserData & { uid: string } | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [filteredActivities, setFilteredActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ActivityStatus | "all">("all");
+  const [dateType, setDateType] = useState<"startDate" | "endDate">("startDate");
+  const [startPeriod, setStartPeriod] = useState<Date | undefined>(undefined);
+  const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,6 +56,7 @@ const CollaboratorDetailsPage = () => {
 
         const userActivities = await getActivitiesByAssignee(id);
         setActivities(userActivities);
+        setFilteredActivities(userActivities);
       } catch (error) {
         console.error("Erro ao buscar dados do colaborador:", error);
       } finally {
@@ -50,6 +66,39 @@ const CollaboratorDetailsPage = () => {
 
     fetchData();
   }, [id]);
+
+  useEffect(() => {
+    let filtered = [...activities];
+    
+    if (searchTerm) {
+      filtered = filtered.filter(activity => 
+        activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        activity.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(activity => activity.status === statusFilter);
+    }
+    
+    if (startPeriod || endPeriod) {
+      filtered = filtered.filter(activity => {
+        const activityDate = new Date(dateType === "startDate" ? activity.startDate : (activity.endDate || activity.startDate));
+        
+        if (startPeriod && endPeriod) {
+          return activityDate >= startPeriod && activityDate <= endPeriod;
+        } else if (startPeriod) {
+          return activityDate >= startPeriod;
+        } else if (endPeriod) {
+          return activityDate <= endPeriod;
+        }
+        
+        return true;
+      });
+    }
+    
+    setFilteredActivities(filtered);
+  }, [activities, searchTerm, statusFilter, dateType, startPeriod, endPeriod]);
 
   if (loading) {
     return (
@@ -138,6 +187,13 @@ const CollaboratorDetailsPage = () => {
     return date.toLocaleDateString('pt-BR');
   };
 
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setStartPeriod(undefined);
+    setEndPeriod(undefined);
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex items-center mb-6">
@@ -219,77 +275,199 @@ const CollaboratorDetailsPage = () => {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  {activities.length > 0 ? (
-                    <div className="space-y-4">
-                      {activities.map((activity) => (
-                        <Card key={activity.id} className="overflow-hidden">
-                          <CardHeader className="p-4">
-                            <div className="flex justify-between items-start">
-                              <CardTitle className="text-base">{activity.title}</CardTitle>
-                              <Badge
-                                className={
-                                  activity.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                  activity.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                                  activity.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                  'bg-yellow-100 text-yellow-800'
-                                }
+                  <div className="space-y-4">
+                    <div className="flex flex-col space-y-4">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="search"
+                          placeholder="Buscar atividades..."
+                          className="pl-8"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="mb-1 block">Status</Label>
+                          <Select 
+                            value={statusFilter} 
+                            onValueChange={(value) => setStatusFilter(value as ActivityStatus | "all")}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Filtrar por status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Todos os status</SelectItem>
+                              <SelectItem value="pending">Pendente</SelectItem>
+                              <SelectItem value="in-progress">Em Progresso</SelectItem>
+                              <SelectItem value="completed">Concluída</SelectItem>
+                              <SelectItem value="cancelled">Cancelada</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label className="mb-1 block">Tipo de Data</Label>
+                          <RadioGroup 
+                            value={dateType} 
+                            onValueChange={(value) => setDateType(value as "startDate" | "endDate")}
+                            className="flex space-x-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="startDate" id="start-date" />
+                              <Label htmlFor="start-date">Data de Início</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="endDate" id="end-date" />
+                              <Label htmlFor="end-date">Data de Término</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="mb-1 block">Período - Início</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !startPeriod && "text-muted-foreground"
+                                )}
                               >
-                                {activity.status === 'completed' ? 'Concluída' :
-                                 activity.status === 'in-progress' ? 'Em andamento' :
-                                 activity.status === 'cancelled' ? 'Cancelada' :
-                                 'Pendente'}
-                              </Badge>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="p-4 pt-0">
-                            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                              {activity.description}
-                            </p>
-                            <div className="flex items-center text-xs text-muted-foreground mb-1">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              <span>Início: {new Date(activity.startDate).toLocaleDateString('pt-BR')}</span>
-                              {activity.endDate && (
-                                <>
-                                  <span className="mx-1">•</span>
-                                  <span>Fim: {new Date(activity.endDate).toLocaleDateString('pt-BR')}</span>
-                                </>
-                              )}
-                            </div>
-                            <div className="flex items-center text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3 mr-1" />
-                              <span>
-                                {formatDistanceToNow(new Date(activity.updatedAt), {
-                                  addSuffix: true,
-                                  locale: ptBR
-                                })}
-                              </span>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="p-2 bg-muted/50">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="ml-auto"
-                              onClick={() => navigate(`/activities/${activity.id}`)}
-                            >
-                              Ver detalhes
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      ))}
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {startPeriod ? format(startPeriod, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={startPeriod}
+                                onSelect={setStartPeriod}
+                                initialFocus
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        <div>
+                          <Label className="mb-1 block">Período - Fim</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !endPeriod && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {endPeriod ? format(endPeriod, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={endPeriod}
+                                onSelect={setEndPeriod}
+                                initialFocus
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <Button variant="outline" size="sm" onClick={resetFilters}>
+                          Limpar Filtros
+                        </Button>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-center p-6">
-                      <List className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
-                      <h3 className="text-lg font-medium mb-2">Nenhuma atividade encontrada</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Este colaborador ainda não possui atividades atribuídas.
-                      </p>
-                      <Button onClick={() => navigate("/activities/new", { state: { assigneeId: id } })}>
-                        Nova Atividade
-                      </Button>
-                    </div>
-                  )}
+                    
+                    {filteredActivities.length > 0 ? (
+                      <div className="space-y-4">
+                        {filteredActivities.map((activity) => (
+                          <Card key={activity.id} className="overflow-hidden">
+                            <CardHeader className="p-4">
+                              <div className="flex justify-between items-start">
+                                <CardTitle className="text-base">{activity.title}</CardTitle>
+                                <Badge
+                                  className={
+                                    activity.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    activity.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                                    activity.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                  }
+                                >
+                                  {activity.status === 'completed' ? 'Concluída' :
+                                   activity.status === 'in-progress' ? 'Em andamento' :
+                                   activity.status === 'cancelled' ? 'Cancelada' :
+                                   'Pendente'}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                              <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                                {activity.description}
+                              </p>
+                              <div className="flex items-center text-xs text-muted-foreground mb-1">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                <span>Início: {new Date(activity.startDate).toLocaleDateString('pt-BR')}</span>
+                                {activity.endDate && (
+                                  <>
+                                    <span className="mx-1">•</span>
+                                    <span>Fim: {new Date(activity.endDate).toLocaleDateString('pt-BR')}</span>
+                                  </>
+                                )}
+                              </div>
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3 mr-1" />
+                                <span>
+                                  {formatDistanceToNow(new Date(activity.updatedAt), {
+                                    addSuffix: true,
+                                    locale: ptBR
+                                  })}
+                                </span>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="p-2 bg-muted/50">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="ml-auto"
+                                onClick={() => navigate(`/activities/${activity.id}`)}
+                              >
+                                Ver detalhes
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center p-6">
+                        <List className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
+                        <h3 className="text-lg font-medium mb-2">Nenhuma atividade encontrada</h3>
+                        <p className="text-muted-foreground mb-4">
+                          {searchTerm || statusFilter !== "all" || startPeriod || endPeriod ? 
+                            "Não foram encontradas atividades com os filtros aplicados." : 
+                            "Este colaborador ainda não possui atividades atribuídas."}
+                        </p>
+                        {searchTerm || statusFilter !== "all" || startPeriod || endPeriod ? (
+                          <Button onClick={resetFilters}>Limpar Filtros</Button>
+                        ) : (
+                          <Button onClick={() => navigate("/activities/new", { state: { assigneeId: id } })}>
+                            Nova Atividade
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

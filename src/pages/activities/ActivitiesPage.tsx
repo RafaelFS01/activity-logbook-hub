@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -9,13 +8,21 @@ import {
   CheckCircle2, 
   AlertCircle, 
   RotateCcw,
-  XCircle
+  XCircle,
+  Filter,
+  CalendarIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { format } from "date-fns";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { 
   getActivities, 
   Activity, 
@@ -36,6 +43,10 @@ const ActivitiesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<ActivityStatus | "all">("all");
+  const [dateType, setDateType] = useState<"startDate" | "endDate">("startDate");
+  const [startPeriod, setStartPeriod] = useState<Date | undefined>(undefined);
+  const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,7 +80,7 @@ const ActivitiesPage = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Filter by search term and status
+    // Filter by search term, status and period
     let filtered = activities;
     
     // Apply status filter
@@ -92,6 +103,26 @@ const ActivitiesPage = () => {
       });
     }
     
+    // Apply date period filters
+    if (startPeriod || endPeriod) {
+      filtered = filtered.filter(activity => {
+        const activityDate = new Date(dateType === "startDate" ? activity.startDate : (activity.endDate || activity.startDate));
+        
+        if (startPeriod && endPeriod) {
+          // Both dates provided - check if activity date is within range
+          return activityDate >= startPeriod && activityDate <= endPeriod;
+        } else if (startPeriod) {
+          // Only start date provided - check if activity date is after or equal to start date
+          return activityDate >= startPeriod;
+        } else if (endPeriod) {
+          // Only end date provided - check if activity date is before or equal to end date
+          return activityDate <= endPeriod;
+        }
+        
+        return true;
+      });
+    }
+    
     // Sort by date and status (pending first, then in-progress, then completed, then cancelled)
     filtered = [...filtered].sort((a, b) => {
       // First by status priority
@@ -110,7 +141,7 @@ const ActivitiesPage = () => {
     });
     
     setFilteredActivities(filtered);
-  }, [searchTerm, statusFilter, activities, clients]);
+  }, [searchTerm, statusFilter, activities, clients, dateType, startPeriod, endPeriod]);
 
   const getStatusBadge = (status: ActivityStatus) => {
     switch (status) {
@@ -195,6 +226,14 @@ const ActivitiesPage = () => {
     }
   };
 
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setStartPeriod(undefined);
+    setEndPeriod(undefined);
+    setDateType("startDate");
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -205,17 +244,121 @@ const ActivitiesPage = () => {
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar atividades..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar atividades..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex gap-2 items-center">
+                <Filter className="h-4 w-4" />
+                <span>Filtros Avançados</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4" align="end">
+              <div className="space-y-4">
+                <h3 className="font-medium">Filtrar por Período</h3>
+                
+                <div>
+                  <Label className="mb-1 block">Tipo de Data</Label>
+                  <RadioGroup 
+                    value={dateType} 
+                    onValueChange={(value) => setDateType(value as "startDate" | "endDate")}
+                    className="flex flex-col space-y-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="startDate" id="period-start-date" />
+                      <Label htmlFor="period-start-date">Data de Início</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="endDate" id="period-end-date" />
+                      <Label htmlFor="period-end-date">Data de Término</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                <div>
+                  <Label className="mb-1 block">Início do Período</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !startPeriod && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {startPeriod ? format(startPeriod, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={startPeriod}
+                        onSelect={setStartPeriod}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div>
+                  <Label className="mb-1 block">Fim do Período</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !endPeriod && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {endPeriod ? format(endPeriod, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={endPeriod}
+                        onSelect={setEndPeriod}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div className="flex justify-between pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={resetFilters}
+                  >
+                    Limpar Filtros
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setIsFilterOpen(false)}
+                  >
+                    Aplicar
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
+        
         <div className="flex flex-wrap gap-2">
           <Button 
             variant={statusFilter === "all" ? "default" : "outline"} 
@@ -257,6 +400,30 @@ const ActivitiesPage = () => {
             Canceladas
           </Button>
         </div>
+        
+        {(startPeriod || endPeriod) && (
+          <div className="flex items-center gap-2 text-sm">
+            <Badge variant="outline" className="px-3 py-1">
+              <CalendarIcon className="h-3 w-3 mr-1" />
+              Filtrando por {dateType === "startDate" ? "Data de Início" : "Data de Término"}:
+              {startPeriod && !endPeriod && (
+                <> a partir de {format(startPeriod, "dd/MM/yyyy")}</>
+              )}
+              {!startPeriod && endPeriod && (
+                <> até {format(endPeriod, "dd/MM/yyyy")}</>
+              )}
+              {startPeriod && endPeriod && (
+                <> de {format(startPeriod, "dd/MM/yyyy")} até {format(endPeriod, "dd/MM/yyyy")}</>
+              )}
+            </Badge>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+              setStartPeriod(undefined);
+              setEndPeriod(undefined);
+            }}>
+              <XCircle className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -373,10 +540,15 @@ const ActivitiesPage = () => {
         <div className="text-center p-10 border rounded-lg bg-muted/10">
           <h3 className="text-lg font-medium mb-2">Nenhuma atividade encontrada</h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm || statusFilter !== "all"
+            {searchTerm || statusFilter !== "all" || startPeriod || endPeriod
               ? "Não encontramos resultados com os filtros aplicados."
               : "Nenhuma atividade cadastrada no sistema."}
           </p>
+          {searchTerm || statusFilter !== "all" || startPeriod || endPeriod ? (
+            <Button onClick={resetFilters} className="mr-2">
+              Limpar Filtros
+            </Button>
+          ) : null}
           <Button onClick={() => navigate("/activities/new")}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Atividade
