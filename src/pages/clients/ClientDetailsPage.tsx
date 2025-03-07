@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  User, Building2, CheckCircle2, XCircle, Calendar, 
+  User, Building2, CheckCircle2, XCircle, Calendar as CalendarIcon, 
   Clock, FileEdit, ArrowLeft, List, CircleAlert, 
-  Search, Filter, CalendarIcon
+  Search, Filter
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,11 +44,9 @@ const ClientDetailsPage = () => {
         setLoading(true);
         if (!id) return;
 
-        // Buscar dados do cliente
         const clientData = await getClientById(id);
         setClient(clientData);
 
-        // Buscar atividades relacionadas ao cliente
         const clientActivities = await getActivitiesByClient(id);
         setActivities(clientActivities);
         setFilteredActivities(clientActivities);
@@ -63,10 +61,8 @@ const ClientDetailsPage = () => {
   }, [id]);
 
   useEffect(() => {
-    // Apply filters to activities
     let filtered = [...activities];
     
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(activity => 
         activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,24 +70,19 @@ const ClientDetailsPage = () => {
       );
     }
     
-    // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter(activity => activity.status === statusFilter);
     }
     
-    // Filter by date period
     if (startPeriod || endPeriod) {
       filtered = filtered.filter(activity => {
         const activityDate = new Date(dateType === "startDate" ? activity.startDate : (activity.endDate || activity.startDate));
         
         if (startPeriod && endPeriod) {
-          // Both dates provided - check if activity date is within range
           return activityDate >= startPeriod && activityDate <= endPeriod;
         } else if (startPeriod) {
-          // Only start date provided - check if activity date is after or equal to start date
           return activityDate >= startPeriod;
         } else if (endPeriod) {
-          // Only end date provided - check if activity date is before or equal to end date
           return activityDate <= endPeriod;
         }
         
@@ -564,3 +555,4 @@ const ClientDetailsPage = () => {
 };
 
 export default ClientDetailsPage;
+

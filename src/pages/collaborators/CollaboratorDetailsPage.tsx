@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  UserCheck, UserX, Calendar, Clock, FileEdit, ArrowLeft, 
+  UserCheck, UserX, Calendar as CalendarIcon, Clock, FileEdit, ArrowLeft, 
   List, CircleAlert, Briefcase, Mail, Phone, BadgeCheck, 
-  Search, Filter, CalendarIcon
+  Search, Filter
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

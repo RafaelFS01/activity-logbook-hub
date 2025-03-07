@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -249,7 +250,8 @@ const NewClientPage = () => {
                       placeholder="000.000.000-00"
                       {...register("cpf")}
                     />
-                    {clientType === "fisica" && isPessoaFisica(watch()) && errors.cpf && (
+                    {clientType === "fisica" && isPessoaFisica(watch()) && 
+                     errors.cpf && (
                       <p className="text-sm text-red-500">{errors.cpf?.message}</p>
                     )}
                   </div>
@@ -261,7 +263,8 @@ const NewClientPage = () => {
                       placeholder="00.000.000-0"
                       {...register("rg")}
                     />
-                    {clientType === "fisica" && isPessoaFisica(watch()) && errors.rg && (
+                    {clientType === "fisica" && isPessoaFisica(watch()) && 
+                     errors.rg && (
                       <p className="text-sm text-red-500">{errors.rg?.message}</p>
                     )}
                   </div>
@@ -317,7 +320,8 @@ const NewClientPage = () => {
                       placeholder="Razão Social"
                       {...register("companyName")}
                     />
-                    {clientType === "juridica" && isPessoaJuridica(watch()) && errors.companyName && (
+                    {clientType === "juridica" && isPessoaJuridica(watch()) && 
+                     errors.companyName && (
                       <p className="text-sm text-red-500">{errors.companyName?.message}</p>
                     )}
                   </div>
@@ -341,7 +345,8 @@ const NewClientPage = () => {
                       placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
                     />
-                    {clientType === "juridica" && isPessoaJuridica(watch()) && errors.cnpj && (
+                    {clientType === "juridica" && isPessoaJuridica(watch()) && 
+                     errors.cnpj && (
                       <p className="text-sm text-red-500">{errors.cnpj?.message}</p>
                     )}
                   </div>
@@ -353,7 +358,8 @@ const NewClientPage = () => {
                       placeholder="Nome do responsável"
                       {...register("responsibleName")}
                     />
-                    {clientType === "juridica" && isPessoaJuridica(watch()) && errors.responsibleName && (
+                    {clientType === "juridica" && isPessoaJuridica(watch()) && 
+                     errors.responsibleName && (
                       <p className="text-sm text-red-500">{errors.responsibleName?.message}</p>
                     )}
                   </div>
