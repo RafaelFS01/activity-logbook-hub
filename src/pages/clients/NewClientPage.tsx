@@ -77,6 +77,7 @@ const NewClientPage = () => {
     formState: { errors },
     setValue,
     watch,
+    reset,
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
@@ -87,7 +88,17 @@ const NewClientPage = () => {
   // Atualizar tipo do cliente quando a tab mudar
   const handleTabChange = (value: string) => {
     setClientType(value as ClientType);
-    setValue("type", value as ClientType);
+    
+    // Reset the form with the new client type to ensure all fields are properly initialized
+    if (value === "fisica") {
+      reset({
+        type: "fisica",
+      } as ClientFormValues);
+    } else {
+      reset({
+        type: "juridica",
+      } as ClientFormValues);
+    }
   };
 
   const onSubmit = async (data: ClientFormValues) => {
@@ -103,11 +114,11 @@ const NewClientPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Adicionando dados comuns
+      // Ensure type is set correctly based on the active tab
       const clientData = {
         ...data,
         active: true,
-        createdBy: user.uid  // Add the missing createdBy property
+        createdBy: user.uid
       };
 
       // Criar cliente no Firebase
@@ -129,6 +140,15 @@ const NewClientPage = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Type guard functions for accessing type-specific errors
+  const isPessoaFisica = (errors: any): errors is typeof errors & { cpf?: any; rg?: any } => {
+    return clientType === "fisica";
+  };
+
+  const isPessoaJuridica = (errors: any): errors is typeof errors & { companyName?: any; cnpj?: any; responsibleName?: any } => {
+    return clientType === "juridica";
   };
 
   return (
@@ -199,8 +219,8 @@ const NewClientPage = () => {
                       placeholder="000.000.000-00"
                       {...register("cpf")}
                     />
-                    {clientType === "fisica" && errors.cpf && (
-                      <p className="text-sm text-red-500">{(errors as any).cpf?.message}</p>
+                    {isPessoaFisica(errors) && errors.cpf && (
+                      <p className="text-sm text-red-500">{errors.cpf.message}</p>
                     )}
                   </div>
 
@@ -211,8 +231,8 @@ const NewClientPage = () => {
                       placeholder="00.000.000-0"
                       {...register("rg")}
                     />
-                    {clientType === "fisica" && errors.rg && (
-                      <p className="text-sm text-red-500">{(errors as any).rg?.message}</p>
+                    {isPessoaFisica(errors) && errors.rg && (
+                      <p className="text-sm text-red-500">{errors.rg.message}</p>
                     )}
                   </div>
 
@@ -248,10 +268,13 @@ const NewClientPage = () => {
                       placeholder="Endereço completo"
                       {...register("address")}
                     />
-                    {clientType === "fisica" && errors.address && (
-                      <p className="text-sm text-red-500">{(errors as any).address?.message}</p>
+                    {isPessoaFisica(errors) && errors.address && (
+                      <p className="text-sm text-red-500">{errors.address.message}</p>
                     )}
                   </div>
+                  
+                  {/* Hidden input to ensure type is always set */}
+                  <input type="hidden" {...register("type")} value="fisica" />
                 </div>
               </TabsContent>
 
@@ -264,8 +287,8 @@ const NewClientPage = () => {
                       placeholder="Razão Social"
                       {...register("companyName")}
                     />
-                    {clientType === "juridica" && (errors as any).companyName && (
-                      <p className="text-sm text-red-500">{(errors as any).companyName?.message}</p>
+                    {isPessoaJuridica(errors) && errors.companyName && (
+                      <p className="text-sm text-red-500">{errors.companyName.message}</p>
                     )}
                   </div>
 
@@ -288,8 +311,8 @@ const NewClientPage = () => {
                       placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
                     />
-                    {clientType === "juridica" && (errors as any).cnpj && (
-                      <p className="text-sm text-red-500">{(errors as any).cnpj?.message}</p>
+                    {isPessoaJuridica(errors) && errors.cnpj && (
+                      <p className="text-sm text-red-500">{errors.cnpj.message}</p>
                     )}
                   </div>
 
@@ -300,8 +323,8 @@ const NewClientPage = () => {
                       placeholder="Nome do responsável"
                       {...register("responsibleName")}
                     />
-                    {clientType === "juridica" && (errors as any).responsibleName && (
-                      <p className="text-sm text-red-500">{(errors as any).responsibleName?.message}</p>
+                    {isPessoaJuridica(errors) && errors.responsibleName && (
+                      <p className="text-sm text-red-500">{errors.responsibleName.message}</p>
                     )}
                   </div>
 
@@ -337,10 +360,13 @@ const NewClientPage = () => {
                       placeholder="Endereço completo"
                       {...register("address")}
                     />
-                    {clientType === "juridica" && (errors as any).address && (
-                      <p className="text-sm text-red-500">{(errors as any).address?.message}</p>
+                    {isPessoaJuridica(errors) && errors.address && (
+                      <p className="text-sm text-red-500">{errors.address.message}</p>
                     )}
                   </div>
+                  
+                  {/* Hidden input to ensure type is always set */}
+                  <input type="hidden" {...register("type")} value="juridica" />
                 </div>
               </TabsContent>
             </Tabs>
