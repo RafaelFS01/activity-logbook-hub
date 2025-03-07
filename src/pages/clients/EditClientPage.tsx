@@ -25,6 +25,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, Briefcase, Building2, Save, User } from "lucide-react";
 
 // Schema for pessoa física
@@ -238,7 +245,6 @@ const EditClientPage = () => {
             <Tabs
               value={clientType}
               className="w-full"
-              disabled
             >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="fisica" className="flex items-center gap-2">
@@ -272,8 +278,8 @@ const EditClientPage = () => {
                       placeholder="000.000.000-00"
                       {...register("cpf")}
                     />
-                    {clientType === "fisica" && errors.cpf && 'cpf' in errors && (
-                      <p className="text-sm text-red-500">{errors.cpf.message}</p>
+                    {clientType === "fisica" && errors.cpf && isPessoaFisica(watch()) && (
+                      <p className="text-sm text-red-500">{errors.cpf?.message}</p>
                     )}
                   </div>
 
@@ -284,8 +290,8 @@ const EditClientPage = () => {
                       placeholder="00.000.000-0"
                       {...register("rg")}
                     />
-                    {clientType === "fisica" && errors.rg && 'rg' in errors && (
-                      <p className="text-sm text-red-500">{errors.rg.message}</p>
+                    {clientType === "fisica" && errors.rg && isPessoaFisica(watch()) && (
+                      <p className="text-sm text-red-500">{errors.rg?.message}</p>
                     )}
                   </div>
 
@@ -356,8 +362,8 @@ const EditClientPage = () => {
                       placeholder="Razão Social"
                       {...register("companyName")}
                     />
-                    {clientType === "juridica" && errors.companyName && 'companyName' in errors && (
-                      <p className="text-sm text-red-500">{errors.companyName.message}</p>
+                    {clientType === "juridica" && errors.companyName && isPessoaJuridica(watch()) && (
+                      <p className="text-sm text-red-500">{errors.companyName?.message}</p>
                     )}
                   </div>
 
@@ -380,8 +386,8 @@ const EditClientPage = () => {
                       placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
                     />
-                    {clientType === "juridica" && errors.cnpj && 'cnpj' in errors && (
-                      <p className="text-sm text-red-500">{errors.cnpj.message}</p>
+                    {clientType === "juridica" && errors.cnpj && isPessoaJuridica(watch()) && (
+                      <p className="text-sm text-red-500">{errors.cnpj?.message}</p>
                     )}
                   </div>
 
@@ -392,8 +398,8 @@ const EditClientPage = () => {
                       placeholder="Nome do responsável"
                       {...register("responsibleName")}
                     />
-                    {clientType === "juridica" && errors.responsibleName && 'responsibleName' in errors && (
-                      <p className="text-sm text-red-500">{errors.responsibleName.message}</p>
+                    {clientType === "juridica" && errors.responsibleName && isPessoaJuridica(watch()) && (
+                      <p className="text-sm text-red-500">{errors.responsibleName?.message}</p>
                     )}
                   </div>
 

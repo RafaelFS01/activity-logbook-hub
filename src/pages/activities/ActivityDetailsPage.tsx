@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getActivityById, Activity, ActivityStatus, updateActivityStatus } from "@/services/firebase/activities";
@@ -36,16 +35,13 @@ const ActivityDetailsPage = () => {
         setLoading(true);
         if (!id) return;
 
-        // Buscar dados da atividade
         const activityData = await getActivityById(id);
         setActivity(activityData);
 
         if (activityData) {
-          // Buscar dados do cliente
           const clientData = await getClientById(activityData.clientId);
           setClient(clientData);
 
-          // Buscar dados dos colaboradores atribuídos
           const usersData: (UserData & { uid: string })[] = [];
           for (const assigneeId of activityData.assignedTo) {
             const userRef = ref(db, `users/${assigneeId}`);
@@ -225,26 +221,24 @@ const ActivityDetailsPage = () => {
             Iniciar Atividade
           </Button>
         )}
-        {activity.status !== 'completed' && (
-          <Button
-            onClick={() => updateStatus('completed')}
-            variant="outline"
-            className="bg-green-100 text-green-800 hover:bg-green-200 border-green-200"
-          >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Concluir Atividade
-          </Button>
-        )}
-        {activity.status !== 'cancelled' && (
-          <Button
-            onClick={() => updateStatus('cancelled')}
-            variant="outline"
-            className="bg-red-100 text-red-800 hover:bg-red-200 border-red-200"
-          >
-            <XCircle className="h-4 w-4 mr-2" />
-            Cancelar Atividade
-          </Button>
-        )}
+        
+        <Button
+          onClick={() => updateStatus('completed')}
+          variant="outline"
+          className="bg-green-100 text-green-800 hover:bg-green-200 border-green-200"
+        >
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Concluir Atividade
+        </Button>
+        
+        <Button
+          onClick={() => updateStatus('cancelled')}
+          variant="outline"
+          className="bg-red-100 text-red-800 hover:bg-red-200 border-red-200"
+        >
+          <XCircle className="h-4 w-4 mr-2" />
+          Cancelar Atividade
+        </Button>
       </div>
     );
   };

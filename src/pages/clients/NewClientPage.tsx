@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm, FieldErrors } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient, ClientType } from "@/services/firebase/clients";
@@ -72,6 +71,7 @@ const NewClientPage = () => {
     formState: { errors },
     setValue,
     reset,
+    watch,
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
@@ -249,9 +249,8 @@ const NewClientPage = () => {
                       placeholder="000.000.000-00"
                       {...register("cpf")}
                     />
-                    {clientType === "fisica" && 
-                      errors.cpf && (
-                      <p className="text-sm text-red-500">{errors.cpf.message}</p>
+                    {clientType === "fisica" && isPessoaFisica(watch()) && errors.cpf && (
+                      <p className="text-sm text-red-500">{errors.cpf?.message}</p>
                     )}
                   </div>
 
@@ -262,9 +261,8 @@ const NewClientPage = () => {
                       placeholder="00.000.000-0"
                       {...register("rg")}
                     />
-                    {clientType === "fisica" && 
-                      errors.rg && (
-                      <p className="text-sm text-red-500">{errors.rg.message}</p>
+                    {clientType === "fisica" && isPessoaFisica(watch()) && errors.rg && (
+                      <p className="text-sm text-red-500">{errors.rg?.message}</p>
                     )}
                   </div>
 
@@ -319,9 +317,8 @@ const NewClientPage = () => {
                       placeholder="Razão Social"
                       {...register("companyName")}
                     />
-                    {clientType === "juridica" && 
-                      errors.companyName && (
-                      <p className="text-sm text-red-500">{errors.companyName.message}</p>
+                    {clientType === "juridica" && isPessoaJuridica(watch()) && errors.companyName && (
+                      <p className="text-sm text-red-500">{errors.companyName?.message}</p>
                     )}
                   </div>
 
@@ -344,9 +341,8 @@ const NewClientPage = () => {
                       placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
                     />
-                    {clientType === "juridica" && 
-                      errors.cnpj && (
-                      <p className="text-sm text-red-500">{errors.cnpj.message}</p>
+                    {clientType === "juridica" && isPessoaJuridica(watch()) && errors.cnpj && (
+                      <p className="text-sm text-red-500">{errors.cnpj?.message}</p>
                     )}
                   </div>
 
@@ -357,9 +353,8 @@ const NewClientPage = () => {
                       placeholder="Nome do responsável"
                       {...register("responsibleName")}
                     />
-                    {clientType === "juridica" && 
-                      errors.responsibleName && (
-                      <p className="text-sm text-red-500">{errors.responsibleName.message}</p>
+                    {clientType === "juridica" && isPessoaJuridica(watch()) && errors.responsibleName && (
+                      <p className="text-sm text-red-500">{errors.responsibleName?.message}</p>
                     )}
                   </div>
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getUserData, UserData } from "@/services/firebase/auth";
@@ -30,7 +29,6 @@ const CollaboratorDetailsPage = () => {
         setLoading(true);
         if (!id) return;
 
-        // Buscar dados do colaborador
         const userRef = ref(db, `users/${id}`);
         const snapshot = await get(userRef);
         
@@ -41,7 +39,6 @@ const CollaboratorDetailsPage = () => {
           setCollaborator(null);
         }
 
-        // Buscar atividades atribuídas ao colaborador
         const userActivities = await getActivitiesByAssignee(id);
         setActivities(userActivities);
       } catch (error) {
@@ -199,7 +196,7 @@ const CollaboratorDetailsPage = () => {
                     <span className="font-medium">Data de Admissão:</span>
                     <span>{new Date(collaborator.admissionDate).toLocaleDateString('pt-BR')}</span>
                   </div>
-                  {collaborator.address && (
+                  {'address' in collaborator && collaborator.address && (
                     <div className="flex justify-between items-center pb-2 border-b">
                       <span className="font-medium">Endereço:</span>
                       <span>{collaborator.address}</span>
