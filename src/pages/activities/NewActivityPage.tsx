@@ -154,6 +154,7 @@ const NewActivityPage = () => {
         status: data.status as ActivityStatus,
         startDate: data.startDate,
         endDate: data.endDate,
+        createdBy: user.uid  // Add the missing createdBy property
       };
 
       // Criar atividade no Firebase

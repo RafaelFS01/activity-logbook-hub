@@ -107,6 +107,7 @@ const NewClientPage = () => {
       const clientData = {
         ...data,
         active: true,
+        createdBy: user.uid  // Add the missing createdBy property
       };
 
       // Criar cliente no Firebase
@@ -198,7 +199,7 @@ const NewClientPage = () => {
                       placeholder="000.000.000-00"
                       {...register("cpf")}
                     />
-                    {errors.cpf && clientType === "fisica" && (
+                    {clientType === "fisica" && errors.cpf && (
                       <p className="text-sm text-red-500">{(errors as any).cpf?.message}</p>
                     )}
                   </div>
@@ -210,7 +211,7 @@ const NewClientPage = () => {
                       placeholder="00.000.000-0"
                       {...register("rg")}
                     />
-                    {errors.rg && clientType === "fisica" && (
+                    {clientType === "fisica" && errors.rg && (
                       <p className="text-sm text-red-500">{(errors as any).rg?.message}</p>
                     )}
                   </div>
@@ -247,7 +248,7 @@ const NewClientPage = () => {
                       placeholder="Endereço completo"
                       {...register("address")}
                     />
-                    {errors.address && clientType === "fisica" && (
+                    {clientType === "fisica" && errors.address && (
                       <p className="text-sm text-red-500">{(errors as any).address?.message}</p>
                     )}
                   </div>
@@ -263,7 +264,7 @@ const NewClientPage = () => {
                       placeholder="Razão Social"
                       {...register("companyName")}
                     />
-                    {errors.companyName && clientType === "juridica" && (
+                    {clientType === "juridica" && (errors as any).companyName && (
                       <p className="text-sm text-red-500">{(errors as any).companyName?.message}</p>
                     )}
                   </div>
@@ -287,7 +288,7 @@ const NewClientPage = () => {
                       placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
                     />
-                    {errors.cnpj && clientType === "juridica" && (
+                    {clientType === "juridica" && (errors as any).cnpj && (
                       <p className="text-sm text-red-500">{(errors as any).cnpj?.message}</p>
                     )}
                   </div>
@@ -299,7 +300,7 @@ const NewClientPage = () => {
                       placeholder="Nome do responsável"
                       {...register("responsibleName")}
                     />
-                    {errors.responsibleName && clientType === "juridica" && (
+                    {clientType === "juridica" && (errors as any).responsibleName && (
                       <p className="text-sm text-red-500">{(errors as any).responsibleName?.message}</p>
                     )}
                   </div>
@@ -336,7 +337,7 @@ const NewClientPage = () => {
                       placeholder="Endereço completo"
                       {...register("address")}
                     />
-                    {errors.address && clientType === "juridica" && (
+                    {clientType === "juridica" && (errors as any).address && (
                       <p className="text-sm text-red-500">{(errors as any).address?.message}</p>
                     )}
                   </div>
