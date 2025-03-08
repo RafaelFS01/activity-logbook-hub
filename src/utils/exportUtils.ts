@@ -12,12 +12,19 @@ const formatDate = (dateString?: string): string => {
 };
 
 // Export activities to Excel
-export const exportActivitiesToExcel = (activities: Activity[], filename = 'atividades.xlsx') => {
+export const exportActivitiesToExcel = (
+  activities: (Activity & { clientName?: string })[], 
+  filename = 'atividades.xlsx',
+  assignees: Record<string, string> = {}
+) => {
   const worksheet = XLSX.utils.json_to_sheet(
     activities.map(activity => ({
       'Título': activity.title,
       'Descrição': activity.description,
-      'ID do Cliente': activity.clientId,
+      'Cliente': activity.clientName || activity.clientId,
+      'Responsáveis': activity.assignedTo
+        .map(id => assignees[id] || id)
+        .join(', '),
       'Status': getActivityStatusText(activity.status),
       'Prioridade': getActivityPriorityText(activity.priority),
       'Data de Início': formatDate(activity.startDate),

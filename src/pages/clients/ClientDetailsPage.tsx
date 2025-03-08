@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getClientById, Client } from "@/services/firebase/clients";
@@ -9,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   User, Building2, CheckCircle2, XCircle, Clock, FileEdit, 
   ArrowLeft, List, CircleAlert, Search, Filter,
-  Calendar as CalendarIcon, RotateCcw
+  Calendar as CalendarIcon, RotateCcw, FileSpreadsheet
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +23,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { exportActivitiesToExcel } from "@/utils/exportUtils";
+import { UserData } from "@/types";
+import { PessoaJuridicaClient } from "@/types";
 
 const ClientDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +40,8 @@ const ClientDetailsPage = () => {
   const [dateType, setDateType] = useState<"startDate" | "endDate">("startDate");
   const [startPeriod, setStartPeriod] = useState<Date | undefined>(undefined);
   const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
+  const [collaborators, setCollaborators] = useState<Record<string, UserData & { uid: string }>>({});
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,11 +50,28 @@ const ClientDetailsPage = () => {
         if (!id) return;
 
         const clientData = await getClientById(id);
-        setClient(clientData);
+        if (clientData) {
+          setClient(clientData);
+        } else {
+          setClient(null);
+        }
 
         const clientActivities = await getActivitiesByClient(id);
         setActivities(clientActivities);
         setFilteredActivities(clientActivities);
+        
+        const usersRef = ref(db, 'users');
+        const usersSnapshot = await get(usersRef);
+        if (usersSnapshot.exists()) {
+          const usersData = usersSnapshot.val();
+          const collaboratorsMap: Record<string, UserData & { uid: string }> = {};
+          
+          Object.entries(usersData).forEach(([uid, userData]) => {
+            collaboratorsMap[uid] = { ...(userData as UserData), uid };
+          });
+          
+          setCollaborators(collaboratorsMap);
+        }
       } catch (error) {
         console.error("Erro ao buscar dados do cliente:", error);
       } finally {
@@ -191,6 +212,51 @@ const ClientDetailsPage = () => {
     setEndPeriod(undefined);
   };
 
+  const handleExport = () => {
+    if (filteredActivities.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Sem dados para exportar",
+        description: "Não há atividades para exportar com os filtros atuais."
+      });
+      return;
+    }
+
+    try {
+      const clientName = client?.type === 'juridica' 
+        ? (client as PessoaJuridicaClient).companyName 
+        : client?.name;
+        
+      const activitiesWithClientName = filteredActivities.map(activity => ({
+        ...activity,
+        clientName: clientName || ''
+      }));
+      
+      const assigneeMap: Record<string, string> = {};
+      Object.entries(collaborators).forEach(([id, user]) => {
+        assigneeMap[id] = user.name;
+      });
+      
+      exportActivitiesToExcel(
+        activitiesWithClientName, 
+        `atividades_${clientName?.replace(/\s+/g, '_')}.xlsx`,
+        assigneeMap
+      );
+      
+      toast({
+        title: "Exportação concluída",
+        description: `${filteredActivities.length} atividades foram exportadas com sucesso.`
+      });
+    } catch (error) {
+      console.error('Erro ao exportar atividades:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro na exportação",
+        description: "Não foi possível exportar as atividades."
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex items-center mb-6">
@@ -296,14 +362,20 @@ const ClientDetailsPage = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle>Atividades</CardTitle>
+                    <CardTitle>Atividades do Cliente</CardTitle>
                     <CardDescription>
-                      Lista de atividades relacionadas a este cliente
+                      Lista de atividades associadas a este cliente
                     </CardDescription>
                   </div>
-                  <Button size="sm" onClick={() => navigate("/activities/new", { state: { clientId: id } })}>
-                    Nova Atividade
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={handleExport}>
+                      <FileSpreadsheet className="mr-2 h-4 w-4" />
+                      Exportar
+                    </Button>
+                    <Button size="sm" onClick={() => navigate("/activities/new", { state: { clientId: id } })}>
+                      Nova Atividade
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">

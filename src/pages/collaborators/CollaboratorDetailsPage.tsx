@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getUserData, UserData } from "@/services/firebase/auth";
@@ -9,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   UserCheck, UserX, Calendar as CalendarIcon, Clock, FileEdit, ArrowLeft, 
   List, CircleAlert, Briefcase, Mail, Phone, BadgeCheck, 
-  Search, Filter, RotateCcw, CheckCircle2, XCircle
+  Search, Filter, RotateCcw, CheckCircle2, XCircle, FileSpreadsheet
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +24,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/use-toast";
+import { getClients, Client } from "@/services/firebase/clients";
+import { PessoaFisicaClient, PessoaJuridicaClient } from "@/services/firebase/clients";
+import { exportActivitiesToExcel } from "@/utils/exportUtils";
 
 const CollaboratorDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +41,10 @@ const CollaboratorDetailsPage = () => {
   const [dateType, setDateType] = useState<"startDate" | "endDate">("startDate");
   const [startPeriod, setStartPeriod] = useState<Date | undefined>(undefined);
   const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
+  
+  const [clients, setClients] = useState<Record<string, Client>>({});
+  const [allCollaborators, setAllCollaborators] = useState<Record<string, UserData & { uid: string }>>({});
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,6 +65,28 @@ const CollaboratorDetailsPage = () => {
         const userActivities = await getActivitiesByAssignee(id);
         setActivities(userActivities);
         setFilteredActivities(userActivities);
+        
+        // Fetch clients for client names
+        const fetchedClients = await getClients();
+        const clientsMap: Record<string, Client> = {};
+        fetchedClients.forEach(client => {
+          clientsMap[client.id] = client;
+        });
+        setClients(clientsMap);
+        
+        // Fetch all collaborators for assignee names
+        const usersRef = ref(db, 'users');
+        const usersSnapshot = await get(usersRef);
+        if (usersSnapshot.exists()) {
+          const usersData = usersSnapshot.val();
+          const collaboratorsMap: Record<string, UserData & { uid: string }> = {};
+          
+          Object.entries(usersData).forEach(([uid, userData]) => {
+            collaboratorsMap[uid] = { ...(userData as UserData), uid };
+          });
+          
+          setAllCollaborators(collaboratorsMap);
+        }
       } catch (error) {
         console.error("Erro ao buscar dados do colaborador:", error);
       } finally {
@@ -205,6 +234,57 @@ const CollaboratorDetailsPage = () => {
     setEndPeriod(undefined);
   };
 
+  const getClientName = (clientId: string) => {
+    const client = clients[clientId];
+    if (!client) return "Cliente não encontrado";
+    
+    return client.type === 'juridica' 
+      ? (client as PessoaJuridicaClient).companyName 
+      : client.name;
+  };
+  
+  const handleExport = () => {
+    if (filteredActivities.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Sem dados para exportar",
+        description: "Não há atividades para exportar com os filtros atuais."
+      });
+      return;
+    }
+
+    try {
+      const activitiesWithClientNames = filteredActivities.map(activity => ({
+        ...activity,
+        clientName: getClientName(activity.clientId)
+      }));
+      
+      // Create a map of assignee IDs to names
+      const assigneeMap: Record<string, string> = {};
+      Object.entries(allCollaborators).forEach(([id, user]) => {
+        assigneeMap[id] = user.name;
+      });
+      
+      exportActivitiesToExcel(
+        activitiesWithClientNames, 
+        `atividades_${collaborator?.name.replace(/\s+/g, '_')}.xlsx`,
+        assigneeMap
+      );
+      
+      toast({
+        title: "Exportação concluída",
+        description: `${filteredActivities.length} atividades foram exportadas com sucesso.`
+      });
+    } catch (error) {
+      console.error('Erro ao exportar atividades:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro na exportação",
+        description: "Não foi possível exportar as atividades."
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex items-center mb-6">
@@ -281,9 +361,15 @@ const CollaboratorDetailsPage = () => {
                       Lista de atividades atribuídas a este colaborador
                     </CardDescription>
                   </div>
-                  <Button size="sm" onClick={() => navigate("/activities/new", { state: { assigneeId: id } })}>
-                    Nova Atividade
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={handleExport}>
+                      <FileSpreadsheet className="mr-2 h-4 w-4" />
+                      Exportar
+                    </Button>
+                    <Button size="sm" onClick={() => navigate("/activities/new", { state: { assigneeId: id } })}>
+                      Nova Atividade
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">

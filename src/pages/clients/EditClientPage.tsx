@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -34,7 +33,6 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Briefcase, Building2, Save, User } from "lucide-react";
 
-// Schema for pessoa física
 const pessoaFisicaSchema = z.object({
   type: z.literal("fisica"),
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -46,7 +44,6 @@ const pessoaFisicaSchema = z.object({
   active: z.boolean().default(true),
 });
 
-// Schema for pessoa jurídica
 const pessoaJuridicaSchema = z.object({
   type: z.literal("juridica"),
   companyName: z.string().min(3, "Razão social deve ter pelo menos 3 caracteres"),
@@ -59,7 +56,6 @@ const pessoaJuridicaSchema = z.object({
   active: z.boolean().default(true),
 });
 
-// Union of schemas with type discriminator
 const clientSchema = z.discriminatedUnion("type", [
   pessoaFisicaSchema,
   pessoaJuridicaSchema,
@@ -92,7 +88,6 @@ const EditClientPage = () => {
     } as PessoaFisicaFormValues,
   });
 
-  // Carregar dados do cliente
   useEffect(() => {
     const fetchClient = async () => {
       setIsLoading(true);
@@ -151,7 +146,6 @@ const EditClientPage = () => {
     fetchClient();
   }, [id, reset, navigate]);
 
-  // Type guard functions for proper error handling
   const isPessoaFisica = (
     data: ClientFormValues
   ): data is PessoaFisicaFormValues => {
@@ -177,7 +171,6 @@ const EditClientPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Atualizar cliente no Firebase
       await updateClient(id, data);
 
       toast({
@@ -272,15 +265,14 @@ const EditClientPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF *</Label>
+                    <Label htmlFor="cpf">CPF</Label>
                     <Input
                       id="cpf"
-                      placeholder="000.000.000-00"
                       {...register("cpf")}
+                      disabled={isSubmitting}
                     />
-                    {clientType === "fisica" && 
-                     errors.cpf && isPessoaFisica(watch()) && (
-                      <p className="text-sm text-red-500">{(errors as any).cpf?.message}</p>
+                    {(errors as any).cpf && (
+                      <p className="text-sm text-destructive">{(errors as any).cpf.message}</p>
                     )}
                   </div>
 
@@ -288,12 +280,11 @@ const EditClientPage = () => {
                     <Label htmlFor="rg">RG</Label>
                     <Input
                       id="rg"
-                      placeholder="00.000.000-0"
                       {...register("rg")}
+                      disabled={isSubmitting}
                     />
-                    {clientType === "fisica" && 
-                     errors.rg && isPessoaFisica(watch()) && (
-                      <p className="text-sm text-red-500">{(errors as any).rg?.message}</p>
+                    {(errors as any).rg && (
+                      <p className="text-sm text-destructive">{(errors as any).rg.message}</p>
                     )}
                   </div>
 
@@ -350,7 +341,6 @@ const EditClientPage = () => {
                     </Select>
                   </div>
                   
-                  {/* Hidden input to ensure type is always set correctly */}
                   <input type="hidden" {...register("type")} value="fisica" />
                 </div>
               </TabsContent>
@@ -358,18 +348,17 @@ const EditClientPage = () => {
               <TabsContent value="juridica" className="pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="companyName">Razão Social *</Label>
+                    <Label htmlFor="companyName">Nome da Empresa</Label>
                     <Input
                       id="companyName"
-                      placeholder="Razão Social"
                       {...register("companyName")}
+                      disabled={isSubmitting}
                     />
-                    {clientType === "juridica" && 
-                     errors.companyName && isPessoaJuridica(watch()) && (
-                      <p className="text-sm text-red-500">{(errors as any).companyName?.message}</p>
+                    {(errors as any).companyName && (
+                      <p className="text-sm text-destructive">{(errors as any).companyName.message}</p>
                     )}
                   </div>
-
+                  
                   <div className="space-y-2">
                     <Label htmlFor="name-juridica">Nome Fantasia *</Label>
                     <Input
@@ -383,15 +372,14 @@ const EditClientPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="cnpj">CNPJ *</Label>
+                    <Label htmlFor="cnpj">CNPJ</Label>
                     <Input
                       id="cnpj"
-                      placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
+                      disabled={isSubmitting}
                     />
-                    {clientType === "juridica" && 
-                     errors.cnpj && isPessoaJuridica(watch()) && (
-                      <p className="text-sm text-red-500">{(errors as any).cnpj?.message}</p>
+                    {(errors as any).cnpj && (
+                      <p className="text-sm text-destructive">{(errors as any).cnpj.message}</p>
                     )}
                   </div>
 
@@ -399,12 +387,11 @@ const EditClientPage = () => {
                     <Label htmlFor="responsibleName">Nome do Responsável</Label>
                     <Input
                       id="responsibleName"
-                      placeholder="Nome do responsável"
                       {...register("responsibleName")}
+                      disabled={isSubmitting}
                     />
-                    {clientType === "juridica" && 
-                     errors.responsibleName && isPessoaJuridica(watch()) && (
-                      <p className="text-sm text-red-500">{(errors as any).responsibleName?.message}</p>
+                    {(errors as any).responsibleName && (
+                      <p className="text-sm text-destructive">{(errors as any).responsibleName.message}</p>
                     )}
                   </div>
 
@@ -461,7 +448,6 @@ const EditClientPage = () => {
                     </Select>
                   </div>
                   
-                  {/* Hidden input to ensure type is always set correctly */}
                   <input type="hidden" {...register("type")} value="juridica" />
                 </div>
               </TabsContent>

@@ -50,6 +50,7 @@ const ActivitiesPage = () => {
   const [startPeriod, setStartPeriod] = useState<Date | undefined>(undefined);
   const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [collaborators, setCollaborators] = useState<Record<string, UserData & { uid: string }>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +66,19 @@ const ActivitiesPage = () => {
           clientsMap[client.id] = client;
         });
         setClients(clientsMap);
+        
+        const usersRef = ref(db, 'users');
+        const usersSnapshot = await get(usersRef);
+        if (usersSnapshot.exists()) {
+          const usersData = usersSnapshot.val();
+          const collaboratorsMap: Record<string, UserData & { uid: string }> = {};
+          
+          Object.entries(usersData).forEach(([uid, userData]) => {
+            collaboratorsMap[uid] = { ...(userData as UserData), uid };
+          });
+          
+          setCollaborators(collaboratorsMap);
+        }
       } catch (error) {
         console.error('Erro ao buscar dados:', error);
         toast({
@@ -183,6 +197,12 @@ const ActivitiesPage = () => {
       : client.name;
   };
 
+  const getAssigneeNames = (assigneeIds: string[]): string => {
+    return assigneeIds
+      .map(id => collaborators[id]?.name || 'Usuário desconhecido')
+      .join(', ');
+  };
+
   const handleStatusChange = async (activityId: string, newStatus: ActivityStatus) => {
     if (!user?.uid) return;
     
@@ -254,7 +274,12 @@ const ActivitiesPage = () => {
         clientName: getClientName(activity.clientId)
       }));
       
-      exportActivitiesToExcel(activitiesWithClientNames, 'atividades.xlsx');
+      const assigneeMap: Record<string, string> = {};
+      Object.entries(collaborators).forEach(([id, user]) => {
+        assigneeMap[id] = user.name;
+      });
+      
+      exportActivitiesToExcel(activitiesWithClientNames, 'atividades.xlsx', assigneeMap);
       
       toast({
         title: "Exportação concluída",
