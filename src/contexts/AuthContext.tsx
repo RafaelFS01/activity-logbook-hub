@@ -30,6 +30,7 @@ type AuthContextType = {
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAdmin: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Configurar listener para mudanças de autenticação
@@ -55,20 +57,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               email: userData.email
             });
             setIsAuthenticated(true);
+            setIsAdmin(userData.role === 'admin');
           } else {
             // Usuário existe no Auth mas não tem dados no Database
             setUser(null);
             setIsAuthenticated(false);
+            setIsAdmin(false);
           }
         } catch (error) {
           console.error("Erro ao obter dados do usuário:", error);
           setUser(null);
           setIsAuthenticated(false);
+          setIsAdmin(false);
         }
       } else {
         // Usuário não está autenticado
         setUser(null);
         setIsAuthenticated(false);
+        setIsAdmin(false);
       }
       setIsLoading(false);
     });
@@ -107,6 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         
         setIsAuthenticated(true);
+        setIsAdmin(userData.role === 'admin');
         
         toast({
           title: "Login bem-sucedido",
@@ -142,6 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signOut();
       setUser(null);
       setIsAuthenticated(false);
+      setIsAdmin(false);
       toast({
         title: "Logout realizado",
         description: "Você saiu do sistema com sucesso."
@@ -157,7 +165,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isLoading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      isAuthenticated, 
+      isLoading,
+      isAdmin 
+    }}>
       {children}
     </AuthContext.Provider>
   );

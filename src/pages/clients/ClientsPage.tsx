@@ -1,14 +1,16 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Building2, User, CheckCircle2, XCircle } from "lucide-react";
+import { PlusCircle, Search, Building2, User, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getClients, Client, ClientType } from "@/services/firebase/clients";
+import { getClients, Client, ClientType, deleteClient } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { toast } from "@/components/ui/use-toast";
 
 const ClientsPage = () => {
   const navigate = useNavigate();
@@ -79,6 +81,29 @@ const ClientsPage = () => {
         Pessoa Física
       </Badge>
     );
+  };
+
+  const handleDeleteClient = async (clientId: string) => {
+    try {
+      await deleteClient(clientId);
+      // Update the local state to reflect the deletion
+      const updatedClients = clients.map(client => 
+        client.id === clientId ? { ...client, active: false } : client
+      );
+      setClients(updatedClients);
+      
+      toast({
+        title: "Cliente desativado",
+        description: "O cliente foi desativado com sucesso."
+      });
+    } catch (error) {
+      console.error("Erro ao desativar cliente:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível desativar o cliente."
+      });
+    }
   };
 
   return (
@@ -207,6 +232,36 @@ const ClientsPage = () => {
                 >
                   Editar
                 </Button>
+                {user?.role === 'admin' && client.active && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Excluir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Desativar cliente</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja desativar este cliente? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteClient(client.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Desativar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </CardFooter>
             </Card>
           ))}

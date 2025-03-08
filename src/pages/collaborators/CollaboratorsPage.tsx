@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, UserCheck, UserX } from "lucide-react";
+import { PlusCircle, Search, UserCheck, UserX, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getUserData, UserData } from "@/services/firebase/auth";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { auth } from "@/lib/firebase";
-import { get, ref } from "firebase/database";
+import { get, ref, update } from "firebase/database";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { toast } from "@/components/ui/use-toast";
 
 const CollaboratorsPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [collaborators, setCollaborators] = useState<(UserData & { uid: string })[]>([]);
   const [filteredCollaborators, setFilteredCollaborators] = useState<(UserData & { uid: string })[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,6 +73,35 @@ const CollaboratorsPage = () => {
         return <Badge variant="outline">Colaborador</Badge>;
       default:
         return <Badge variant="secondary">{role}</Badge>;
+    }
+  };
+
+  const handleDeactivateCollaborator = async (collaboratorId: string) => {
+    try {
+      // Update the active flag to false
+      const userRef = ref(db, `users/${collaboratorId}`);
+      await update(userRef, { 
+        active: false,
+        updatedAt: new Date().toISOString()
+      });
+      
+      // Update the local state to reflect the deactivation
+      const updatedCollaborators = collaborators.map(collab => 
+        collab.uid === collaboratorId ? { ...collab, active: false } : collab
+      );
+      setCollaborators(updatedCollaborators);
+      
+      toast({
+        title: "Colaborador desativado",
+        description: "O colaborador foi desativado com sucesso."
+      });
+    } catch (error) {
+      console.error("Erro ao desativar colaborador:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível desativar o colaborador."
+      });
     }
   };
 
@@ -160,6 +193,36 @@ const CollaboratorsPage = () => {
                 >
                   Editar
                 </Button>
+                {user?.role === 'admin' && collaborator.active && user.uid !== collaborator.uid && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Excluir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Desativar colaborador</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja desativar este colaborador? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeactivateCollaborator(collaborator.uid)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Desativar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </CardFooter>
             </Card>
           ))}

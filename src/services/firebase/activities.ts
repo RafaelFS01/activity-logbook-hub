@@ -170,3 +170,27 @@ export const updateActivityStatus = async (activityId: string, status: ActivityS
     throw error;
   }
 };
+
+// Delete (cancel) activity
+export const deleteActivity = async (activityId: string) => {
+  try {
+    const activityRef = ref(db, `activities/${activityId}`);
+    
+    // Get current activity data
+    const snapshot = await get(activityRef);
+    if (!snapshot.exists()) {
+      throw new Error('Atividade não encontrada');
+    }
+    
+    // Instead of actually deleting, we mark it as cancelled
+    await update(activityRef, { 
+      status: 'cancelled',
+      updatedAt: new Date().toISOString()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Erro ao cancelar atividade:', error);
+    throw error;
+  }
+};
