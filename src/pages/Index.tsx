@@ -1,38 +1,35 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
-import { Activity, ClipboardList, Clock } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { Activity, ClipboardList, Clock, AlertCircle } from "lucide-react";
+import { useActivityStats } from "@/hooks/useActivityStats";
+import { useRecentActivities } from "@/hooks/useRecentActivities";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { ActivityStatus } from "@/services/firebase/activities";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
-const STATUS_NAMES = ["Concluída", "Em Andamento", "Futura"];
-
-// Dados de exemplo para o dashboard
-const activityStats = {
-  today: {
-    total: 12,
-    inProgress: 5,
-    future: 3
-  },
-  week: {
-    total: 48,
-    inProgress: 10,
-    future: 15
-  },
-  month: {
-    total: 156,
-    inProgress: 25,
-    future: 30
-  }
+const COLORS = ["#22c55e", "#3b82f6", "#eab308", "#6b7280", "#ef4444"];
+const STATUS_NAMES: Record<ActivityStatus, string> = {
+  "completed": "Concluída",
+  "in-progress": "Em Andamento",
+  "pending": "Pendente",
+  "cancelled": "Cancelada"
 };
 
-const pieData = [
-  { name: "Concluída", value: 25 },
-  { name: "Em Andamento", value: 10 },
-  { name: "Futura", value: 15 }
-];
-
 const Dashboard = () => {
+  const { stats, isLoading: loadingStats } = useActivityStats();
+  const { recentActivities, isLoading: loadingActivities } = useRecentActivities(3);
+  
+  // Preparar dados para o gráfico de pizza
+  const getPieData = (period: 'today' | 'week' | 'month') => [
+    { name: "Concluída", value: stats[period].completed },
+    { name: "Em Andamento", value: stats[period].inProgress },
+    { name: "Futura", value: stats[period].future },
+    { name: "Pendente", value: stats[period].pending },
+    { name: "Cancelada", value: stats[period].cancelled }
+  ].filter(item => item.value > 0); // Remover categorias vazias
+  
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <h1 className="text-3xl font-bold mb-6">Painel de Controle</h1>
@@ -48,17 +45,17 @@ const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-3">
             <StatsCard 
               title="Total de Atividades" 
-              value={activityStats.today.total} 
+              value={loadingStats ? "..." : stats.today.total} 
               icon={<Activity />} 
             />
             <StatsCard 
               title="Em Andamento" 
-              value={activityStats.today.inProgress} 
+              value={loadingStats ? "..." : stats.today.inProgress} 
               icon={<Clock />} 
             />
             <StatsCard 
               title="Futuras" 
-              value={activityStats.today.future} 
+              value={loadingStats ? "..." : stats.today.future} 
               icon={<ClipboardList />} 
             />
           </div>
@@ -68,17 +65,17 @@ const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-3">
             <StatsCard 
               title="Total de Atividades" 
-              value={activityStats.week.total} 
+              value={loadingStats ? "..." : stats.week.total} 
               icon={<Activity />} 
             />
             <StatsCard 
               title="Em Andamento" 
-              value={activityStats.week.inProgress} 
+              value={loadingStats ? "..." : stats.week.inProgress} 
               icon={<Clock />} 
             />
             <StatsCard 
               title="Futuras" 
-              value={activityStats.week.future} 
+              value={loadingStats ? "..." : stats.week.future} 
               icon={<ClipboardList />} 
             />
           </div>
@@ -88,17 +85,17 @@ const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-3">
             <StatsCard 
               title="Total de Atividades" 
-              value={activityStats.month.total} 
+              value={loadingStats ? "..." : stats.month.total} 
               icon={<Activity />} 
             />
             <StatsCard 
               title="Em Andamento" 
-              value={activityStats.month.inProgress} 
+              value={loadingStats ? "..." : stats.month.inProgress} 
               icon={<Clock />} 
             />
             <StatsCard 
               title="Futuras" 
-              value={activityStats.month.future} 
+              value={loadingStats ? "..." : stats.month.future} 
               icon={<ClipboardList />} 
             />
           </div>
@@ -113,24 +110,31 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              {loadingStats ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>Carregando dados...</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={getPieData('month')}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {getPieData('month').map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -141,23 +145,27 @@ const Dashboard = () => {
             <CardDescription>Últimas atividades registradas</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <ActivityItem 
-                client="Empresa ABC" 
-                description="Reunião de alinhamento estratégico" 
-                status="Em Andamento" 
-              />
-              <ActivityItem 
-                client="João Silva" 
-                description="Consultoria financeira" 
-                status="Concluída" 
-              />
-              <ActivityItem 
-                client="Comércio XYZ" 
-                description="Implantação de sistema" 
-                status="Futura" 
-              />
-            </div>
+            {loadingActivities ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <p>Carregando atividades...</p>
+              </div>
+            ) : recentActivities.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[300px] text-center">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mb-2" />
+                <p className="text-muted-foreground">Nenhuma atividade encontrada</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentActivities.map((item) => (
+                  <ActivityItem
+                    key={item.activity.id}
+                    client={item.client?.name || "Cliente não encontrado"}
+                    description={item.activity.title}
+                    status={STATUS_NAMES[item.activity.status]}
+                  />
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -189,6 +197,8 @@ const ActivityItem = ({ client, description, status }) => {
       case "Concluída": return "text-green-600 bg-green-100";
       case "Em Andamento": return "text-blue-600 bg-blue-100";
       case "Futura": return "text-yellow-600 bg-yellow-100";
+      case "Pendente": return "text-gray-600 bg-gray-100";
+      case "Cancelada": return "text-red-600 bg-red-100";
       default: return "text-gray-600 bg-gray-100";
     }
   };
