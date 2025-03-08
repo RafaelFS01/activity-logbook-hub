@@ -24,6 +24,9 @@ import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { UserData } from "@/services/firebase/auth";
+import { get, ref, update } from "firebase/database";
+import { db } from "@/lib/firebase";
 import { 
   getActivities, 
   Activity, 

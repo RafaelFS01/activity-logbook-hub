@@ -24,8 +24,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { exportActivitiesToExcel } from "@/utils/exportUtils";
-import { UserData } from "@/types";
+import { UserData } from "@/services/firebase/auth";
 import { PessoaJuridicaClient } from "@/types";
+import { get, ref, update } from "firebase/database";
+import { db } from "@/lib/firebase";
+import { useToast } from "@/components/ui/use-toast";
 
 const ClientDetailsPage = () => {
   const { id } = useParams<{ id: string }>();

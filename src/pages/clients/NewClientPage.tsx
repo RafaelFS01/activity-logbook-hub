@@ -12,6 +12,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { createClient } from "@/services/firebase/clients";
 import { useToast } from "@/components/ui/use-toast";
 import { PlusCircle, ArrowLeft } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const clientSchema = z.object({
   type: z.enum(["fisica", "juridica"]),
@@ -33,6 +34,7 @@ const NewClientPage = () => {
   const navigate = useNavigate();
   const [clientType, setClientType] = useState<"fisica" | "juridica">("fisica");
   const { toast } = useToast();
+  const { user } = useAuth(); // Obtenha o user do AuthContext
 
   const form = useForm<ClientSchemaType>({
     resolver: zodResolver(clientSchema),
@@ -59,7 +61,15 @@ const NewClientPage = () => {
 
   const onSubmit = async (data: ClientSchemaType) => {
     try {
-      await createClient(data);
+      if (!user?.uid) {
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Usuário não autenticado. Não é possível criar cliente."
+        });
+        return;
+      }
+      await createClient(data, user.uid); // Passe user.uid aqui
       toast({
         title: "Cliente criado com sucesso!",
       });
