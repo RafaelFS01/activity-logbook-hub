@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -11,7 +10,8 @@ import {
   RotateCcw,
   XCircle,
   Filter,
-  CalendarIcon
+  CalendarIcon,
+  FileSpreadsheet
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ import { getClients, Client } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { exportActivitiesToExcel } from "@/utils/exportUtils";
 
 const ActivitiesPage = () => {
   const navigate = useNavigate();
@@ -54,12 +55,10 @@ const ActivitiesPage = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        // Fetch activities
         const fetchedActivities = await getActivities();
         setActivities(fetchedActivities);
         setFilteredActivities(fetchedActivities);
         
-        // Fetch clients to get their names
         const fetchedClients = await getClients();
         const clientsMap: Record<string, Client> = {};
         fetchedClients.forEach(client => {
@@ -82,15 +81,12 @@ const ActivitiesPage = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Filter by search term, status and period
     let filtered = activities;
     
-    // Apply status filters
     if (statusFilters.length > 0) {
       filtered = filtered.filter(activity => statusFilters.includes(activity.status));
     }
     
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(activity => {
         const clientName = clients[activity.clientId] 
@@ -105,19 +101,15 @@ const ActivitiesPage = () => {
       });
     }
     
-    // Apply date period filters
     if (startPeriod || endPeriod) {
       filtered = filtered.filter(activity => {
         const activityDate = new Date(dateType === "startDate" ? activity.startDate : (activity.endDate || activity.startDate));
         
         if (startPeriod && endPeriod) {
-          // Both dates provided - check if activity date is within range
           return activityDate >= startPeriod && activityDate <= endPeriod;
         } else if (startPeriod) {
-          // Only start date provided - check if activity date is after or equal to start date
           return activityDate >= startPeriod;
         } else if (endPeriod) {
-          // Only end date provided - check if activity date is before or equal to end date
           return activityDate <= endPeriod;
         }
         
@@ -125,9 +117,7 @@ const ActivitiesPage = () => {
       });
     }
     
-    // Sort by date and status (pending first, then in-progress, then completed, then cancelled)
     filtered = [...filtered].sort((a, b) => {
-      // First by status priority
       const statusPriority: Record<ActivityStatus, number> = {
         'pending': 0,
         'in-progress': 1,
@@ -138,7 +128,6 @@ const ActivitiesPage = () => {
       const statusDiff = statusPriority[a.status] - statusPriority[b.status];
       if (statusDiff !== 0) return statusDiff;
       
-      // Then by start date (most recent first)
       return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
     });
     
@@ -200,7 +189,6 @@ const ActivitiesPage = () => {
     try {
       await updateActivityStatus(activityId, newStatus, user.uid);
       
-      // Update the activities list
       setActivities(prevActivities => 
         prevActivities.map(activity => 
           activity.id === activityId 
@@ -250,14 +238,52 @@ const ActivitiesPage = () => {
     setDateType("startDate");
   };
 
+  const handleExport = () => {
+    if (filteredActivities.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Sem dados para exportar",
+        description: "Não há atividades para exportar com os filtros atuais."
+      });
+      return;
+    }
+
+    try {
+      const activitiesWithClientNames = filteredActivities.map(activity => ({
+        ...activity,
+        clientName: getClientName(activity.clientId)
+      }));
+      
+      exportActivitiesToExcel(activitiesWithClientNames, 'atividades.xlsx');
+      
+      toast({
+        title: "Exportação concluída",
+        description: `${filteredActivities.length} atividades foram exportadas com sucesso.`
+      });
+    } catch (error) {
+      console.error('Erro ao exportar atividades:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro na exportação",
+        description: "Não foi possível exportar as atividades."
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold">Gerenciamento de Atividades</h1>
-        <Button onClick={() => navigate("/activities/new")}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nova Atividade
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Exportar para Excel
+          </Button>
+          <Button onClick={() => navigate("/activities/new")}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Nova Atividade
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 mb-6">

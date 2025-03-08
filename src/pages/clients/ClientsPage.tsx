@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Building2, User, CheckCircle2, XCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Search, Building2, User, CheckCircle2, XCircle, Trash2, FileSpreadsheet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import { getClients, Client, ClientType, deleteClient } from "@/services/firebas
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/use-toast";
+import { exportClientsToExcel } from "@/utils/exportUtils";
 
 const ClientsPage = () => {
   const navigate = useNavigate();
@@ -39,15 +39,12 @@ const ClientsPage = () => {
   }, []);
 
   useEffect(() => {
-    // Filter by search term and client type
     let filtered = clients;
     
-    // Apply type filter
     if (filter !== "all") {
       filtered = filtered.filter(client => client.type === filter);
     }
     
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(client => {
         const nameField = client.type === 'juridica' 
@@ -86,7 +83,6 @@ const ClientsPage = () => {
   const handleDeleteClient = async (clientId: string) => {
     try {
       await deleteClient(clientId);
-      // Update the local state to reflect the deletion
       const updatedClients = clients.map(client => 
         client.id === clientId ? { ...client, active: false } : client
       );
@@ -106,14 +102,47 @@ const ClientsPage = () => {
     }
   };
 
+  const handleExport = () => {
+    if (filteredClients.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Sem dados para exportar",
+        description: "Não há clientes para exportar com os filtros atuais."
+      });
+      return;
+    }
+
+    try {
+      exportClientsToExcel(filteredClients, 'clientes.xlsx');
+      
+      toast({
+        title: "Exportação concluída",
+        description: `${filteredClients.length} clientes foram exportados com sucesso.`
+      });
+    } catch (error) {
+      console.error('Erro ao exportar clientes:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro na exportação",
+        description: "Não foi possível exportar os clientes."
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold">Gerenciamento de Clientes</h1>
-        <Button onClick={() => navigate("/clients/new")}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Novo Cliente
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Exportar para Excel
+          </Button>
+          <Button onClick={() => navigate("/clients/new")}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">

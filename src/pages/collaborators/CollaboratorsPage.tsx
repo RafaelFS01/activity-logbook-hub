@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, UserCheck, UserX, Trash2 } from "lucide-react";
+import { PlusCircle, Search, UserCheck, UserX, Trash2, FileSpreadsheet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getUserData, UserData } from "@/services/firebase/auth";
 import { Input } from "@/components/ui/input";
@@ -14,6 +13,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/use-toast";
+import { exportCollaboratorsToExcel } from "@/utils/exportUtils";
 
 const CollaboratorsPage = () => {
   const navigate = useNavigate();
@@ -78,14 +78,12 @@ const CollaboratorsPage = () => {
 
   const handleDeactivateCollaborator = async (collaboratorId: string) => {
     try {
-      // Update the active flag to false
       const userRef = ref(db, `users/${collaboratorId}`);
       await update(userRef, { 
         active: false,
         updatedAt: new Date().toISOString()
       });
       
-      // Update the local state to reflect the deactivation
       const updatedCollaborators = collaborators.map(collab => 
         collab.uid === collaboratorId ? { ...collab, active: false } : collab
       );
@@ -105,14 +103,47 @@ const CollaboratorsPage = () => {
     }
   };
 
+  const handleExport = () => {
+    if (filteredCollaborators.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Sem dados para exportar",
+        description: "Não há colaboradores para exportar com os filtros atuais."
+      });
+      return;
+    }
+
+    try {
+      exportCollaboratorsToExcel(filteredCollaborators, 'colaboradores.xlsx');
+      
+      toast({
+        title: "Exportação concluída",
+        description: `${filteredCollaborators.length} colaboradores foram exportados com sucesso.`
+      });
+    } catch (error) {
+      console.error('Erro ao exportar colaboradores:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro na exportação",
+        description: "Não foi possível exportar os colaboradores."
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold">Gerenciamento de Colaboradores</h1>
-        <Button onClick={() => navigate("/collaborators/new")}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Novo Colaborador
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Exportar para Excel
+          </Button>
+          <Button onClick={() => navigate("/collaborators/new")}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Novo Colaborador
+          </Button>
+        </div>
       </div>
 
       <div className="relative mb-6">
