@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -32,6 +33,7 @@ import {
 import { getClients, Client } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ActivitiesPage = () => {
   const navigate = useNavigate();
@@ -42,7 +44,7 @@ const ActivitiesPage = () => {
   const [clients, setClients] = useState<Record<string, Client>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<ActivityStatus | "all">("all");
+  const [statusFilters, setStatusFilters] = useState<ActivityStatus[]>([]);
   const [dateType, setDateType] = useState<"startDate" | "endDate">("startDate");
   const [startPeriod, setStartPeriod] = useState<Date | undefined>(undefined);
   const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
@@ -83,9 +85,9 @@ const ActivitiesPage = () => {
     // Filter by search term, status and period
     let filtered = activities;
     
-    // Apply status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(activity => activity.status === statusFilter);
+    // Apply status filters
+    if (statusFilters.length > 0) {
+      filtered = filtered.filter(activity => statusFilters.includes(activity.status));
     }
     
     // Apply search filter
@@ -141,7 +143,7 @@ const ActivitiesPage = () => {
     });
     
     setFilteredActivities(filtered);
-  }, [searchTerm, statusFilter, activities, clients, dateType, startPeriod, endPeriod]);
+  }, [searchTerm, statusFilters, activities, clients, dateType, startPeriod, endPeriod]);
 
   const getStatusBadge = (status: ActivityStatus) => {
     switch (status) {
@@ -226,9 +228,23 @@ const ActivitiesPage = () => {
     }
   };
 
+  const toggleStatusFilter = (status: ActivityStatus) => {
+    setStatusFilters(prev => {
+      if (prev.includes(status)) {
+        return prev.filter(s => s !== status);
+      } else {
+        return [...prev, status];
+      }
+    });
+  };
+
+  const isStatusFilterActive = (status: ActivityStatus) => {
+    return statusFilters.includes(status);
+  };
+
   const resetFilters = () => {
     setSearchTerm("");
-    setStatusFilter("all");
+    setStatusFilters([]);
     setStartPeriod(undefined);
     setEndPeriod(undefined);
     setDateType("startDate");
@@ -361,45 +377,65 @@ const ActivitiesPage = () => {
         
         <div className="flex flex-wrap gap-2">
           <Button 
-            variant={statusFilter === "all" ? "default" : "outline"} 
+            variant={statusFilters.length === 0 ? "default" : "outline"} 
             size="sm"
-            onClick={() => setStatusFilter("all")}
+            onClick={() => setStatusFilters([])}
           >
             Todas
           </Button>
           <Button 
-            variant={statusFilter === "pending" ? "default" : "outline"} 
+            variant={isStatusFilterActive("pending") ? "default" : "outline"} 
             size="sm"
-            onClick={() => setStatusFilter("pending")}
+            onClick={() => toggleStatusFilter("pending")}
+            className={isStatusFilterActive("pending") ? "" : "border-yellow-200 text-yellow-700 hover:bg-yellow-50"}
           >
             <Clock className="h-4 w-4 mr-1" />
             Pendentes
           </Button>
           <Button 
-            variant={statusFilter === "in-progress" ? "default" : "outline"} 
+            variant={isStatusFilterActive("in-progress") ? "default" : "outline"} 
             size="sm"
-            onClick={() => setStatusFilter("in-progress")}
+            onClick={() => toggleStatusFilter("in-progress")}
+            className={isStatusFilterActive("in-progress") ? "" : "border-blue-200 text-blue-700 hover:bg-blue-50"}
           >
             <RotateCcw className="h-4 w-4 mr-1" />
             Em Progresso
           </Button>
           <Button 
-            variant={statusFilter === "completed" ? "default" : "outline"} 
+            variant={isStatusFilterActive("completed") ? "default" : "outline"} 
             size="sm"
-            onClick={() => setStatusFilter("completed")}
+            onClick={() => toggleStatusFilter("completed")}
+            className={isStatusFilterActive("completed") ? "" : "border-green-200 text-green-700 hover:bg-green-50"}
           >
             <CheckCircle2 className="h-4 w-4 mr-1" />
             Concluídas
           </Button>
           <Button 
-            variant={statusFilter === "cancelled" ? "default" : "outline"} 
+            variant={isStatusFilterActive("cancelled") ? "default" : "outline"} 
             size="sm"
-            onClick={() => setStatusFilter("cancelled")}
+            onClick={() => toggleStatusFilter("cancelled")}
+            className={isStatusFilterActive("cancelled") ? "" : "border-red-200 text-red-700 hover:bg-red-50"}
           >
             <XCircle className="h-4 w-4 mr-1" />
             Canceladas
           </Button>
         </div>
+        
+        {statusFilters.length > 0 && (
+          <div className="flex items-center gap-2 text-sm">
+            <Badge variant="outline" className="px-3 py-1">
+              Filtrando por status: {statusFilters.map(status => 
+                status === "pending" ? "Pendente" :
+                status === "in-progress" ? "Em Progresso" :
+                status === "completed" ? "Concluída" :
+                "Cancelada"
+              ).join(", ")}
+            </Badge>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setStatusFilters([])}>
+              <XCircle className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
         
         {(startPeriod || endPeriod) && (
           <div className="flex items-center gap-2 text-sm">
@@ -540,11 +576,11 @@ const ActivitiesPage = () => {
         <div className="text-center p-10 border rounded-lg bg-muted/10">
           <h3 className="text-lg font-medium mb-2">Nenhuma atividade encontrada</h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm || statusFilter !== "all" || startPeriod || endPeriod
+            {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod
               ? "Não encontramos resultados com os filtros aplicados."
               : "Nenhuma atividade cadastrada no sistema."}
           </p>
-          {searchTerm || statusFilter !== "all" || startPeriod || endPeriod ? (
+          {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod ? (
             <Button onClick={resetFilters} className="mr-2">
               Limpar Filtros
             </Button>

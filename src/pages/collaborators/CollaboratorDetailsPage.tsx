@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getUserData, UserData } from "@/services/firebase/auth";
 import { getActivitiesByAssignee, Activity, ActivityStatus } from "@/services/firebase/activities";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   UserCheck, UserX, Calendar as CalendarIcon, Clock, FileEdit, ArrowLeft, 
   List, CircleAlert, Briefcase, Mail, Phone, BadgeCheck, 
-  Search, Filter
+  Search, Filter, RotateCcw, CheckCircle2, XCircle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,13 +18,13 @@ import { ptBR } from "date-fns/locale";
 import { get, ref } from "firebase/database";
 import { db } from "@/lib/firebase";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const CollaboratorDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,7 +34,7 @@ const CollaboratorDetailsPage = () => {
   const [filteredActivities, setFilteredActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ActivityStatus | "all">("all");
+  const [statusFilters, setStatusFilters] = useState<ActivityStatus[]>([]);
   const [dateType, setDateType] = useState<"startDate" | "endDate">("startDate");
   const [startPeriod, setStartPeriod] = useState<Date | undefined>(undefined);
   const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
@@ -77,8 +78,8 @@ const CollaboratorDetailsPage = () => {
       );
     }
     
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(activity => activity.status === statusFilter);
+    if (statusFilters.length > 0) {
+      filtered = filtered.filter(activity => statusFilters.includes(activity.status));
     }
     
     if (startPeriod || endPeriod) {
@@ -98,7 +99,7 @@ const CollaboratorDetailsPage = () => {
     }
     
     setFilteredActivities(filtered);
-  }, [activities, searchTerm, statusFilter, dateType, startPeriod, endPeriod]);
+  }, [activities, searchTerm, statusFilters, dateType, startPeriod, endPeriod]);
 
   if (loading) {
     return (
@@ -187,9 +188,19 @@ const CollaboratorDetailsPage = () => {
     return date.toLocaleDateString('pt-BR');
   };
 
+  const toggleStatusFilter = (status: ActivityStatus) => {
+    setStatusFilters(prev => {
+      if (prev.includes(status)) {
+        return prev.filter(s => s !== status);
+      } else {
+        return [...prev, status];
+      }
+    });
+  };
+
   const resetFilters = () => {
     setSearchTerm("");
-    setStatusFilter("all");
+    setStatusFilters([]);
     setStartPeriod(undefined);
     setEndPeriod(undefined);
   };
@@ -288,26 +299,53 @@ const CollaboratorDetailsPage = () => {
                         />
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label className="mb-1 block">Status</Label>
-                          <Select 
-                            value={statusFilter} 
-                            onValueChange={(value) => setStatusFilter(value as ActivityStatus | "all")}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Filtrar por status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">Todos os status</SelectItem>
-                              <SelectItem value="pending">Pendente</SelectItem>
-                              <SelectItem value="in-progress">Em Progresso</SelectItem>
-                              <SelectItem value="completed">Concluída</SelectItem>
-                              <SelectItem value="cancelled">Cancelada</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            id="status-pending" 
+                            checked={statusFilters.includes("pending")} 
+                            onCheckedChange={() => toggleStatusFilter("pending")}
+                          />
+                          <Label htmlFor="status-pending" className="flex items-center cursor-pointer text-sm">
+                            <Clock className="h-3 w-3 mr-1 text-yellow-600" /> Pendentes
+                          </Label>
                         </div>
                         
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            id="status-in-progress" 
+                            checked={statusFilters.includes("in-progress")} 
+                            onCheckedChange={() => toggleStatusFilter("in-progress")}
+                          />
+                          <Label htmlFor="status-in-progress" className="flex items-center cursor-pointer text-sm">
+                            <RotateCcw className="h-3 w-3 mr-1 text-blue-600" /> Em Progresso
+                          </Label>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            id="status-completed" 
+                            checked={statusFilters.includes("completed")} 
+                            onCheckedChange={() => toggleStatusFilter("completed")}
+                          />
+                          <Label htmlFor="status-completed" className="flex items-center cursor-pointer text-sm">
+                            <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" /> Concluídas
+                          </Label>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            id="status-cancelled" 
+                            checked={statusFilters.includes("cancelled")} 
+                            onCheckedChange={() => toggleStatusFilter("cancelled")}
+                          />
+                          <Label htmlFor="status-cancelled" className="flex items-center cursor-pointer text-sm">
+                            <XCircle className="h-3 w-3 mr-1 text-red-600" /> Canceladas
+                          </Label>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label className="mb-1 block">Tipo de Data</Label>
                           <RadioGroup 
@@ -454,11 +492,11 @@ const CollaboratorDetailsPage = () => {
                         <List className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
                         <h3 className="text-lg font-medium mb-2">Nenhuma atividade encontrada</h3>
                         <p className="text-muted-foreground mb-4">
-                          {searchTerm || statusFilter !== "all" || startPeriod || endPeriod ? 
+                          {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod ? 
                             "Não foram encontradas atividades com os filtros aplicados." : 
                             "Este colaborador ainda não possui atividades atribuídas."}
                         </p>
-                        {searchTerm || statusFilter !== "all" || startPeriod || endPeriod ? (
+                        {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod ? (
                           <Button onClick={resetFilters}>Limpar Filtros</Button>
                         ) : (
                           <Button onClick={() => navigate("/activities/new", { state: { assigneeId: id } })}>
