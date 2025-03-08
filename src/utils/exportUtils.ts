@@ -74,7 +74,7 @@ export const exportClientsToExcel = (clients: Client[], filename = 'clientes.xls
 };
 
 // Export collaborators to Excel
-export const exportCollaboratorsToExcel = (collaborators: (UserData & { uid: string })[], filename = 'colaboradores.xlsx') => {
+export const exportCollaboratorsToExcel = (collaborators: (UserData & { uid: string; createdAt?: string; updatedAt?: string })[], filename = 'colaboradores.xlsx') => {
   const worksheet = XLSX.utils.json_to_sheet(
     collaborators.map(collaborator => ({
       'Nome': collaborator.name,
@@ -84,8 +84,8 @@ export const exportCollaboratorsToExcel = (collaborators: (UserData & { uid: str
       'Cargo': getRoleText(collaborator.role),
       'Status': collaborator.active ? 'Ativo' : 'Inativo',
       'Data de Admissão': formatDate(collaborator.admissionDate),
-      'Criado em': formatDate(collaborator.createdAt),
-      'Atualizado em': formatDate(collaborator.updatedAt)
+      'Criado em': formatDate(collaborator.createdAt || ''),
+      'Atualizado em': formatDate(collaborator.updatedAt || '')
     }))
   );
 

@@ -110,7 +110,7 @@ const EditClientPage = () => {
               name: client.name,
               email: client.email,
               phone: client.phone,
-              cpf: client.cpf,
+              cpf: (client as any).cpf,
               rg: (client as any).rg || "",
               address: client.address || "",
               active: client.active,
@@ -278,9 +278,9 @@ const EditClientPage = () => {
                       placeholder="000.000.000-00"
                       {...register("cpf")}
                     />
-                    {clientType === "fisica" && isPessoaFisica(watch()) && 
-                     errors.cpf && (
-                      <p className="text-sm text-red-500">{errors.cpf?.message}</p>
+                    {clientType === "fisica" && 
+                     errors.cpf && isPessoaFisica(watch()) && (
+                      <p className="text-sm text-red-500">{(errors as any).cpf?.message}</p>
                     )}
                   </div>
 
@@ -291,9 +291,9 @@ const EditClientPage = () => {
                       placeholder="00.000.000-0"
                       {...register("rg")}
                     />
-                    {clientType === "fisica" && isPessoaFisica(watch()) && 
-                     errors.rg && (
-                      <p className="text-sm text-red-500">{errors.rg?.message}</p>
+                    {clientType === "fisica" && 
+                     errors.rg && isPessoaFisica(watch()) && (
+                      <p className="text-sm text-red-500">{(errors as any).rg?.message}</p>
                     )}
                   </div>
 
@@ -364,9 +364,9 @@ const EditClientPage = () => {
                       placeholder="Razão Social"
                       {...register("companyName")}
                     />
-                    {clientType === "juridica" && isPessoaJuridica(watch()) && 
-                     errors.companyName && (
-                      <p className="text-sm text-red-500">{errors.companyName?.message}</p>
+                    {clientType === "juridica" && 
+                     errors.companyName && isPessoaJuridica(watch()) && (
+                      <p className="text-sm text-red-500">{(errors as any).companyName?.message}</p>
                     )}
                   </div>
 
@@ -389,9 +389,9 @@ const EditClientPage = () => {
                       placeholder="00.000.000/0000-00"
                       {...register("cnpj")}
                     />
-                    {clientType === "juridica" && isPessoaJuridica(watch()) && 
-                     errors.cnpj && (
-                      <p className="text-sm text-red-500">{errors.cnpj?.message}</p>
+                    {clientType === "juridica" && 
+                     errors.cnpj && isPessoaJuridica(watch()) && (
+                      <p className="text-sm text-red-500">{(errors as any).cnpj?.message}</p>
                     )}
                   </div>
 
@@ -402,9 +402,9 @@ const EditClientPage = () => {
                       placeholder="Nome do responsável"
                       {...register("responsibleName")}
                     />
-                    {clientType === "juridica" && isPessoaJuridica(watch()) && 
-                     errors.responsibleName && (
-                      <p className="text-sm text-red-500">{errors.responsibleName?.message}</p>
+                    {clientType === "juridica" && 
+                     errors.responsibleName && isPessoaJuridica(watch()) && (
+                      <p className="text-sm text-red-500">{(errors as any).responsibleName?.message}</p>
                     )}
                   </div>
 
