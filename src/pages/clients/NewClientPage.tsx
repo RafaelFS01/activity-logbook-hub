@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -70,10 +71,15 @@ const NewClientPage = () => {
         return;
       }
       
+      // Ensure required fields are set based on client type
       const clientData = {
         ...data,
         type: data.type || "fisica",
-        createdBy: user.uid
+        createdBy: user.uid,
+        // For person
+        name: clientType === "fisica" ? (data.name || "Nome não informado") : undefined,
+        // For company
+        companyName: clientType === "juridica" ? (data.companyName || "Empresa não informada") : undefined,
       };
       
       await createClient(clientData, user.uid);

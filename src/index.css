@@ -29,8 +29,9 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    /* Enhanced border and input outlines for better visibility */
+    --border: 214.3 31.8% 82%; 
+    --input: 214.3 31.8% 82%;
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
@@ -70,8 +71,9 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    /* Enhanced border and input outlines for better visibility in dark mode */
+    --border: 217.2 32.6% 28%;
+    --input: 217.2 32.6% 28%;
     --ring: 212.7 26.8% 83.9%;
     
     --sidebar-background: 240 5.9% 10%;
@@ -104,3 +106,19 @@
 .sidebar-active {
   @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
 }
+
+/* Enhanced styling for input fields */
+.input, input, select, textarea {
+  @apply border-2;
+}
+
+/* Enhanced styling for cards */
+.card, [class*='card'] {
+  @apply border-2 shadow-md;
+}
+
+/* Enhanced form fields */
+.form-group, [class*='form-item'] {
+  @apply border-opacity-100;
+}
+
