@@ -41,15 +41,15 @@ const NewClientPage = () => {
     defaultValues: {
       type: "fisica",
       name: "",
-      companyName: "",
       email: "",
       phone: "",
       address: "",
-      cpf: "",
-      cnpj: "",
-      responsibleName: "",
-      rg: "",
       active: true,
+      cpf: "",
+      rg: "",
+      cnpj: "",
+      companyName: "",
+      responsibleName: "",
     },
   });
 
@@ -61,17 +61,18 @@ const NewClientPage = () => {
 
   const onSubmit = async (data: ClientSchemaType) => {
     try {
-      if (!user?.uid) {
+      if (!user) {
         toast({
+          title: "Erro ao criar cliente",
+          description: "Você precisa estar logado para realizar esta ação.",
           variant: "destructive",
-          title: "Erro de autenticação",
-          description: "Usuário não autenticado. Não é possível criar cliente."
         });
         return;
       }
       
       const clientData = {
         ...data,
+        type: data.type || "fisica",
         createdBy: user.uid
       };
       

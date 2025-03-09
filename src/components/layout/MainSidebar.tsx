@@ -19,15 +19,20 @@ import {
   ClipboardList, 
   Home, 
   LogOut, 
+  Moon,
   Settings, 
+  Sun,
   UserCircle, 
   Users 
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { Button } from "@/components/ui/button";
 
 const MainSidebar = () => {
   const { logout, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   
   // Função para determinar se um link está ativo
   const activeClass = ({ isActive }: { isActive: boolean }) => {
@@ -40,11 +45,29 @@ const MainSidebar = () => {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-4">
-          <Activity className="h-6 w-6" />
-          <span className="font-bold text-lg">Activity Hub</span>
+        <div className="flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <Activity className="h-6 w-6" />
+            <span className="font-bold text-lg">Activity Hub</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleTheme} 
+              className="ml-2"
+              title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+            >
+              {theme === 'light' ? (
+                <Moon className="h-5 w-5" />
+              ) : (
+                <Sun className="h-5 w-5" />
+              )}
+              <span className="sr-only">Alternar tema</span>
+            </Button>
+            <SidebarTrigger />
+          </div>
         </div>
-        <SidebarTrigger />
       </SidebarHeader>
       
       <SidebarContent>
