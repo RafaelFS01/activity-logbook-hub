@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { getActivities, Activity, ActivityStatus } from '@/services/firebase/activities';
-import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
+import { format, isToday, isThisWeek, isThisMonth, isPast } from 'date-fns';
 
 export type ActivityStats = {
   total: number;
@@ -10,6 +10,7 @@ export type ActivityStats = {
   future: number;
   pending: number;
   cancelled: number;
+  overdue: number;  // Added for overdue activities
 };
 
 export const useActivityStats = () => {
@@ -21,10 +22,10 @@ export const useActivityStats = () => {
     month: ActivityStats;
     all: ActivityStats;
   }>({
-    today: { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0 },
-    week: { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0 },
-    month: { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0 },
-    all: { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0 },
+    today: { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0, overdue: 0 },
+    week: { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0, overdue: 0 },
+    month: { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0, overdue: 0 },
+    all: { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0, overdue: 0 },
   });
 
   // Função para determinar se uma atividade é futura
@@ -34,6 +35,19 @@ export const useActivityStats = () => {
     today.setHours(0, 0, 0, 0);
     return startDate > today;
   };
+  
+  // Função para determinar se uma atividade está atrasada
+  const isOverdueActivity = (activity: Activity): boolean => {
+    if (!activity.endDate || activity.status === 'completed' || activity.status === 'cancelled') {
+      return false;
+    }
+    
+    const endDate = new Date(activity.endDate);
+    endDate.setHours(23, 59, 59, 999); // Fim do dia
+    const today = new Date();
+    
+    return isPast(endDate) && (activity.status === 'pending' || activity.status === 'in-progress');
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -42,10 +56,10 @@ export const useActivityStats = () => {
         const activities = await getActivities();
         
         // Inicializar contadores
-        const todayStats: ActivityStats = { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0 };
-        const weekStats: ActivityStats = { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0 };
-        const monthStats: ActivityStats = { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0 };
-        const allStats: ActivityStats = { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0 };
+        const todayStats: ActivityStats = { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0, overdue: 0 };
+        const weekStats: ActivityStats = { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0, overdue: 0 };
+        const monthStats: ActivityStats = { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0, overdue: 0 };
+        const allStats: ActivityStats = { total: 0, completed: 0, inProgress: 0, future: 0, pending: 0, cancelled: 0, overdue: 0 };
         
         // Processar cada atividade
         activities.forEach(activity => {
@@ -53,6 +67,11 @@ export const useActivityStats = () => {
           
           // Estatísticas para todas as atividades
           allStats.total++;
+          
+          // Verificar se a atividade está atrasada
+          if (isOverdueActivity(activity)) {
+            allStats.overdue++;
+          }
           
           // Contar por status
           if (activity.status === 'completed') {
@@ -70,6 +89,11 @@ export const useActivityStats = () => {
           // Verificar se é hoje
           if (isToday(startDate)) {
             todayStats.total++;
+            
+            if (isOverdueActivity(activity)) {
+              todayStats.overdue++;
+            }
+            
             if (activity.status === 'completed') {
               todayStats.completed++;
             } else if (activity.status === 'in-progress') {
@@ -86,6 +110,11 @@ export const useActivityStats = () => {
           // Verificar se é esta semana
           if (isThisWeek(startDate)) {
             weekStats.total++;
+            
+            if (isOverdueActivity(activity)) {
+              weekStats.overdue++;
+            }
+            
             if (activity.status === 'completed') {
               weekStats.completed++;
             } else if (activity.status === 'in-progress') {
@@ -102,6 +131,11 @@ export const useActivityStats = () => {
           // Verificar se é este mês
           if (isThisMonth(startDate)) {
             monthStats.total++;
+            
+            if (isOverdueActivity(activity)) {
+              monthStats.overdue++;
+            }
+            
             if (activity.status === 'completed') {
               monthStats.completed++;
             } else if (activity.status === 'in-progress') {

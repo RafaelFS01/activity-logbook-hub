@@ -2,18 +2,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { Activity, ClipboardList, Clock, AlertCircle } from "lucide-react";
+import { Activity, ClipboardList, Clock, AlertCircle, AlertTriangle, CalendarRange } from "lucide-react";
 import { useActivityStats } from "@/hooks/useActivityStats";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { ActivityStatus } from "@/services/firebase/activities";
 
 const COLORS = ["#22c55e", "#3b82f6", "#eab308", "#6b7280", "#ef4444"];
 const STATUS_NAMES: Record<ActivityStatus, string> = {
   "completed": "Concluída",
   "in-progress": "Em Andamento",
-  "pending": "Pendente",
+  "pending": "Futura", // Changed from "Pendente" to "Futura"
   "cancelled": "Cancelada"
 };
 
@@ -25,7 +23,7 @@ const Dashboard = () => {
   const getPieData = (period: 'today' | 'week' | 'month') => [
     { name: "Concluída", value: stats[period].completed },
     { name: "Em Andamento", value: stats[period].inProgress },
-    { name: "Futura", value: stats[period].future },
+    { name: "Futura", value: stats[period].future }, // Changed from "Pendente" to "Futura"
     { name: "Pendente", value: stats[period].pending },
     { name: "Cancelada", value: stats[period].cancelled }
   ].filter(item => item.value > 0); // Remover categorias vazias
@@ -102,7 +100,7 @@ const Dashboard = () => {
         </TabsContent>
       </Tabs>
       
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
         <Card>
           <CardHeader>
             <CardTitle>Atividades por Status</CardTitle>
@@ -169,6 +167,85 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Nova seção para atividades futuras e atrasadas */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarRange className="h-5 w-5" />
+              Atividades Futuras
+            </CardTitle>
+            <CardDescription>Próximas atividades agendadas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingStats ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <p>Carregando dados...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-md">
+                  <div className="flex items-center gap-3">
+                    <ClipboardList className="h-8 w-8 text-blue-500" />
+                    <div>
+                      <h4 className="font-medium">Total de Atividades Futuras</h4>
+                      <p className="text-sm text-muted-foreground">Atividades agendadas para datas futuras</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-bold">{stats.all.future}</span>
+                </div>
+                <Card className="bg-blue-50">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-blue-700">
+                      Atividades com status "Futura" são aquelas que estão programadas para iniciar em datas futuras. 
+                      Você pode gerenciá-las na página de atividades.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-700">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Atividades Atrasadas
+            </CardTitle>
+            <CardDescription>Atividades pendentes que já passaram da data de término</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingStats ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <p>Carregando dados...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-md bg-amber-50 border-amber-200">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="h-8 w-8 text-amber-500" />
+                    <div>
+                      <h4 className="font-medium text-amber-800">Total de Atividades Atrasadas</h4>
+                      <p className="text-sm text-amber-700">Atividades pendentes com data de término vencida</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-bold text-amber-700">{stats.all.overdue}</span>
+                </div>
+                <Card className="bg-amber-50 border-amber-200">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-amber-700">
+                      Atividades atrasadas são aquelas que já passaram da data de término planejada 
+                      mas ainda não foram concluídas ou canceladas. Recomendamos priorizá-las.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
@@ -196,7 +273,7 @@ const ActivityItem = ({ client, description, status }) => {
     switch (status) {
       case "Concluída": return "text-green-600 bg-green-100";
       case "Em Andamento": return "text-blue-600 bg-blue-100";
-      case "Futura": return "text-yellow-600 bg-yellow-100";
+      case "Futura": return "text-yellow-600 bg-yellow-100"; // Changed from "Pendente" to "Futura"
       case "Pendente": return "text-gray-600 bg-gray-100";
       case "Cancelada": return "text-red-600 bg-red-100";
       default: return "text-gray-600 bg-gray-100";

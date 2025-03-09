@@ -156,7 +156,7 @@ const ActivitiesPage = () => {
       case "pending":
         return (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
-            <Clock className="h-3 w-3 mr-1" /> Pendente
+            <Clock className="h-3 w-3 mr-1" /> Futura
           </Badge>
         );
       case "in-progress":
@@ -223,7 +223,7 @@ const ActivitiesPage = () => {
       toast({
         title: "Status atualizado",
         description: `A atividade foi marcada como ${
-          newStatus === 'pending' ? 'pendente' : 
+          newStatus === 'pending' ? 'futura' : 
           newStatus === 'in-progress' ? 'em progresso' : 
           newStatus === 'completed' ? 'concluída' : 
           'cancelada'
@@ -444,7 +444,7 @@ const ActivitiesPage = () => {
             className={isStatusFilterActive("pending") ? "" : "border-yellow-200 text-yellow-700 hover:bg-yellow-50"}
           >
             <Clock className="h-4 w-4 mr-1" />
-            Pendentes
+            Futuras
           </Button>
           <Button 
             variant={isStatusFilterActive("in-progress") ? "default" : "outline"} 
@@ -479,7 +479,7 @@ const ActivitiesPage = () => {
           <div className="flex items-center gap-2 text-sm">
             <Badge variant="outline" className="px-3 py-1">
               Filtrando por status: {statusFilters.map(status => 
-                status === "pending" ? "Pendente" :
+                status === "pending" ? "Futura" :
                 status === "in-progress" ? "Em Progresso" :
                 status === "completed" ? "Concluída" :
                 "Cancelada"
