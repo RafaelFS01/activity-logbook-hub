@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getClientById, Client } from "@/services/firebase/clients";
+import { getClientById, Client, PessoaJuridicaClient } from "@/services/firebase/clients";
 import { getActivitiesByClient, Activity, ActivityStatus } from "@/services/firebase/activities";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { exportActivitiesToExcel } from "@/utils/exportUtils";
 import { UserData } from "@/services/firebase/auth";
-import { PessoaJuridicaClient } from "@/types";
 import { get, ref, update } from "firebase/database";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/components/ui/use-toast";

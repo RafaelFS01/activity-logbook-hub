@@ -34,7 +34,7 @@ const NewClientPage = () => {
   const navigate = useNavigate();
   const [clientType, setClientType] = useState<"fisica" | "juridica">("fisica");
   const { toast } = useToast();
-  const { user } = useAuth(); // Obtenha o user do AuthContext
+  const { user } = useAuth();
 
   const form = useForm<ClientSchemaType>({
     resolver: zodResolver(clientSchema),
@@ -69,7 +69,13 @@ const NewClientPage = () => {
         });
         return;
       }
-      await createClient(data, user.uid); // Passe user.uid aqui
+      
+      const clientData = {
+        ...data,
+        createdBy: user.uid
+      };
+      
+      await createClient(clientData, user.uid);
       toast({
         title: "Cliente criado com sucesso!",
       });

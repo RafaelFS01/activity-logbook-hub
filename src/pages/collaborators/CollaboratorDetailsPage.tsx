@@ -337,7 +337,7 @@ const CollaboratorDetailsPage = () => {
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">CPF:</span>
-                    <span>{collaborator.cpf}</span>
+                    <span>{collaborator.cpf || ""}</span>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">Data de Admissão:</span>
