@@ -122,7 +122,7 @@
   @apply border-opacity-100;
 }
 
-/* Botões no modo escuro */
+/* Button styles in dark mode */
 .dark button[class*='outline'] {
   @apply hover:bg-gray-700 hover:text-white;
 }
@@ -132,7 +132,23 @@
   @apply hover:bg-gray-700 hover:text-white;
 }
 
-/* Estilo de fundo para página de login no modo escuro */
+/* Dark mode background for login page */
 .dark .login-container {
   @apply bg-gray-900;
+}
+
+/* Fixed button styles for action buttons in dark mode */
+.dark button.border-red-200,
+.dark button.border-green-200,
+.dark button.border-blue-200,
+.dark button.border-yellow-200 {
+  @apply hover:bg-gray-700 hover:text-white;
+}
+
+/* Status filter buttons in dark mode */
+.dark button[class*='border-yellow-200'],
+.dark button[class*='border-blue-200'],
+.dark button[class*='border-green-200'],
+.dark button[class*='border-red-200'] {
+  @apply hover:bg-gray-700 hover:text-white;
 }

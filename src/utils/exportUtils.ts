@@ -11,37 +11,39 @@ const formatDate = (dateString?: string): string => {
   return date.toLocaleDateString('pt-BR');
 };
 
-// Função para aplicar estilo negrito e centralizado às células
+// Function to apply styles to cells (bold headers, centered content)
 const applyCellStyles = (worksheet: XLSX.WorkSheet) => {
   if (!worksheet['!cols']) worksheet['!cols'] = [];
   
-  // Aplicar largura de coluna adequada
+  // Set appropriate column width
   const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
   for (let i = 0; i <= range.e.c; ++i) {
-    worksheet['!cols'][i] = { width: 20 }; // Largura padrão para colunas
+    worksheet['!cols'][i] = { width: 20 }; // Default width for columns
   }
   
-  // Estilo para todas as células: centralizado
-  const allCellStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
+  // Style for all cells: centered
+  const allCellStyle = { 
+    alignment: { horizontal: 'center', vertical: 'center' } 
+  };
   
-  // Estilo para cabeçalho: negrito e centralizado
+  // Style for header: bold and centered
   const headerStyle = { 
     font: { bold: true },
     alignment: { horizontal: 'center', vertical: 'center' }
   };
   
-  // Aplicar estilo a todas as células
+  // Apply styles to all cells
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cell_address = { c: C, r: R };
       const cell_ref = XLSX.utils.encode_cell(cell_address);
       
       if (R === 0) {
-        // Cabeçalho
+        // Header row
         if (!worksheet[cell_ref]) continue;
         worksheet[cell_ref].s = headerStyle;
       } else {
-        // Demais células
+        // Data cells
         if (!worksheet[cell_ref]) continue;
         worksheet[cell_ref].s = allCellStyle;
       }
@@ -49,13 +51,13 @@ const applyCellStyles = (worksheet: XLSX.WorkSheet) => {
   }
 };
 
-// Adicionar título ao Excel
+// Add title to Excel sheet
 const addTitleToSheet = (worksheet: XLSX.WorkSheet, title: string) => {
-  // Obter a referência atual da planilha
+  // Get current worksheet reference
   const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
   const numCols = range.e.c + 1;
   
-  // Mover todas as células para baixo para dar espaço ao título
+  // Move all cells down to make space for title
   for (let R = range.e.r; R >= 0; --R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const oldCellRef = XLSX.utils.encode_cell({ c: C, r: R });
@@ -68,7 +70,7 @@ const addTitleToSheet = (worksheet: XLSX.WorkSheet, title: string) => {
     }
   }
   
-  // Inserir o título na primeira linha, mesclar células
+  // Insert title in first row, merge cells
   const titleCell = XLSX.utils.encode_cell({ c: 0, r: 0 });
   worksheet[titleCell] = { 
     v: title, 
@@ -79,14 +81,14 @@ const addTitleToSheet = (worksheet: XLSX.WorkSheet, title: string) => {
     }
   };
   
-  // Mesclar células para o título
+  // Merge cells for title
   if (!worksheet['!merges']) worksheet['!merges'] = [];
   worksheet['!merges'].push({ 
     s: { c: 0, r: 0 }, 
     e: { c: numCols - 1, r: 0 }
   });
   
-  // Atualizar a referência da planilha
+  // Update worksheet reference
   worksheet['!ref'] = XLSX.utils.encode_range({
     s: { c: 0, r: 0 },
     e: { c: range.e.c, r: range.e.r + 2 }
@@ -117,10 +119,10 @@ export const exportActivitiesToExcel = (
     }))
   );
 
-  // Aplicar estilos
+  // Apply styles
   applyCellStyles(worksheet);
   
-  // Adicionar título
+  // Add title
   addTitleToSheet(worksheet, "ACTIVITY HUB");
 
   const workbook = XLSX.utils.book_new();
@@ -163,10 +165,10 @@ export const exportClientsToExcel = (clients: Client[], filename = 'clientes.xls
     })
   );
 
-  // Aplicar estilos
+  // Apply styles
   applyCellStyles(worksheet);
   
-  // Adicionar título
+  // Add title
   addTitleToSheet(worksheet, "ACTIVITY HUB");
 
   const workbook = XLSX.utils.book_new();
@@ -190,10 +192,10 @@ export const exportCollaboratorsToExcel = (collaborators: (UserData & { uid: str
     }))
   );
 
-  // Aplicar estilos
+  // Apply styles
   applyCellStyles(worksheet);
   
-  // Adicionar título
+  // Add title
   addTitleToSheet(worksheet, "ACTIVITY HUB");
 
   const workbook = XLSX.utils.book_new();
