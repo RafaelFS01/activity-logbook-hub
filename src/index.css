@@ -152,3 +152,18 @@
 .dark button[class*='border-red-200'] {
   @apply hover:bg-gray-700 hover:text-white;
 }
+
+/* Sidebar toggle button enhancements */
+.sidebar-toggle-btn {
+  @apply transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl;
+}
+
+/* Add animation for the sidebar toggle button when collapsed */
+.sidebar-toggle-btn-collapsed {
+  @apply animate-pulse;
+}
+
+/* Make the sidebar rail more visible on hover */
+.sidebar-rail {
+  @apply hover:bg-sidebar-accent/50;
+}
