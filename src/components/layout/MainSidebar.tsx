@@ -9,8 +9,7 @@ import {
   SidebarHeader, 
   SidebarMenu, 
   SidebarMenuButton, 
-  SidebarMenuItem, 
-  SidebarTrigger 
+  SidebarMenuItem 
 } from "@/components/ui/sidebar";
 import { 
   Activity, 
@@ -50,23 +49,20 @@ const MainSidebar = () => {
             <Activity className="h-6 w-6" />
             <span className="font-bold text-lg">Activity Hub</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleTheme} 
-              className="ml-2"
-              title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
-            >
-              {theme === 'light' ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-              <span className="sr-only">Alternar tema</span>
-            </Button>
-            <SidebarTrigger />
-          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleTheme} 
+            className="ml-2"
+            title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+          >
+            {theme === 'light' ? (
+              <Moon className="h-5 w-5" />
+            ) : (
+              <Sun className="h-5 w-5" />
+            )}
+            <span className="sr-only">Alternar tema</span>
+          </Button>
         </div>
       </SidebarHeader>
       
