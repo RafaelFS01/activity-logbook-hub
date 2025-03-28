@@ -1,10 +1,10 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -39,10 +39,12 @@ const NewClientPage: React.FC = () => {
 
   const { data: clientData, isLoading: isClientLoading, isError: isClientError } = useQuery({
     queryKey: ['client', id],
-    queryFn: () => getClient(id!),
+    queryFn: () => id ? getClient(id) : Promise.reject('No ID provided'),
     enabled: isEditMode && !!id,
-    onError: (error) => {
-      toast.error(`Erro ao buscar cliente: ${error.message}`);
+    meta: {
+      onError: (error: Error) => {
+        toast.error(`Erro ao buscar cliente: ${error.message}`);
+      }
     }
   });
 
@@ -53,18 +55,18 @@ const NewClientPage: React.FC = () => {
     }
   }, [clientData, form]);
 
-  const mutation = useMutation(
-    isEditMode ? updateClient : createClient,
-    {
-      onSuccess: () => {
-        toast.success(`Cliente ${isEditMode ? 'atualizado' : 'criado'} com sucesso!`);
-        navigate('/clients');
-      },
-      onError: (error: any) => {
-        toast.error(`Erro ao ${isEditMode ? 'atualizar' : 'criar'} cliente: ${error.message}`);
-      }
+  const mutation = useMutation({
+    mutationFn: (data: any) => isEditMode 
+      ? updateClient(data as Client) 
+      : createClient(data as Omit<Client, 'id'>),
+    onSuccess: () => {
+      toast.success(`Cliente ${isEditMode ? 'atualizado' : 'criado'} com sucesso!`);
+      navigate('/clients');
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao ${isEditMode ? 'atualizar' : 'criar'} cliente: ${error.message}`);
     }
-  );
+  });
 
   const onSubmit = (data: Client) => {
     const payload = isEditMode ? { id, ...data } : data;
@@ -95,7 +97,7 @@ const NewClientPage: React.FC = () => {
                   setClientType(value === "company" ? "company" : "individual");
                   form.reset({
                     ...form.getValues(),
-                    type: value,
+                    type: value as any,
                     ...(value === "company" ? { companyName: "", cnpj: "" } : {}),
                   });
                 }} defaultValue={field.value}>
@@ -228,8 +230,8 @@ const NewClientPage: React.FC = () => {
             )}
           />
 
-          <Button type="submit" disabled={mutation.isLoading}>
-            {mutation.isLoading ? 'Salvando...' : 'Salvar'}
+          <Button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending ? 'Salvando...' : 'Salvar'}
           </Button>
         </form>
       </Form>
