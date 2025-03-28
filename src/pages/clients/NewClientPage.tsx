@@ -1,265 +1,375 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { createClient } from "@/services/firebase/clients";
+import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { createClient } from "@/services/firebase/clients";
-import { useToast } from "@/components/ui/use-toast";
-import { PlusCircle, ArrowLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { ArrowLeft, User, Building2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const clientSchema = z.object({
-  type: z.enum(["fisica", "juridica"]),
-  name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres." }).optional(),
-  companyName: z.string().min(3, { message: "Nome da empresa deve ter pelo menos 3 caracteres." }).optional(),
-  email: z.string().email({ message: "Email inválido." }),
-  phone: z.string().min(8, { message: "Telefone deve ter pelo menos 8 caracteres." }),
-  address: z.string().optional(),
-  cpf: z.string().min(11, { message: "CPF deve ter 11 caracteres." }).optional(),
-  cnpj: z.string().min(14, { message: "CNPJ deve ter 14 caracteres." }).optional(),
-  responsibleName: z.string().min(3, { message: "Nome do responsável deve ter pelo menos 3 caracteres." }).optional(),
+// Definição dos schemas de validação
+const pessoaFisicaSchema = z.object({
+  type: z.literal("fisica"),
+  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  cpf: z
+    .string()
+    .min(11, "CPF deve ter 11 dígitos")
+    .max(14, "CPF deve ter no máximo 14 caracteres"),
   rg: z.string().optional(),
-  active: z.boolean().default(true),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
+  address: z.string().optional(),
 });
 
-type ClientSchemaType = z.infer<typeof clientSchema>;
+const pessoaJuridicaSchema = z.object({
+  type: z.literal("juridica"),
+  companyName: z.string().min(3, "Nome da empresa deve ter pelo menos 3 caracteres"),
+  cnpj: z
+    .string()
+    .min(14, "CNPJ deve ter 14 dígitos")
+    .max(18, "CNPJ deve ter no máximo 18 caracteres"),
+  responsibleName: z.string().min(3, "Nome do responsável deve ter pelo menos 3 caracteres"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
+  address: z.string().optional(),
+});
+
+// Criação do schema de cliente combinado
+const clientSchema = z.discriminatedUnion("type", [
+  pessoaFisicaSchema,
+  pessoaJuridicaSchema,
+]);
+
+type ClientFormValues = z.infer<typeof clientSchema>;
 
 const NewClientPage = () => {
   const navigate = useNavigate();
-  const [clientType, setClientType] = useState<"fisica" | "juridica">("fisica");
-  const { toast } = useToast();
   const { user } = useAuth();
-
-  const form = useForm<ClientSchemaType>({
-    resolver: zodResolver(clientSchema),
-    defaultValues: {
-      type: "fisica",
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      active: true,
-      cpf: "",
-      rg: "",
-      cnpj: "",
-      companyName: "",
-      responsibleName: "",
-    },
-  });
+  const [clientType, setClientType] = useState<"fisica" | "juridica">("fisica");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
-    handleSubmit,
     register,
-    formState: { errors, isSubmitting },
-  } = form;
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<ClientFormValues>({
+    resolver: zodResolver(
+      clientType === "fisica" ? pessoaFisicaSchema : pessoaJuridicaSchema
+    ),
+    defaultValues: {
+      type: "fisica",
+      email: "",
+      phone: "",
+    } as ClientFormValues,
+  });
 
-  const onSubmit = async (data: ClientSchemaType) => {
-    try {
-      if (!user) {
-        toast({
-          title: "Erro ao criar cliente",
-          description: "Você precisa estar logado para realizar esta ação.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Ensure required fields are set based on client type
-      const clientData = {
-        ...data,
-        type: data.type || "fisica",
-        createdBy: user.uid,
-        // For person
-        name: clientType === "fisica" ? (data.name || "Nome não informado") : undefined,
-        // For company
-        companyName: clientType === "juridica" ? (data.companyName || "Empresa não informada") : undefined,
-      };
-      
-      await createClient(clientData, user.uid);
-      toast({
-        title: "Cliente criado com sucesso!",
-      });
-      navigate("/clients");
-    } catch (error) {
+  const onTabChange = (value: string) => {
+    setClientType(value as "fisica" | "juridica");
+    setValue("type", value as "fisica" | "juridica");
+  };
+
+  const onSubmit = async (data: ClientFormValues) => {
+    if (!user) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar cliente!",
-        description: "Por favor, tente novamente.",
+        title: "Erro",
+        description:
+          "Você precisa estar autenticado para realizar esta operação.",
       });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Preparando o objeto cliente com os campos necessários
+      const clientData = {
+        ...data,
+        name: data.type === "fisica" ? data.name : "",
+        companyName: data.type === "juridica" ? data.companyName : "",
+        active: true,
+        createdBy: user.uid,
+        // Garantindo que o email é definido (não é opcional)
+        email: data.email,
+      };
+
+      // Criar cliente no Firebase
+      await createClient(clientData);
+
+      toast({
+        title: "Cliente cadastrado com sucesso",
+        description: `O cliente foi adicionado ao sistema.`,
+      });
+
+      navigate("/clients");
+    } catch (error: any) {
+      console.error("Erro ao cadastrar cliente:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao cadastrar cliente",
+        description:
+          error.message || "Ocorreu um erro ao cadastrar o cliente.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
-      <div className="flex items-center mb-6">
-        <Button variant="outline" size="sm" onClick={() => navigate("/clients")} className="mr-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
+      <div className="mb-6">
+        <Button
+          variant="outline"
+          onClick={() => navigate("/clients")}
+          className="mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar para Clientes
         </Button>
+
         <h1 className="text-3xl font-bold">Novo Cliente</h1>
+        <p className="text-muted-foreground">
+          Preencha o formulário para cadastrar um novo cliente no sistema.
+        </p>
       </div>
-      <Card>
+
+      <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Informações do Cliente</CardTitle>
-          <CardDescription>Preencha os campos abaixo para criar um novo cliente.</CardDescription>
+          <CardTitle>Cadastro de Cliente</CardTitle>
+          <CardDescription>
+            Selecione o tipo de cliente e preencha os dados
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <Tabs
+          defaultValue="fisica"
+          onValueChange={onTabChange}
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="fisica" className="flex items-center gap-1">
+              <User className="h-4 w-4" />
+              Pessoa Física
+            </TabsTrigger>
+            <TabsTrigger value="juridica" className="flex items-center gap-1">
+              <Building2 className="h-4 w-4" />
+              Pessoa Jurídica
+            </TabsTrigger>
+          </TabsList>
+
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <TabsContent value="fisica">
+              <CardContent className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label>Tipo de Cliente</Label>
-                  <RadioGroup defaultValue={clientType} onValueChange={value => setClientType(value as "fisica" | "juridica")}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="fisica" id="fisica" />
-                      <Label htmlFor="fisica">Pessoa Física</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="juridica" id="juridica" />
-                      <Label htmlFor="juridica">Pessoa Jurídica</Label>
-                    </div>
-                  </RadioGroup>
+                  <Label htmlFor="name">Nome Completo</Label>
+                  <Input
+                    id="name"
+                    placeholder="Digite o nome completo"
+                    {...register("name")}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-red-500">{errors.name.message}</p>
+                  )}
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input
+                      id="cpf"
+                      placeholder="000.000.000-00"
+                      {...register("cpf")}
+                    />
+                    {errors.cpf && (
+                      <p className="text-sm text-red-500">
+                        {errors.cpf.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="rg">RG (Opcional)</Label>
+                    <Input
+                      id="rg"
+                      placeholder="00.000.000-0"
+                      {...register("rg")}
+                    />
+                    {errors.rg && (
+                      <p className="text-sm text-red-500">{errors.rg.message}</p>
+                    )}
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
+                    placeholder="email@exemplo.com"
                     {...register("email")}
-                    disabled={isSubmitting}
                   />
-                  {(errors as any).email && (
-                    <p className="text-sm text-destructive">{(errors as any).email.message}</p>
+                  {errors.email && (
+                    <p className="text-sm text-red-500">
+                      {errors.email.message}
+                    </p>
                   )}
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
                 <div className="space-y-2">
                   <Label htmlFor="phone">Telefone</Label>
                   <Input
                     id="phone"
-                    type="tel"
+                    placeholder="(00) 00000-0000"
                     {...register("phone")}
-                    disabled={isSubmitting}
                   />
-                  {(errors as any).phone && (
-                    <p className="text-sm text-destructive">{(errors as any).phone.message}</p>
+                  {errors.phone && (
+                    <p className="text-sm text-red-500">
+                      {errors.phone.message}
+                    </p>
                   )}
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="address">Endereço</Label>
-                  <Input
+                  <Label htmlFor="address">Endereço (Opcional)</Label>
+                  <Textarea
                     id="address"
+                    placeholder="Digite o endereço completo"
                     {...register("address")}
-                    disabled={isSubmitting}
                   />
-                  {(errors as any).address && (
-                    <p className="text-sm text-destructive">{(errors as any).address.message}</p>
+                  {errors.address && (
+                    <p className="text-sm text-red-500">
+                      {errors.address.message}
+                    </p>
                   )}
                 </div>
-              </div>
+              </CardContent>
+            </TabsContent>
 
-              {clientType === 'fisica' && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nome Completo</Label>
-                    <Input
-                      id="name"
-                      {...register("name")}
-                      disabled={isSubmitting}
-                    />
-                    {(errors as any).name && (
-                      <p className="text-sm text-destructive">{(errors as any).name.message}</p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cpf">CPF</Label>
-                      <Input
-                        id="cpf"
-                        {...register("cpf")}
-                        disabled={isSubmitting}
-                      />
-                      {(errors as any).cpf && (
-                        <p className="text-sm text-destructive">{(errors as any).cpf.message}</p>
-                      )}
-                    </div>
+            <TabsContent value="juridica">
+              <CardContent className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Nome da Empresa</Label>
+                  <Input
+                    id="companyName"
+                    placeholder="Digite o nome da empresa"
+                    {...register("companyName")}
+                  />
+                  {errors.companyName && (
+                    <p className="text-sm text-red-500">
+                      {errors.companyName.message}
+                    </p>
+                  )}
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="rg">RG</Label>
-                      <Input
-                        id="rg"
-                        {...register("rg")}
-                        disabled={isSubmitting}
-                      />
-                      {(errors as any).rg && (
-                        <p className="text-sm text-destructive">{(errors as any).rg.message}</p>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
+                <div className="space-y-2">
+                  <Label htmlFor="cnpj">CNPJ</Label>
+                  <Input
+                    id="cnpj"
+                    placeholder="00.000.000/0000-00"
+                    {...register("cnpj")}
+                  />
+                  {errors.cnpj && (
+                    <p className="text-sm text-red-500">
+                      {errors.cnpj.message}
+                    </p>
+                  )}
+                </div>
 
-              {clientType === 'juridica' && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="companyName">Nome da Empresa</Label>
-                    <Input
-                      id="companyName"
-                      {...register("companyName")}
-                      disabled={isSubmitting}
-                    />
-                    {(errors as any).companyName && (
-                      <p className="text-sm text-destructive">{(errors as any).companyName.message}</p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cnpj">CNPJ</Label>
-                      <Input
-                        id="cnpj"
-                        {...register("cnpj")}
-                        disabled={isSubmitting}
-                      />
-                      {(errors as any).cnpj && (
-                        <p className="text-sm text-destructive">{(errors as any).cnpj.message}</p>
-                      )}
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="responsibleName">Nome do Responsável</Label>
+                  <Input
+                    id="responsibleName"
+                    placeholder="Digite o nome do responsável"
+                    {...register("responsibleName")}
+                  />
+                  {errors.responsibleName && (
+                    <p className="text-sm text-red-500">
+                      {errors.responsibleName.message}
+                    </p>
+                  )}
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="responsibleName">Nome do Responsável</Label>
-                      <Input
-                        id="responsibleName"
-                        {...register("responsibleName")}
-                        disabled={isSubmitting}
-                      />
-                      {(errors as any).responsibleName && (
-                        <p className="text-sm text-destructive">{(errors as any).responsibleName.message}</p>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    {...register("email")}
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-red-500">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
 
-              <CardFooter className="flex justify-between">
-                <Button variant="ghost" onClick={() => navigate("/clients")}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Criar Cliente
-                </Button>
-              </CardFooter>
-            </form>
-          </Form>
-        </CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input
+                    id="phone"
+                    placeholder="(00) 00000-0000"
+                    {...register("phone")}
+                  />
+                  {errors.phone && (
+                    <p className="text-sm text-red-500">
+                      {errors.phone.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Endereço (Opcional)</Label>
+                  <Textarea
+                    id="address"
+                    placeholder="Digite o endereço completo"
+                    {...register("address")}
+                  />
+                  {errors.address && (
+                    <p className="text-sm text-red-500">
+                      {errors.address.message}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </TabsContent>
+
+            <CardFooter className="flex justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/clients")}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Cadastrando..." : "Cadastrar Cliente"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Tabs>
       </Card>
     </div>
   );

@@ -337,7 +337,7 @@ const CollaboratorDetailsPage = () => {
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">CPF:</span>
-                    <span className="text-sm">{collaborator?.cpf ? String(collaborator.cpf) : "Não informado"}</span>
+                    <span>{collaborator?.cpf || ''}</span>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">Data de Admissão:</span>

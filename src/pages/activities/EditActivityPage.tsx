@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -39,7 +38,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, CalendarClock, Save } from "lucide-react";
 
-// Definir interface para UserData
 interface UserData {
   uid?: string;
   name: string;
@@ -48,7 +46,6 @@ interface UserData {
   active: boolean;
 }
 
-// Definir o esquema de validação
 const activitySchema = z.object({
   title: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
   description: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
@@ -91,15 +88,12 @@ const EditActivityPage = () => {
     },
   });
 
-  // Carregar dados iniciais (clientes e colaboradores)
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        // Carregar clientes
         const clientsData = await getClients();
         setClients(clientsData.filter(client => client.active));
 
-        // Carregar colaboradores
         const usersRef = ref(db, "users");
         const snapshot = await get(usersRef);
         if (snapshot.exists()) {
@@ -125,7 +119,6 @@ const EditActivityPage = () => {
     fetchInitialData();
   }, []);
 
-  // Carregar dados da atividade
   useEffect(() => {
     const fetchActivity = async () => {
       setIsLoading(true);
@@ -145,7 +138,6 @@ const EditActivityPage = () => {
             setValue("endDate", activity.endDate.split('T')[0]);
           }
           
-          // Configurar colaboradores selecionados
           setSelectedCollaborators(activity.assignedTo);
           setValue("assignedToIds", activity.assignedTo);
         } else {
@@ -171,7 +163,6 @@ const EditActivityPage = () => {
     fetchActivity();
   }, [id, setValue, navigate]);
 
-  // Atualizar assignedToIds quando selectedCollaborators mudar
   useEffect(() => {
     setValue("assignedToIds", selectedCollaborators);
   }, [selectedCollaborators, setValue]);
@@ -200,7 +191,6 @@ const EditActivityPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Preparar dados da atividade para atualização
       const activityData = {
         title: data.title,
         description: data.description,
@@ -212,7 +202,6 @@ const EditActivityPage = () => {
         endDate: data.endDate,
       };
 
-      // Atualizar atividade no Firebase
       await updateActivity(id, activityData);
 
       toast({
@@ -234,7 +223,6 @@ const EditActivityPage = () => {
     }
   };
 
-  // Função para exibir o nome do cliente no formato correto
   const displayClientName = (client: Client) => {
     if (client.type === "fisica") {
       return `${client.name} (CPF: ${client.cpf})`;
@@ -375,7 +363,7 @@ const EditActivityPage = () => {
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="pending">Futura</SelectItem>
                     <SelectItem value="in-progress">Em andamento</SelectItem>
                     <SelectItem value="completed">Concluída</SelectItem>
                     <SelectItem value="cancelled">Cancelada</SelectItem>

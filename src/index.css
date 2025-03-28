@@ -109,7 +109,7 @@
 
 /* Enhanced styling for input fields */
 .input, input, select, textarea {
-  @apply border-2;
+  @apply border-2 shadow-sm;
 }
 
 /* Enhanced styling for cards */
@@ -122,3 +122,17 @@
   @apply border-opacity-100;
 }
 
+/* Botões no modo escuro */
+.dark button[class*='outline'] {
+  @apply hover:bg-gray-700 hover:text-white;
+}
+
+.dark button[type='submit'],
+.dark [class*='primary'] {
+  @apply hover:bg-gray-700 hover:text-white;
+}
+
+/* Estilo de fundo para página de login no modo escuro */
+.dark .login-container {
+  @apply bg-gray-900;
+}

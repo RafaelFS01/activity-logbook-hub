@@ -11,6 +11,88 @@ const formatDate = (dateString?: string): string => {
   return date.toLocaleDateString('pt-BR');
 };
 
+// Função para aplicar estilo negrito e centralizado às células
+const applyCellStyles = (worksheet: XLSX.WorkSheet) => {
+  if (!worksheet['!cols']) worksheet['!cols'] = [];
+  
+  // Aplicar largura de coluna adequada
+  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+  for (let i = 0; i <= range.e.c; ++i) {
+    worksheet['!cols'][i] = { width: 20 }; // Largura padrão para colunas
+  }
+  
+  // Estilo para todas as células: centralizado
+  const allCellStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
+  
+  // Estilo para cabeçalho: negrito e centralizado
+  const headerStyle = { 
+    font: { bold: true },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  };
+  
+  // Aplicar estilo a todas as células
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell_address = { c: C, r: R };
+      const cell_ref = XLSX.utils.encode_cell(cell_address);
+      
+      if (R === 0) {
+        // Cabeçalho
+        if (!worksheet[cell_ref]) continue;
+        worksheet[cell_ref].s = headerStyle;
+      } else {
+        // Demais células
+        if (!worksheet[cell_ref]) continue;
+        worksheet[cell_ref].s = allCellStyle;
+      }
+    }
+  }
+};
+
+// Adicionar título ao Excel
+const addTitleToSheet = (worksheet: XLSX.WorkSheet, title: string) => {
+  // Obter a referência atual da planilha
+  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+  const numCols = range.e.c + 1;
+  
+  // Mover todas as células para baixo para dar espaço ao título
+  for (let R = range.e.r; R >= 0; --R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const oldCellRef = XLSX.utils.encode_cell({ c: C, r: R });
+      const newCellRef = XLSX.utils.encode_cell({ c: C, r: R + 2 });
+      
+      if (worksheet[oldCellRef]) {
+        worksheet[newCellRef] = worksheet[oldCellRef];
+        delete worksheet[oldCellRef];
+      }
+    }
+  }
+  
+  // Inserir o título na primeira linha, mesclar células
+  const titleCell = XLSX.utils.encode_cell({ c: 0, r: 0 });
+  worksheet[titleCell] = { 
+    v: title, 
+    t: 's',
+    s: { 
+      font: { bold: true, sz: 16 },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    }
+  };
+  
+  // Mesclar células para o título
+  if (!worksheet['!merges']) worksheet['!merges'] = [];
+  worksheet['!merges'].push({ 
+    s: { c: 0, r: 0 }, 
+    e: { c: numCols - 1, r: 0 }
+  });
+  
+  // Atualizar a referência da planilha
+  worksheet['!ref'] = XLSX.utils.encode_range({
+    s: { c: 0, r: 0 },
+    e: { c: range.e.c, r: range.e.r + 2 }
+  });
+};
+
 // Export activities to Excel
 export const exportActivitiesToExcel = (
   activities: (Activity & { clientName?: string })[], 
@@ -34,6 +116,12 @@ export const exportActivitiesToExcel = (
       'Atualizado em': formatDate(activity.updatedAt)
     }))
   );
+
+  // Aplicar estilos
+  applyCellStyles(worksheet);
+  
+  // Adicionar título
+  addTitleToSheet(worksheet, "ACTIVITY HUB");
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Atividades');
@@ -75,6 +163,12 @@ export const exportClientsToExcel = (clients: Client[], filename = 'clientes.xls
     })
   );
 
+  // Aplicar estilos
+  applyCellStyles(worksheet);
+  
+  // Adicionar título
+  addTitleToSheet(worksheet, "ACTIVITY HUB");
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Clientes');
   XLSX.writeFile(workbook, filename);
@@ -96,6 +190,12 @@ export const exportCollaboratorsToExcel = (collaborators: (UserData & { uid: str
     }))
   );
 
+  // Aplicar estilos
+  applyCellStyles(worksheet);
+  
+  // Adicionar título
+  addTitleToSheet(worksheet, "ACTIVITY HUB");
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Colaboradores');
   XLSX.writeFile(workbook, filename);
@@ -104,7 +204,7 @@ export const exportCollaboratorsToExcel = (collaborators: (UserData & { uid: str
 // Helper function to get human-readable status text
 const getActivityStatusText = (status: string): string => {
   switch (status) {
-    case 'pending': return 'Pendente';
+    case 'pending': return 'Futura';
     case 'in-progress': return 'Em Progresso';
     case 'completed': return 'Concluída';
     case 'cancelled': return 'Cancelada';

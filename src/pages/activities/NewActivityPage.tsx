@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -81,15 +80,12 @@ const NewActivityPage = () => {
     },
   });
 
-  // Carregar clientes e colaboradores
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Carregar clientes
         const clientsData = await getClients();
         setClients(clientsData.filter(client => client.active));
 
-        // Carregar colaboradores
         const usersRef = ref(db, "users");
         const snapshot = await get(usersRef);
         if (snapshot.exists()) {
@@ -115,7 +111,6 @@ const NewActivityPage = () => {
     fetchData();
   }, []);
 
-  // Atualizar assignedToIds quando selectedCollaborators mudar
   useEffect(() => {
     setValue("assignedToIds", selectedCollaborators);
   }, [selectedCollaborators, setValue]);
@@ -144,7 +139,6 @@ const NewActivityPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Preparar dados da atividade
       const activityData = {
         title: data.title,
         description: data.description,
@@ -154,10 +148,9 @@ const NewActivityPage = () => {
         status: data.status as ActivityStatus,
         startDate: data.startDate,
         endDate: data.endDate,
-        createdBy: user.uid  // Add the missing createdBy property
+        createdBy: user.uid
       };
 
-      // Criar atividade no Firebase
       await createActivity(activityData, user.uid);
 
       toast({
@@ -179,7 +172,6 @@ const NewActivityPage = () => {
     }
   };
 
-  // Função para exibir o nome do cliente no formato correto
   const displayClientName = (client: Client) => {
     if (client.type === "fisica") {
       return `${client.name} (CPF: ${client.cpf})`;
@@ -306,10 +298,9 @@ const NewActivityPage = () => {
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="pending">Futura</SelectItem>
                     <SelectItem value="in-progress">Em andamento</SelectItem>
                     <SelectItem value="completed">Concluída</SelectItem>
-                    <SelectItem value="cancelled">Cancelada</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.status && (

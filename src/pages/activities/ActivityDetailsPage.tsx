@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 const getStatusLabel = (status: "pending" | "in-progress" | "completed" | "cancelled") => {
   switch (status) {
     case "pending":
-      return "Pendente";
+      return "Futura";
     case "in-progress":
       return "Em Andamento";
     case "completed":
