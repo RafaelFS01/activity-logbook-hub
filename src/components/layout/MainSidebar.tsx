@@ -1,4 +1,3 @@
-
 import { 
   Sidebar, 
   SidebarContent, 
@@ -16,15 +15,11 @@ import {
 } from "@/components/ui/sidebar";
 import { 
   Activity, 
-  ArrowLeft,
-  ArrowRight,
   BarChart3, 
   Calendar, 
-  ClipboardList, 
   Home, 
   LogOut, 
   Moon,
-  PanelLeft,
   Settings, 
   Sun,
   UserCircle, 
@@ -38,7 +33,6 @@ import { Button } from "@/components/ui/button";
 const MainSidebar = () => {
   const { logout, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { state, toggleSidebar } = useSidebar();
   
   // Função para determinar se um link está ativo
   const activeClass = ({ isActive }: { isActive: boolean }) => {
@@ -164,24 +158,8 @@ const MainSidebar = () => {
         </SidebarMenu>
       </SidebarFooter>
 
-      {/* Add SidebarRail for resizing control */}
+      {/* Adicionar SidebarRail para controle de redimensionamento */}
       <SidebarRail />
-      
-      {/* Floating button for expanding a collapsed sidebar */}
-      {state === "collapsed" && (
-        <div className="fixed z-20 left-4 bottom-4 md:left-2 md:bottom-8">
-          <Button 
-            onClick={toggleSidebar} 
-            variant="secondary" 
-            size="icon" 
-            className="rounded-full shadow-lg"
-            title="Expandir barra lateral"
-          >
-            <ArrowRight className="h-5 w-5" />
-            <span className="sr-only">Expandir menu</span>
-          </Button>
-        </div>
-      )}
     </Sidebar>
   );
 };
