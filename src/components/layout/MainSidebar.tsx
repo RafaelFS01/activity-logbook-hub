@@ -1,3 +1,4 @@
+
 import { 
   Sidebar, 
   SidebarContent, 
@@ -9,14 +10,13 @@ import {
   SidebarMenu, 
   SidebarMenuButton, 
   SidebarMenuItem, 
-  SidebarRail,
-  SidebarTrigger,
-  useSidebar
+  SidebarTrigger 
 } from "@/components/ui/sidebar";
 import { 
   Activity, 
   BarChart3, 
   Calendar, 
+  ClipboardList, 
   Home, 
   LogOut, 
   Moon,
@@ -157,9 +157,6 @@ const MainSidebar = () => {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-
-      {/* Adicionar SidebarRail para controle de redimensionamento */}
-      <SidebarRail />
     </Sidebar>
   );
 };
