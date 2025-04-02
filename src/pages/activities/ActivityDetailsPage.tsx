@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getActivityById, Activity, updateActivityStatus, deleteActivity } from "@/services/firebase/activities";
@@ -47,6 +48,7 @@ const ActivityDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [assigneesLoading, setAssigneesLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,24 +65,21 @@ const ActivityDetailsPage = () => {
           setClient(clientData);
 
           // Fetch all assignees data in parallel
-          const assigneesData = await Promise.all(
-            activityData.assignedTo.map(async (userId) => {
-              try {
-                return await getUserData(userId);
-              } catch (error) {
-                console.error(`Error fetching user ${userId}:`, error);
-                return null;
-              }
-            })
-          );
+          setAssigneesLoading(true);
+          const assigneesPromises = activityData.assignedTo.map(async (userId) => {
+            try {
+              const userData = await getUserData(userId);
+              return [userId, userData];
+            } catch (error) {
+              console.error(`Error fetching user ${userId}:`, error);
+              return [userId, null];
+            }
+          });
 
-          // Create a map of userId -> userData
-          const assigneesMap = activityData.assignedTo.reduce((acc, userId, index) => {
-            acc[userId] = assigneesData[index];
-            return acc;
-          }, {} as { [key: string]: UserData | null });
-
+          const assigneesResults = await Promise.all(assigneesPromises);
+          const assigneesMap = Object.fromEntries(assigneesResults);
           setAssignees(assigneesMap);
+          setAssigneesLoading(false);
         }
       } catch (error) {
         console.error("Erro ao buscar dados da atividade:", error);
@@ -306,7 +305,10 @@ const ActivityDetailsPage = () => {
                       ) : (
                         <UserCircle className="h-4 w-4 mr-1" />
                       )}
-                      <span>{client.type === 'juridica' ? (client as any).companyName : client.name}</span>
+                      <span>{client.type === 'juridica' 
+                        ? (client as any).companyName || client.name 
+                        : client.name}
+                      </span>
                     </>
                   ) : (
                     <span>Carregando...</span>
@@ -316,12 +318,20 @@ const ActivityDetailsPage = () => {
               <div className="flex justify-between items-center pb-2 border-b">
                 <span className="font-medium">Responsáveis:</span>
                 <div>
-                  {Object.entries(assignees).map(([userId, assignee]) => (
-                    <div key={userId} className="flex items-center space-x-2">
-                      <UserCircle className="h-4 w-4" />
-                      <span>{assignee?.name || 'Carregando...'}</span>
+                  {assigneesLoading ? (
+                    <span className="text-sm text-muted-foreground">Carregando responsáveis...</span>
+                  ) : Object.entries(assignees).length > 0 ? (
+                    <div className="space-y-1">
+                      {Object.entries(assignees).map(([userId, assignee]) => (
+                        <div key={userId} className="flex items-center space-x-2">
+                          <UserCircle className="h-4 w-4" />
+                          <span>{assignee?.name || 'Usuário não encontrado'}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Nenhum responsável atribuído</span>
+                  )}
                 </div>
               </div>
               <div className="space-y-1">

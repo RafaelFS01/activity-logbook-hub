@@ -2,10 +2,12 @@
 import { useState, useEffect } from 'react';
 import { getActivities, Activity } from '@/services/firebase/activities';
 import { getClientById, Client } from '@/services/firebase/clients';
+import { getUserData, UserData } from '@/services/firebase/auth';
 
 export type ActivityWithClient = {
   activity: Activity;
   client: Client | null;
+  assignees: (UserData | null)[];
 };
 
 export const useRecentActivities = (limit: number = 5) => {
@@ -27,20 +29,42 @@ export const useRecentActivities = (limit: number = 5) => {
         // Limitar ao número especificado
         const limitedActivities = sortedActivities.slice(0, limit);
         
-        // Buscar informações do cliente para cada atividade
-        const activitiesWithClients = await Promise.all(
+        // Buscar informações do cliente e colaboradores para cada atividade
+        const activitiesWithData = await Promise.all(
           limitedActivities.map(async (activity) => {
             try {
+              // Buscar informações do cliente
               const client = await getClientById(activity.clientId);
-              return { activity, client };
+              
+              // Buscar informações dos colaboradores responsáveis
+              const assigneesData = await Promise.all(
+                activity.assignedTo.map(async (userId) => {
+                  try {
+                    return await getUserData(userId);
+                  } catch (err) {
+                    console.error(`Erro ao buscar colaborador ${userId}:`, err);
+                    return null;
+                  }
+                })
+              );
+              
+              return { 
+                activity, 
+                client, 
+                assignees: assigneesData 
+              };
             } catch (err) {
-              console.error(`Erro ao buscar cliente para atividade ${activity.id}:`, err);
-              return { activity, client: null };
+              console.error(`Erro ao buscar dados para atividade ${activity.id}:`, err);
+              return { 
+                activity, 
+                client: null, 
+                assignees: [] 
+              };
             }
           })
         );
         
-        setRecentActivities(activitiesWithClients);
+        setRecentActivities(activitiesWithData);
       } catch (err) {
         console.error('Erro ao buscar atividades recentes:', err);
         setError(err instanceof Error ? err : new Error('Erro desconhecido'));
