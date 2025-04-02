@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,7 +37,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, CalendarClock } from "lucide-react";
+import { ArrowLeft, CalendarClock, UserPlus } from "lucide-react";
 
 const activitySchema = z.object({
   title: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
@@ -260,6 +260,15 @@ const NewActivityPage = () => {
                     {errors.clientId.message}
                   </p>
                 )}
+                <div className="mt-1">
+                  <Link 
+                    to="/clients/new" 
+                    className="text-sm text-blue-500 hover:text-blue-700 flex items-center gap-1"
+                  >
+                    <UserPlus className="w-3 h-3" />
+                    O cliente não está cadastrado?
+                  </Link>
+                </div>
               </div>
 
               <div className="space-y-2">

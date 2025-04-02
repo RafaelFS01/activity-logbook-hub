@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm, FormProvider, useWatch, type FieldErrors } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient } from "@/services/firebase/clients";
@@ -78,23 +78,39 @@ const NewClientPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Definição do formulário com React Hook Form
-  const form = useForm<ClientFormValues>({
-    resolver: zodResolver(
-      clientType === "fisica" ? pessoaFisicaSchema : pessoaJuridicaSchema
-    ),
+  const formFisica = useForm<z.infer<typeof pessoaFisicaSchema>>({
+    resolver: zodResolver(pessoaFisicaSchema),
     defaultValues: {
       type: "fisica",
+      name: "",
+      cpf: "",
+      rg: "",
       email: "",
       phone: "",
-    } as ClientFormValues,
+      address: "",
+    }
   });
+
+  const formJuridica = useForm<z.infer<typeof pessoaJuridicaSchema>>({
+    resolver: zodResolver(pessoaJuridicaSchema),
+    defaultValues: {
+      type: "juridica",
+      companyName: "",
+      cnpj: "",
+      responsibleName: "",
+      email: "",
+      phone: "",
+      address: "",
+    }
+  });
+
+  const currentForm = clientType === "fisica" ? formFisica : formJuridica;
 
   const onTabChange = (value: string) => {
     setClientType(value as "fisica" | "juridica");
-    form.setValue("type", value as "fisica" | "juridica");
   };
 
-  const onSubmit = async (data: ClientFormValues) => {
+  const onSubmit = async (data: any) => {
     if (!user) {
       toast({
         variant: "destructive",
@@ -108,14 +124,7 @@ const NewClientPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Preparando o objeto cliente com os campos necessários
-      const clientData = {
-        ...data,
-        active: true,
-      };
-
-      // Criar cliente no Firebase
-      await createClient(clientData, user.uid);
+      await createClient(data, user.uid);
 
       toast({
         title: "Cliente cadastrado com sucesso",
@@ -178,202 +187,215 @@ const NewClientPage = () => {
             </TabsTrigger>
           </TabsList>
 
-          <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <TabsContent value="fisica">
-                <CardContent className="space-y-4 mt-4">
+          <TabsContent value="fisica">
+            <form onSubmit={formFisica.handleSubmit(onSubmit)}>
+              <CardContent className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome Completo</Label>
+                  <Input
+                    id="name"
+                    placeholder="Digite o nome completo"
+                    {...formFisica.register("name")}
+                  />
+                  {formFisica.formState.errors.name && (
+                    <p className="text-sm text-red-500">
+                      {formFisica.formState.errors.name.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome Completo</Label>
+                    <Label htmlFor="cpf">CPF</Label>
                     <Input
-                      id="name"
-                      placeholder="Digite o nome completo"
-                      {...form.register("name")}
+                      id="cpf"
+                      placeholder="000.000.000-00"
+                      {...formFisica.register("cpf")}
                     />
-                    {form.formState.errors.name && (
+                    {formFisica.formState.errors.cpf && (
                       <p className="text-sm text-red-500">
-                        {form.formState.errors.name.message}
+                        {formFisica.formState.errors.cpf.message}
                       </p>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cpf">CPF</Label>
-                      <Input
-                        id="cpf"
-                        placeholder="000.000.000-00"
-                        {...form.register("cpf")}
-                      />
-                      {form.formState.errors.cpf && (
-                        <p className="text-sm text-red-500">
-                          {form.formState.errors.cpf.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="rg">RG (Opcional)</Label>
-                      <Input
-                        id="rg"
-                        placeholder="00.000.000-0"
-                        {...form.register("rg")}
-                      />
-                      {form.formState.errors.rg && (
-                        <p className="text-sm text-red-500">
-                          {form.formState.errors.rg.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="rg">RG (Opcional)</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="email@exemplo.com"
-                      {...form.register("email")}
+                      id="rg"
+                      placeholder="00.000.000-0"
+                      {...formFisica.register("rg")}
                     />
-                    {form.formState.errors.email && (
+                    {formFisica.formState.errors.rg && (
                       <p className="text-sm text-red-500">
-                        {form.formState.errors.email.message}
+                        {formFisica.formState.errors.rg.message}
                       </p>
                     )}
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
-                    <Input
-                      id="phone"
-                      placeholder="(00) 00000-0000"
-                      {...form.register("phone")}
-                    />
-                    {form.formState.errors.phone && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.phone.message}
-                      </p>
-                    )}
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    {...formFisica.register("email")}
+                  />
+                  {formFisica.formState.errors.email && (
+                    <p className="text-sm text-red-500">
+                      {formFisica.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Endereço (Opcional)</Label>
-                    <Textarea
-                      id="address"
-                      placeholder="Digite o endereço completo"
-                      {...form.register("address")}
-                    />
-                    {form.formState.errors.address && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.address.message}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </TabsContent>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input
+                    id="phone"
+                    placeholder="(00) 00000-0000"
+                    {...formFisica.register("phone")}
+                  />
+                  {formFisica.formState.errors.phone && (
+                    <p className="text-sm text-red-500">
+                      {formFisica.formState.errors.phone.message}
+                    </p>
+                  )}
+                </div>
 
-              <TabsContent value="juridica">
-                <CardContent className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="companyName">Nome da Empresa</Label>
-                    <Input
-                      id="companyName"
-                      placeholder="Digite o nome da empresa"
-                      {...form.register("companyName")}
-                    />
-                    {clientType === "juridica" && form.formState.errors.companyName && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.companyName.message}
-                      </p>
-                    )}
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Endereço (Opcional)</Label>
+                  <Textarea
+                    id="address"
+                    placeholder="Digite o endereço completo"
+                    {...formFisica.register("address")}
+                  />
+                  {formFisica.formState.errors.address && (
+                    <p className="text-sm text-red-500">
+                      {formFisica.formState.errors.address.message}
+                    </p>
+                  )}
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="cnpj">CNPJ</Label>
-                    <Input
-                      id="cnpj"
-                      placeholder="00.000.000/0000-00"
-                      {...form.register("cnpj")}
-                    />
-                    {clientType === "juridica" && form.formState.errors.cnpj && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.cnpj.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="responsibleName">Nome do Responsável</Label>
-                    <Input
-                      id="responsibleName"
-                      placeholder="Digite o nome do responsável"
-                      {...form.register("responsibleName")}
-                    />
-                    {clientType === "juridica" && form.formState.errors.responsibleName && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.responsibleName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="email@exemplo.com"
-                      {...form.register("email")}
-                    />
-                    {form.formState.errors.email && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.email.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
-                    <Input
-                      id="phone"
-                      placeholder="(00) 00000-0000"
-                      {...form.register("phone")}
-                    />
-                    {form.formState.errors.phone && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.phone.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Endereço (Opcional)</Label>
-                    <Textarea
-                      id="address"
-                      placeholder="Digite o endereço completo"
-                      {...form.register("address")}
-                    />
-                    {form.formState.errors.address && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.address.message}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </TabsContent>
-
-              <CardFooter className="flex justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate("/clients")}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Cadastrando..." : "Cadastrar Cliente"}
-                </Button>
-              </CardFooter>
+                <CardFooter className="flex justify-between px-0 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate("/clients")}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Cadastrando..." : "Cadastrar Cliente"}
+                  </Button>
+                </CardFooter>
+              </CardContent>
             </form>
-          </FormProvider>
+          </TabsContent>
+
+          <TabsContent value="juridica">
+            <form onSubmit={formJuridica.handleSubmit(onSubmit)}>
+              <CardContent className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Nome da Empresa</Label>
+                  <Input
+                    id="companyName"
+                    placeholder="Digite o nome da empresa"
+                    {...formJuridica.register("companyName")}
+                  />
+                  {formJuridica.formState.errors.companyName && (
+                    <p className="text-sm text-red-500">
+                      {formJuridica.formState.errors.companyName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cnpj">CNPJ</Label>
+                  <Input
+                    id="cnpj"
+                    placeholder="00.000.000/0000-00"
+                    {...formJuridica.register("cnpj")}
+                  />
+                  {formJuridica.formState.errors.cnpj && (
+                    <p className="text-sm text-red-500">
+                      {formJuridica.formState.errors.cnpj.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="responsibleName">Nome do Responsável</Label>
+                  <Input
+                    id="responsibleName"
+                    placeholder="Digite o nome do responsável"
+                    {...formJuridica.register("responsibleName")}
+                  />
+                  {formJuridica.formState.errors.responsibleName && (
+                    <p className="text-sm text-red-500">
+                      {formJuridica.formState.errors.responsibleName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    {...formJuridica.register("email")}
+                  />
+                  {formJuridica.formState.errors.email && (
+                    <p className="text-sm text-red-500">
+                      {formJuridica.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input
+                    id="phone"
+                    placeholder="(00) 00000-0000"
+                    {...formJuridica.register("phone")}
+                  />
+                  {formJuridica.formState.errors.phone && (
+                    <p className="text-sm text-red-500">
+                      {formJuridica.formState.errors.phone.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Endereço (Opcional)</Label>
+                  <Textarea
+                    id="address"
+                    placeholder="Digite o endereço completo"
+                    {...formJuridica.register("address")}
+                  />
+                  {formJuridica.formState.errors.address && (
+                    <p className="text-sm text-red-500">
+                      {formJuridica.formState.errors.address.message}
+                    </p>
+                  )}
+                </div>
+
+                <CardFooter className="flex justify-between px-0 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate("/clients")}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Cadastrando..." : "Cadastrar Cliente"}
+                  </Button>
+                </CardFooter>
+              </CardContent>
+            </form>
+          </TabsContent>
         </Tabs>
       </Card>
     </div>

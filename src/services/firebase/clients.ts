@@ -50,7 +50,7 @@ export const createClient = async (data: Omit<Client, 'id' | 'createdAt' | 'upda
 
     if (data.type === 'fisica') {
       clientData = {
-        ...(data as Omit<PessoaFisicaClient, 'id' | 'createdAt' | 'updatedAt'>),
+        ...(data as PessoaFisicaClient),
         id: clientId,
         name: data.name || '', // Ensure name has a default value
         createdAt: new Date().toISOString(),
@@ -60,9 +60,9 @@ export const createClient = async (data: Omit<Client, 'id' | 'createdAt' | 'upda
       } as PessoaFisicaClient;
     } else {
       clientData = {
-        ...(data as Omit<PessoaJuridicaClient, 'id' | 'createdAt' | 'updatedAt'>),
+        ...(data as PessoaJuridicaClient),
         id: clientId,
-        name: '', // For juridica, name will be empty as we use companyName
+        name: data.companyName || '', // Use companyName as name for juridica
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         createdBy: userId || 'unknown', // Ensure createdBy has a default value
