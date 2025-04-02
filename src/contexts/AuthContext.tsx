@@ -31,6 +31,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   isAdmin: boolean;
+  hasPermission: (roles: UserRole[]) => boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,6 +41,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Função para verificar se o usuário tem uma das funções permitidas
+  const hasPermission = (allowedRoles: UserRole[]) => {
+    if (!user) return false;
+    return allowedRoles.includes(user.role);
+  };
 
   useEffect(() => {
     // Configurar listener para mudanças de autenticação
@@ -171,7 +178,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logout, 
       isAuthenticated, 
       isLoading,
-      isAdmin 
+      isAdmin,
+      hasPermission
     }}>
       {children}
     </AuthContext.Provider>

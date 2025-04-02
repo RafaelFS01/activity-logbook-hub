@@ -40,9 +40,10 @@ type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
 const EditCollaboratorPage = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CollaboratorFormValues>({
     resolver: zodResolver(collaboratorSchema),
@@ -72,6 +73,7 @@ const EditCollaboratorPage = () => {
           setValue("admissionDate", data.admissionDate);
           setValue("role", data.role);
           setValue("active", data.active);
+          setCurrentRole(data.role);
         } else {
           toast({
             variant: "destructive",
@@ -105,13 +107,24 @@ const EditCollaboratorPage = () => {
       return;
     }
 
+    // Verificar permissões para editar um administrador
+    if (currentRole === 'admin' && !isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permissão negada",
+        description: "Apenas administradores podem editar outros administradores."
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       // Atualizar informações no Realtime Database
       await update(ref(db, `users/${id}`), {
         ...data,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        updatedBy: user.uid // Adicionando quem fez a atualização
       });
 
       toast({
