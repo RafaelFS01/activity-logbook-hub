@@ -9,7 +9,8 @@ import {
   SidebarHeader, 
   SidebarMenu, 
   SidebarMenuButton, 
-  SidebarMenuItem 
+  SidebarMenuItem,
+  useSidebar
 } from "@/components/ui/sidebar";
 import { 
   Activity, 
@@ -24,18 +25,35 @@ import {
   UserCircle, 
   Users 
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 
 const MainSidebar = () => {
   const { logout, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const location = useLocation();
+  
+  // Fechar a barra lateral ao navegar para uma nova página em dispositivos móveis
+  useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [location.pathname, isMobile, setOpenMobile]);
   
   // Função para determinar se um link está ativo
   const activeClass = ({ isActive }: { isActive: boolean }) => {
     return isActive ? "sidebar-active" : "";
+  };
+
+  // Função para lidar com o clique nos itens do menu no mobile
+  const handleMenuItemClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
   };
 
   // Verificar se o usuário tem permissão para ver a seção de relatórios
@@ -73,7 +91,7 @@ const MainSidebar = () => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/" className={activeClass}>
+                  <NavLink to="/" className={activeClass} onClick={handleMenuItemClick}>
                     <Home />
                     <span>Dashboard</span>
                   </NavLink>
@@ -82,7 +100,7 @@ const MainSidebar = () => {
               
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/activities" className={activeClass}>
+                  <NavLink to="/activities" className={activeClass} onClick={handleMenuItemClick}>
                     <Calendar />
                     <span>Atividades</span>
                   </NavLink>
@@ -91,7 +109,7 @@ const MainSidebar = () => {
               
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/clients" className={activeClass}>
+                  <NavLink to="/clients" className={activeClass} onClick={handleMenuItemClick}>
                     <Users />
                     <span>Clientes</span>
                   </NavLink>
@@ -100,7 +118,7 @@ const MainSidebar = () => {
               
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/collaborators" className={activeClass}>
+                  <NavLink to="/collaborators" className={activeClass} onClick={handleMenuItemClick}>
                     <UserCircle />
                     <span>Colaboradores</span>
                   </NavLink>
@@ -117,7 +135,7 @@ const MainSidebar = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/reports" className={activeClass}>
+                    <NavLink to="/reports" className={activeClass} onClick={handleMenuItemClick}>
                       <BarChart3 />
                       <span>Relatórios</span>
                     </NavLink>
@@ -126,7 +144,7 @@ const MainSidebar = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/settings" className={activeClass}>
+                    <NavLink to="/settings" className={activeClass} onClick={handleMenuItemClick}>
                       <Settings />
                       <span>Configurações</span>
                     </NavLink>
@@ -144,7 +162,10 @@ const MainSidebar = () => {
             <SidebarMenuButton asChild>
               <button 
                 className="w-full flex items-center gap-2"
-                onClick={logout}
+                onClick={() => {
+                  logout();
+                  if (isMobile) setOpenMobile(false);
+                }}
               >
                 <LogOut />
                 <span>Sair</span>
