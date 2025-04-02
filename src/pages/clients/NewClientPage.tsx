@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider, useWatch, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient } from "@/services/firebase/clients";
@@ -26,8 +26,16 @@ import {
 } from "@/components/ui/tabs";
 import { ArrowLeft, User, Building2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
-// Definição dos schemas de validação
+// Schema de validação para pessoa física
 const pessoaFisicaSchema = z.object({
   type: z.literal("fisica"),
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -41,6 +49,7 @@ const pessoaFisicaSchema = z.object({
   address: z.string().optional(),
 });
 
+// Schema de validação para pessoa jurídica
 const pessoaJuridicaSchema = z.object({
   type: z.literal("juridica"),
   companyName: z.string().min(3, "Nome da empresa deve ter pelo menos 3 caracteres"),
@@ -54,7 +63,7 @@ const pessoaJuridicaSchema = z.object({
   address: z.string().optional(),
 });
 
-// Criação do schema de cliente combinado
+// Schema combinado com discriminador
 const clientSchema = z.discriminatedUnion("type", [
   pessoaFisicaSchema,
   pessoaJuridicaSchema,
@@ -68,13 +77,8 @@ const NewClientPage = () => {
   const [clientType, setClientType] = useState<"fisica" | "juridica">("fisica");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-  } = useForm<ClientFormValues>({
+  // Definição do formulário com React Hook Form
+  const form = useForm<ClientFormValues>({
     resolver: zodResolver(
       clientType === "fisica" ? pessoaFisicaSchema : pessoaJuridicaSchema
     ),
@@ -87,7 +91,7 @@ const NewClientPage = () => {
 
   const onTabChange = (value: string) => {
     setClientType(value as "fisica" | "juridica");
-    setValue("type", value as "fisica" | "juridica");
+    form.setValue("type", value as "fisica" | "juridica");
   };
 
   const onSubmit = async (data: ClientFormValues) => {
@@ -107,16 +111,11 @@ const NewClientPage = () => {
       // Preparando o objeto cliente com os campos necessários
       const clientData = {
         ...data,
-        name: data.type === "fisica" ? data.name : "",
-        companyName: data.type === "juridica" ? data.companyName : "",
         active: true,
-        createdBy: user.uid,
-        // Garantindo que o email é definido (não é opcional)
-        email: data.email,
       };
 
       // Criar cliente no Firebase
-      await createClient(clientData);
+      await createClient(clientData, user.uid);
 
       toast({
         title: "Cliente cadastrado com sucesso",
@@ -179,196 +178,202 @@ const NewClientPage = () => {
             </TabsTrigger>
           </TabsList>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <TabsContent value="fisica">
-              <CardContent className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo</Label>
-                  <Input
-                    id="name"
-                    placeholder="Digite o nome completo"
-                    {...register("name")}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-500">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <TabsContent value="fisica">
+                <CardContent className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
+                    <Label htmlFor="name">Nome Completo</Label>
                     <Input
-                      id="cpf"
-                      placeholder="000.000.000-00"
-                      {...register("cpf")}
+                      id="name"
+                      placeholder="Digite o nome completo"
+                      {...form.register("name")}
                     />
-                    {errors.cpf && (
+                    {form.formState.errors.name && (
                       <p className="text-sm text-red-500">
-                        {errors.cpf.message}
+                        {form.formState.errors.name.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cpf">CPF</Label>
+                      <Input
+                        id="cpf"
+                        placeholder="000.000.000-00"
+                        {...form.register("cpf")}
+                      />
+                      {form.formState.errors.cpf && (
+                        <p className="text-sm text-red-500">
+                          {form.formState.errors.cpf.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="rg">RG (Opcional)</Label>
+                      <Input
+                        id="rg"
+                        placeholder="00.000.000-0"
+                        {...form.register("rg")}
+                      />
+                      {form.formState.errors.rg && (
+                        <p className="text-sm text-red-500">
+                          {form.formState.errors.rg.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="email@exemplo.com"
+                      {...form.register("email")}
+                    />
+                    {form.formState.errors.email && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.email.message}
                       </p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="rg">RG (Opcional)</Label>
+                    <Label htmlFor="phone">Telefone</Label>
                     <Input
-                      id="rg"
-                      placeholder="00.000.000-0"
-                      {...register("rg")}
+                      id="phone"
+                      placeholder="(00) 00000-0000"
+                      {...form.register("phone")}
                     />
-                    {errors.rg && (
-                      <p className="text-sm text-red-500">{errors.rg.message}</p>
+                    {form.formState.errors.phone && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.phone.message}
+                      </p>
                     )}
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="email@exemplo.com"
-                    {...register("email")}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-red-500">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Endereço (Opcional)</Label>
+                    <Textarea
+                      id="address"
+                      placeholder="Digite o endereço completo"
+                      {...form.register("address")}
+                    />
+                    {form.formState.errors.address && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.address.message}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </TabsContent>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    placeholder="(00) 00000-0000"
-                    {...register("phone")}
-                  />
-                  {errors.phone && (
-                    <p className="text-sm text-red-500">
-                      {errors.phone.message}
-                    </p>
-                  )}
-                </div>
+              <TabsContent value="juridica">
+                <CardContent className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Nome da Empresa</Label>
+                    <Input
+                      id="companyName"
+                      placeholder="Digite o nome da empresa"
+                      {...form.register("companyName")}
+                    />
+                    {clientType === "juridica" && form.formState.errors.companyName && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.companyName.message}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address">Endereço (Opcional)</Label>
-                  <Textarea
-                    id="address"
-                    placeholder="Digite o endereço completo"
-                    {...register("address")}
-                  />
-                  {errors.address && (
-                    <p className="text-sm text-red-500">
-                      {errors.address.message}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </TabsContent>
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ</Label>
+                    <Input
+                      id="cnpj"
+                      placeholder="00.000.000/0000-00"
+                      {...form.register("cnpj")}
+                    />
+                    {clientType === "juridica" && form.formState.errors.cnpj && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.cnpj.message}
+                      </p>
+                    )}
+                  </div>
 
-            <TabsContent value="juridica">
-              <CardContent className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">Nome da Empresa</Label>
-                  <Input
-                    id="companyName"
-                    placeholder="Digite o nome da empresa"
-                    {...register("companyName")}
-                  />
-                  {errors.companyName && (
-                    <p className="text-sm text-red-500">
-                      {errors.companyName.message}
-                    </p>
-                  )}
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="responsibleName">Nome do Responsável</Label>
+                    <Input
+                      id="responsibleName"
+                      placeholder="Digite o nome do responsável"
+                      {...form.register("responsibleName")}
+                    />
+                    {clientType === "juridica" && form.formState.errors.responsibleName && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.responsibleName.message}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="cnpj">CNPJ</Label>
-                  <Input
-                    id="cnpj"
-                    placeholder="00.000.000/0000-00"
-                    {...register("cnpj")}
-                  />
-                  {errors.cnpj && (
-                    <p className="text-sm text-red-500">
-                      {errors.cnpj.message}
-                    </p>
-                  )}
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="email@exemplo.com"
+                      {...form.register("email")}
+                    />
+                    {form.formState.errors.email && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="responsibleName">Nome do Responsável</Label>
-                  <Input
-                    id="responsibleName"
-                    placeholder="Digite o nome do responsável"
-                    {...register("responsibleName")}
-                  />
-                  {errors.responsibleName && (
-                    <p className="text-sm text-red-500">
-                      {errors.responsibleName.message}
-                    </p>
-                  )}
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefone</Label>
+                    <Input
+                      id="phone"
+                      placeholder="(00) 00000-0000"
+                      {...form.register("phone")}
+                    />
+                    {form.formState.errors.phone && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.phone.message}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="email@exemplo.com"
-                    {...register("email")}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-red-500">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Endereço (Opcional)</Label>
+                    <Textarea
+                      id="address"
+                      placeholder="Digite o endereço completo"
+                      {...form.register("address")}
+                    />
+                    {form.formState.errors.address && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.address.message}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </TabsContent>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    placeholder="(00) 00000-0000"
-                    {...register("phone")}
-                  />
-                  {errors.phone && (
-                    <p className="text-sm text-red-500">
-                      {errors.phone.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">Endereço (Opcional)</Label>
-                  <Textarea
-                    id="address"
-                    placeholder="Digite o endereço completo"
-                    {...register("address")}
-                  />
-                  {errors.address && (
-                    <p className="text-sm text-red-500">
-                      {errors.address.message}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </TabsContent>
-
-            <CardFooter className="flex justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/clients")}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Cadastrando..." : "Cadastrar Cliente"}
-              </Button>
-            </CardFooter>
-          </form>
+              <CardFooter className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/clients")}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Cadastrando..." : "Cadastrar Cliente"}
+                </Button>
+              </CardFooter>
+            </form>
+          </FormProvider>
         </Tabs>
       </Card>
     </div>

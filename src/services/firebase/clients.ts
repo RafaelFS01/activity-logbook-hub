@@ -41,23 +41,32 @@ export const createClient = async (data: Omit<Client, 'id' | 'createdAt' | 'upda
     const newClientRef = push(clientRef);
     const clientId = newClientRef.key;
 
+    if (!clientId) {
+      throw new Error('Falha ao gerar ID do cliente');
+    }
+
+    // Ensure all required fields are present
     let clientData: Client;
 
     if (data.type === 'fisica') {
       clientData = {
         ...(data as Omit<PessoaFisicaClient, 'id' | 'createdAt' | 'updatedAt'>),
-        id: clientId || uuidv4(),
+        id: clientId,
+        name: data.name || '', // Ensure name has a default value
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        createdBy: userId
+        createdBy: userId || 'unknown', // Ensure createdBy has a default value
+        active: true
       } as PessoaFisicaClient;
     } else {
       clientData = {
         ...(data as Omit<PessoaJuridicaClient, 'id' | 'createdAt' | 'updatedAt'>),
-        id: clientId || uuidv4(),
+        id: clientId,
+        name: '', // For juridica, name will be empty as we use companyName
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        createdBy: userId
+        createdBy: userId || 'unknown', // Ensure createdBy has a default value
+        active: true
       } as PessoaJuridicaClient;
     }
 
