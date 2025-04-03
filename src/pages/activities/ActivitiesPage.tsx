@@ -60,8 +60,17 @@ const ActivitiesPage = () => {
       try {
         setIsLoading(true);
         const fetchedActivities = await getActivities();
-        setActivities(fetchedActivities);
-        setFilteredActivities(fetchedActivities);
+        
+        // Filter activities for collaborator users to only show their assigned activities
+        let activitiesToShow = fetchedActivities;
+        if (user?.role === 'collaborator' && user?.uid) {
+          activitiesToShow = fetchedActivities.filter(activity => 
+            activity.assignedTo.includes(user.uid)
+          );
+        }
+        
+        setActivities(activitiesToShow);
+        setFilteredActivities(activitiesToShow);
         
         const fetchedClients = await getClients();
         const clientsMap: Record<string, Client> = {};
@@ -95,7 +104,7 @@ const ActivitiesPage = () => {
     };
 
     fetchData();
-  }, [toast]);
+  }, [toast, user]);
 
   useEffect(() => {
     let filtered = activities;

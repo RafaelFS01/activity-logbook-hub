@@ -1,668 +1,214 @@
-import { useState, useEffect, ReactNode } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { getUserData, UserData } from "@/services/firebase/auth";
-import { getActivitiesByAssignee, Activity, ActivityStatus } from "@/services/firebase/activities";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  UserCheck, UserX, Calendar as CalendarIcon, Clock, FileEdit, ArrowLeft, 
-  List, CircleAlert, Briefcase, Mail, Phone, BadgeCheck, 
-  Search, Filter, RotateCcw, CheckCircle2, XCircle, FileSpreadsheet
-} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { get, ref } from "firebase/database";
+import { getUserData, UserData } from "@/services/firebase/auth";
+import { Button } from "@/components/ui/button";
+import { Edit, Mail, Phone, Calendar } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/components/ui/use-toast";
+import { update, ref } from "firebase/database";
 import { db } from "@/lib/firebase";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
-import { getClients, Client } from "@/services/firebase/clients";
-import { PessoaFisicaClient, PessoaJuridicaClient } from "@/services/firebase/clients";
-import { exportActivitiesToExcel } from "@/utils/exportUtils";
 
 const CollaboratorDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [collaborator, setCollaborator] = useState<UserData & { uid: string } | null>(null);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [filteredActivities, setFilteredActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilters, setStatusFilters] = useState<ActivityStatus[]>([]);
-  const [dateType, setDateType] = useState<"startDate" | "endDate">("startDate");
-  const [startPeriod, setStartPeriod] = useState<Date | undefined>(undefined);
-  const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
-  
-  const [clients, setClients] = useState<Record<string, Client>>({});
-  const [allCollaborators, setAllCollaborators] = useState<Record<string, UserData & { uid: string }>>({});
-  const { toast } = useToast();
+  const { user: loggedInUser } = useAuth();
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchUserData = async () => {
+      if (!id) return;
+      setIsLoading(true);
       try {
-        setLoading(true);
-        if (!id) return;
-
-        const userRef = ref(db, `users/${id}`);
-        const snapshot = await get(userRef);
-        
-        if (snapshot.exists()) {
-          const userData = snapshot.val() as UserData;
-          setCollaborator({ ...userData, uid: id });
+        const user = await getUserData(id);
+        if (user) {
+          setUserData(user);
         } else {
-          setCollaborator(null);
-        }
-
-        const userActivities = await getActivitiesByAssignee(id);
-        setActivities(userActivities);
-        setFilteredActivities(userActivities);
-        
-        // Fetch clients for client names
-        const fetchedClients = await getClients();
-        const clientsMap: Record<string, Client> = {};
-        fetchedClients.forEach(client => {
-          clientsMap[client.id] = client;
-        });
-        setClients(clientsMap);
-        
-        // Fetch all collaborators for assignee names
-        const usersRef = ref(db, 'users');
-        const usersSnapshot = await get(usersRef);
-        if (usersSnapshot.exists()) {
-          const usersData = usersSnapshot.val();
-          const collaboratorsMap: Record<string, UserData & { uid: string }> = {};
-          
-          Object.entries(usersData).forEach(([uid, userData]) => {
-            collaboratorsMap[uid] = { ...(userData as UserData), uid };
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Colaborador não encontrado."
           });
-          
-          setAllCollaborators(collaboratorsMap);
+          navigate("/collaborators");
         }
       } catch (error) {
         console.error("Erro ao buscar dados do colaborador:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível carregar os dados do colaborador."
+        });
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchData();
-  }, [id]);
+    fetchUserData();
+  }, [id, navigate, toast]);
 
-  useEffect(() => {
-    let filtered = [...activities];
-    
-    if (searchTerm) {
-      filtered = filtered.filter(activity => 
-        activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        activity.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    if (statusFilters.length > 0) {
-      filtered = filtered.filter(activity => statusFilters.includes(activity.status));
-    }
-    
-    if (startPeriod || endPeriod) {
-      filtered = filtered.filter(activity => {
-        const activityDate = new Date(dateType === "startDate" ? activity.startDate : (activity.endDate || activity.startDate));
-        
-        if (startPeriod && endPeriod) {
-          return activityDate >= startPeriod && activityDate <= endPeriod;
-        } else if (startPeriod) {
-          return activityDate >= startPeriod;
-        } else if (endPeriod) {
-          return activityDate <= endPeriod;
-        }
-        
-        return true;
-      });
-    }
-    
-    setFilteredActivities(filtered);
-  }, [activities, searchTerm, statusFilters, dateType, startPeriod, endPeriod]);
+  const formattedUserData = userData ? {
+    Nome: userData.name,
+    Email: userData.email,
+    CPF: userData.cpf,
+    Telefone: userData.phone,
+    "Data de Nascimento": userData.birthDate,
+    "Data de Admissão": userData.admissionDate,
+    Função: userData.role,
+    Ativo: userData.active ? "Sim" : "Não",
+  } : {};
 
-  if (loading) {
-    return (
-      <div className="container mx-auto py-6 px-4 md:px-6">
-        <div className="flex items-center mb-6">
-          <Skeleton className="h-8 w-8 mr-2" />
-          <Skeleton className="h-8 w-64" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="col-span-2">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40 mb-2" />
-                <Skeleton className="h-4 w-60" />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="flex justify-between">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-48" />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-          <div>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-24 w-full" />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleDeleteCollaborator = async () => {
+    if (!id) return;
 
-  if (!collaborator) {
-    return (
-      <div className="container mx-auto py-6 px-4 md:px-6">
-        <div className="text-center p-10 border rounded-lg bg-muted/10">
-          <CircleAlert className="mx-auto h-10 w-10 text-yellow-500 mb-4" />
-          <h3 className="text-lg font-medium mb-2">Colaborador não encontrado</h3>
-          <p className="text-muted-foreground mb-4">
-            O colaborador que você está procurando não foi encontrado ou foi removido.
-          </p>
-          <Button onClick={() => navigate("/collaborators")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para Lista de Colaboradores
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "admin":
-        return <Badge variant="destructive">Administrador</Badge>;
-      case "manager":
-        return <Badge variant="default">Gerente</Badge>;
-      case "collaborator":
-        return <Badge variant="outline">Colaborador</Badge>;
-      default:
-        return <Badge variant="secondary">{role}</Badge>;
-    }
-  };
-
-  const getStatusBadge = () => {
-    return collaborator.active ? (
-      <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-200">
-        <UserCheck className="h-3 w-3 mr-1" /> Ativo
-      </Badge>
-    ) : (
-      <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-200">
-        <UserX className="h-3 w-3 mr-1" /> Inativo
-      </Badge>
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-  };
-
-  const toggleStatusFilter = (status: ActivityStatus) => {
-    setStatusFilters(prev => {
-      if (prev.includes(status)) {
-        return prev.filter(s => s !== status);
-      } else {
-        return [...prev, status];
-      }
-    });
-  };
-
-  const resetFilters = () => {
-    setSearchTerm("");
-    setStatusFilters([]);
-    setStartPeriod(undefined);
-    setEndPeriod(undefined);
-  };
-
-  const getClientName = (clientId: string) => {
-    const client = clients[clientId];
-    if (!client) return "Cliente não encontrado";
-    
-    return client.type === 'juridica' 
-      ? (client as PessoaJuridicaClient).companyName 
-      : client.name;
-  };
-  
-  const handleExport = () => {
-    if (filteredActivities.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Sem dados para exportar",
-        description: "Não há atividades para exportar com os filtros atuais."
-      });
-      return;
-    }
-
+    setIsDeleting(true);
     try {
-      const activitiesWithClientNames = filteredActivities.map(activity => ({
-        ...activity,
-        clientName: getClientName(activity.clientId)
-      }));
-      
-      // Create a map of assignee IDs to names
-      const assigneeMap: Record<string, string> = {};
-      Object.entries(allCollaborators).forEach(([id, user]) => {
-        assigneeMap[id] = user.name;
-      });
-      
-      exportActivitiesToExcel(
-        activitiesWithClientNames, 
-        `atividades_${collaborator?.name.replace(/\s+/g, '_')}.xlsx`,
-        assigneeMap
-      );
-      
+      // Update the user's active status to false in the database
+      await update(ref(db, `users/${id}`), { active: false });
+
+      // Update the local state
+      setUserData(prev => prev ? { ...prev, active: false } : null);
+
       toast({
-        title: "Exportação concluída",
-        description: `${filteredActivities.length} atividades foram exportadas com sucesso.`
+        title: "Colaborador desativado",
+        description: "O colaborador foi desativado com sucesso."
       });
     } catch (error) {
-      console.error('Erro ao exportar atividades:', error);
+      console.error("Erro ao desativar colaborador:", error);
       toast({
         variant: "destructive",
-        title: "Erro na exportação",
-        description: "Não foi possível exportar as atividades."
+        title: "Erro",
+        description: "Não foi possível desativar o colaborador."
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
-      <div className="flex items-center mb-6">
-        <Button variant="outline" size="sm" onClick={() => navigate("/collaborators")} className="mr-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
+      <div className="mb-6 flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Detalhes do Colaborador</h1>
+        <Button onClick={() => navigate("/collaborators")} variant="outline">
+          Voltar para a lista
         </Button>
-        <h1 className="text-3xl font-bold flex items-center">
-          {collaborator.name}
-        </h1>
-        <div className="ml-auto flex gap-2">
-          <Button variant="outline" onClick={() => navigate(`/collaborators/edit/${id}`)}>
-            <FileEdit className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-2">
-          <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="info">Informações</TabsTrigger>
-              <TabsTrigger value="activities">Atividades</TabsTrigger>
-            </TabsList>
-            <TabsContent value="info" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Dados do Colaborador</CardTitle>
-                  <CardDescription>
-                    Informações detalhadas do perfil do colaborador
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center pb-2 border-b">
-                    <span className="font-medium">Status:</span>
-                    <span>{getStatusBadge()}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b">
-                    <span className="font-medium">Cargo:</span>
-                    <span>{getRoleBadge(collaborator.role)}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b">
-                    <span className="font-medium">E-mail:</span>
-                    <span>{collaborator.email}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b">
-                    <span className="font-medium">Telefone:</span>
-                    <span>{collaborator.phone}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b">
-                    <span className="font-medium">CPF:</span>
-                    <span>{collaborator?.cpf || ''}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b">
-                    <span className="font-medium">Data de Admissão:</span>
-                    <span>{new Date(collaborator.admissionDate).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                  {'address' in collaborator && collaborator.address && (
-                    <div className="flex justify-between items-center pb-2 border-b">
-                      <span className="font-medium">Endereço:</span>
-                      <span>{collaborator.address}</span>
-                    </div>
+      {isLoading ? (
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-2">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-10 w-full" />
+          </CardFooter>
+        </Card>
+      ) : !userData ? (
+        <Card className="text-center p-10 border rounded-lg bg-muted/10">
+          <CardHeader>
+            <CardTitle>Colaborador não encontrado</CardTitle>
+            <CardDescription>Não foi possível carregar os detalhes deste colaborador.</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="text-2xl font-semibold">{userData.name}</CardTitle>
+                <CardDescription>{userData.email}</CardDescription>
+              </div>
+              <Badge variant="secondary">{userData.role}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 py-3 border-b">
+                <div className="font-medium text-muted-foreground">Status</div>
+                <div className="col-span-2">
+                  {userData.active ? (
+                    <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-200">
+                      Ativo
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-200">
+                      Inativo
+                    </Badge>
                   )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="activities" className="mt-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Atividades Atribuídas</CardTitle>
-                    <CardDescription>
-                      Lista de atividades atribuídas a este colaborador
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={handleExport}>
-                      <FileSpreadsheet className="mr-2 h-4 w-4" />
-                      Exportar
-                    </Button>
-                    <Button size="sm" onClick={() => navigate("/activities/new", { state: { assigneeId: id } })}>
-                      Nova Atividade
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex flex-col space-y-4">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          type="search"
-                          placeholder="Buscar atividades..."
-                          className="pl-8"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <div className="flex items-center gap-2">
-                          <Checkbox 
-                            id="status-pending" 
-                            checked={statusFilters.includes("pending")} 
-                            onCheckedChange={() => toggleStatusFilter("pending")}
-                          />
-                          <Label htmlFor="status-pending" className="flex items-center cursor-pointer text-sm">
-                            <Clock className="h-3 w-3 mr-1 text-yellow-600" /> Pendentes
-                          </Label>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Checkbox 
-                            id="status-in-progress" 
-                            checked={statusFilters.includes("in-progress")} 
-                            onCheckedChange={() => toggleStatusFilter("in-progress")}
-                          />
-                          <Label htmlFor="status-in-progress" className="flex items-center cursor-pointer text-sm">
-                            <RotateCcw className="h-3 w-3 mr-1 text-blue-600" /> Em Progresso
-                          </Label>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Checkbox 
-                            id="status-completed" 
-                            checked={statusFilters.includes("completed")} 
-                            onCheckedChange={() => toggleStatusFilter("completed")}
-                          />
-                          <Label htmlFor="status-completed" className="flex items-center cursor-pointer text-sm">
-                            <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" /> Concluídas
-                          </Label>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Checkbox 
-                            id="status-cancelled" 
-                            checked={statusFilters.includes("cancelled")} 
-                            onCheckedChange={() => toggleStatusFilter("cancelled")}
-                          />
-                          <Label htmlFor="status-cancelled" className="flex items-center cursor-pointer text-sm">
-                            <XCircle className="h-3 w-3 mr-1 text-red-600" /> Canceladas
-                          </Label>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label className="mb-1 block">Tipo de Data</Label>
-                          <RadioGroup 
-                            value={dateType} 
-                            onValueChange={(value) => setDateType(value as "startDate" | "endDate")}
-                            className="flex space-x-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="startDate" id="start-date" />
-                              <Label htmlFor="start-date">Data de Início</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="endDate" id="end-date" />
-                              <Label htmlFor="end-date">Data de Término</Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label className="mb-1 block">Período - Início</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full justify-start text-left font-normal",
-                                  !startPeriod && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {startPeriod ? format(startPeriod, "dd/MM/yyyy") : <span>Selecionar data</span>}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={startPeriod}
-                                onSelect={setStartPeriod}
-                                initialFocus
-                                className="pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        
-                        <div>
-                          <Label className="mb-1 block">Período - Fim</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full justify-start text-left font-normal",
-                                  !endPeriod && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {endPeriod ? format(endPeriod, "dd/MM/yyyy") : <span>Selecionar data</span>}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={endPeriod}
-                                onSelect={setEndPeriod}
-                                initialFocus
-                                className="pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end">
-                        <Button variant="outline" size="sm" onClick={resetFilters}>
-                          Limpar Filtros
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {filteredActivities.length > 0 ? (
-                      <div className="space-y-4">
-                        {filteredActivities.map((activity) => (
-                          <Card key={activity.id} className="overflow-hidden">
-                            <CardHeader className="p-4">
-                              <div className="flex justify-between items-start">
-                                <CardTitle className="text-base">{activity.title}</CardTitle>
-                                <Badge
-                                  className={
-                                    activity.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                    activity.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                                    activity.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                    'bg-yellow-100 text-yellow-800'
-                                  }
-                                >
-                                  {activity.status === 'completed' ? 'Concluída' :
-                                   activity.status === 'in-progress' ? 'Em andamento' :
-                                   activity.status === 'cancelled' ? 'Cancelada' :
-                                   'Pendente'}
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                              <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                                {activity.description}
-                              </p>
-                              <div className="flex items-center text-xs text-muted-foreground mb-1">
-                                <CalendarIcon className="h-3 w-3 mr-1" />
-                                <span>Início: {new Date(activity.startDate).toLocaleDateString('pt-BR')}</span>
-                                {activity.endDate && (
-                                  <>
-                                    <span className="mx-1">•</span>
-                                    <span>Fim: {new Date(activity.endDate).toLocaleDateString('pt-BR')}</span>
-                                  </>
-                                )}
-                              </div>
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3 mr-1" />
-                                <span>
-                                  {formatDistanceToNow(new Date(activity.updatedAt), {
-                                    addSuffix: true,
-                                    locale: ptBR
-                                  })}
-                                </span>
-                              </div>
-                            </CardContent>
-                            <CardFooter className="p-2 bg-muted/50">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="ml-auto"
-                                onClick={() => navigate(`/activities/${activity.id}`)}
-                              >
-                                Ver detalhes
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center p-6">
-                        <List className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
-                        <h3 className="text-lg font-medium mb-2">Nenhuma atividade encontrada</h3>
-                        <p className="text-muted-foreground mb-4">
-                          {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod ? 
-                            "Não foram encontradas atividades com os filtros aplicados." : 
-                            "Este colaborador ainda não possui atividades atribuídas."}
-                        </p>
-                        {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod ? (
-                          <Button onClick={resetFilters}>Limpar Filtros</Button>
-                        ) : (
-                          <Button onClick={() => navigate("/activities/new", { state: { assigneeId: id } })}>
-                            Nova Atividade
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Resumo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-1">Perfil</h4>
-                  <div className="flex items-center gap-2">
-                    {getRoleBadge(collaborator.role)}
-                    {getStatusBadge()}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-1">Contato</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {collaborator.email}
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {collaborator.phone}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-1">Atividades</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-md bg-muted p-2">
-                      <p className="text-sm font-medium">Total</p>
-                      <p className="text-2xl font-bold">{activities.length}</p>
-                    </div>
-                    <div className="rounded-md bg-muted p-2">
-                      <p className="text-sm font-medium">Concluídas</p>
-                      <p className="text-2xl font-bold">
-                        {activities.filter(a => a.status === 'completed').length}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-1">Tempo de Empresa</h4>
-                  <div className="flex items-center">
-                    <Briefcase className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="text-sm">
-                      Desde {new Date(collaborator.admissionDate).toLocaleDateString('pt-BR')}
-                      </span>
-                  </div>
                 </div>
               </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => navigate(`/collaborators/edit/${id}`)}
-              >
-                <FileEdit className="h-4 w-4 mr-2" />
-                Editar Colaborador
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
+
+              {Object.entries(formattedUserData).map(([field, value]) => (
+                <div key={field} className="grid grid-cols-3 gap-4 py-3 border-b">
+                  <div className="font-medium text-muted-foreground">{field}</div>
+                  <div className="col-span-2">
+                    {typeof value === 'object' ? JSON.stringify(value) : value?.toString() || ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (id) {
+                  navigate(`/collaborators/edit/${id}`);
+                }
+              }}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+            {loggedInUser?.role === 'admin' && userData.active && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    Desativar Colaborador
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Desativar colaborador</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja desativar este colaborador? Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteCollaborator}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? (
+                        <>
+                          Desativando...
+                        </>
+                      ) : (
+                        "Desativar"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </CardFooter>
+        </Card>
+      )}
     </div>
   );
 };

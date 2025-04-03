@@ -1,29 +1,42 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { 
+  CalendarIcon, 
+  Check, 
+  ChevronsUpDown, 
+  Loader2,
+  AlertTriangle
+} from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { createActivity, ActivityPriority, ActivityStatus } from "@/services/firebase/activities";
-import { getClients, Client } from "@/services/firebase/clients";
-import { getUserData, UserData } from "@/services/firebase/auth";
-import { toast } from "@/components/ui/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { get, ref } from "firebase/database";
-import { db } from "@/lib/firebase";
+import { format } from "date-fns";
+import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 import {
   Select,
   SelectContent,
@@ -31,108 +44,109 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, CalendarClock, UserPlus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
+import { 
+  createActivity, 
+  ActivityStatus, 
+  ActivityPriority 
+} from "@/services/firebase/activities";
+import { getClients } from "@/services/firebase/clients";
+import { useAuth } from "@/contexts/AuthContext";
+import { getAllActiveUsers } from "@/services/firebase/auth";
+import { db } from "@/lib/firebase";
+import { ref, get } from "firebase/database";
 
-const activitySchema = z.object({
-  title: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
-  description: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
-  clientId: z.string().min(1, "Selecione um cliente"),
-  assignedToIds: z.array(z.string()).min(1, "Selecione pelo menos um colaborador"),
-  priority: z.enum(["low", "medium", "high"] as const),
-  status: z.enum(["pending", "in-progress", "completed", "cancelled"] as const),
-  startDate: z.string().min(1, "Defina uma data de início"),
+// Definição do esquema de validação
+const formSchema = z.object({
+  title: z.string().min(3, {
+    message: "O título deve ter pelo menos 3 caracteres."
+  }),
+  description: z.string().min(10, {
+    message: "A descrição deve ter pelo menos 10 caracteres."
+  }),
+  clientId: z.string({
+    required_error: "Por favor, selecione um cliente."
+  }),
+  assignedToIds: z.array(z.string()).min(1, {
+    message: "Selecione pelo menos um responsável."
+  }),
+  priority: z.string({
+    required_error: "Por favor, selecione uma prioridade."
+  }),
+  status: z.string({
+    required_error: "Por favor, selecione um status."
+  }),
+  startDate: z.string({
+    required_error: "Por favor, selecione uma data de início."
+  }),
   endDate: z.string().optional(),
 });
 
-type ActivityFormValues = z.infer<typeof activitySchema>;
-
-interface Collaborator extends UserData {
-  uid: string;
-}
+// O resto da implementação segue...
 
 const NewActivityPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const [selectedCollaborators, setSelectedCollaborators] = useState<string[]>([]);
+  const [clients, setClients] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-  } = useForm<ActivityFormValues>({
-    resolver: zodResolver(activitySchema),
+  // Inicializar o formulário
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
+      title: "",
+      description: "",
+      assignedToIds: [],
       priority: "medium",
       status: "pending",
-      startDate: new Date().toISOString().split("T")[0],
-      assignedToIds: [],
+      startDate: format(new Date(), "yyyy-MM-dd"),
     },
   });
 
+  // Carregar dados necessários
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const clientsData = await getClients();
-        setClients(clientsData.filter(client => client.active));
-
-        const usersRef = ref(db, "users");
-        const snapshot = await get(usersRef);
-        if (snapshot.exists()) {
-          const usersData = snapshot.val();
-          const collaboratorsArray = Object.entries(usersData)
-            .map(([uid, data]) => ({
-              uid,
-              ...(data as UserData),
-            }))
-            .filter((user) => user.active);
-          setCollaborators(collaboratorsArray);
+        setIsLoadingData(true);
+        
+        // Buscar clientes
+        const fetchedClients = await getClients();
+        setClients(fetchedClients);
+        
+        // Buscar colaboradores ativos
+        const fetchedUsers = await getAllActiveUsers();
+        setUsers(fetchedUsers);
+        
+        // Adicionar o usuário atual como responsável por padrão
+        if (user?.uid) {
+          form.setValue("assignedToIds", [user.uid]);
         }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Erro ao carregar dados. Tente novamente mais tarde.",
+          description: "Não foi possível carregar os dados necessários."
         });
+      } finally {
+        setIsLoadingData(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [form, toast, user]);
 
-  useEffect(() => {
-    setValue("assignedToIds", selectedCollaborators);
-  }, [selectedCollaborators, setValue]);
-
-  const handleCollaboratorChange = (collaboratorId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCollaborators((prev) => [...prev, collaboratorId]);
-    } else {
-      setSelectedCollaborators((prev) =>
-        prev.filter((id) => id !== collaboratorId)
-      );
-    }
-  };
-
-  const onSubmit = async (data: ActivityFormValues) => {
-    if (!user) {
+  // Função para lidar com o envio do formulário
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    if (!user?.uid) {
       toast({
-        variant: "destructive",
-        title: "Erro",
-        description:
-          "Você precisa estar autenticado para realizar esta operação.",
+        variant: "destructive", 
+        title: "Erro", 
+        description: "Usuário não autenticado."
       });
       return;
     }
@@ -164,266 +178,330 @@ const NewActivityPage = () => {
       };
 
       await createActivity(activityData, user.uid);
-
+      
       toast({
-        title: "Atividade criada com sucesso",
-        description: `A atividade "${data.title}" foi adicionada`,
+        title: "Atividade criada",
+        description: "A atividade foi criada com sucesso.",
       });
-
+      
       navigate("/activities");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro ao criar atividade:", error);
       toast({
         variant: "destructive",
-        title: "Erro ao criar atividade",
-        description:
-          error.message || "Ocorreu um erro ao cadastrar a atividade.",
+        title: "Erro",
+        description: "Não foi possível criar a atividade."
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const displayClientName = (client: Client) => {
-    if (client.type === "fisica") {
-      return `${client.name} (CPF: ${client.cpf})`;
-    } else {
-      return `${client.name} (CNPJ: ${client.cnpj})`;
-    }
-  };
-
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="mb-6">
-        <Button
-          variant="outline"
-          onClick={() => navigate("/activities")}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar para Atividades
-        </Button>
-
         <h1 className="text-3xl font-bold">Nova Atividade</h1>
         <p className="text-muted-foreground">
-          Preencha o formulário para adicionar uma nova atividade ao sistema.
+          Crie uma nova atividade para sua equipe.
         </p>
       </div>
 
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarClock className="h-5 w-5" />
-            Cadastro de Atividade
-          </CardTitle>
-          <CardDescription>
-            Todos os campos com * são obrigatórios
-          </CardDescription>
-        </CardHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Título</FormLabel>
+                <FormControl>
+                  <Input placeholder="Título da atividade" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Dê um nome claro e conciso para esta atividade.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título da Atividade *</Label>
-              <Input
-                id="title"
-                placeholder="Título da atividade"
-                {...register("title")}
-              />
-              {errors.title && (
-                <p className="text-sm text-red-500">{errors.title.message}</p>
-              )}
-            </div>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descrição</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Detalhe o que precisa ser feito nesta atividade."
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Forneça o máximo de detalhes possível.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
-              <Textarea
-                id="description"
-                placeholder="Descreva a atividade detalhadamente"
-                className="min-h-[100px]"
-                {...register("description")}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500">
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="clientId">Cliente *</Label>
-                <Select
-                  onValueChange={(value) => setValue("clientId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {displayClientName(client)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.clientId && (
-                  <p className="text-sm text-red-500">
-                    {errors.clientId.message}
-                  </p>
-                )}
-                <div className="mt-1">
-                  <Link 
-                    to="/clients/new" 
-                    className="text-sm text-blue-500 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    <UserPlus className="w-3 h-3" />
-                    O cliente não está cadastrado?
-                  </Link>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="priority">Prioridade *</Label>
-                <Select
-                  defaultValue={watch("priority")}
-                  onValueChange={(value: ActivityPriority) =>
-                    setValue("priority", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a prioridade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Baixa</SelectItem>
-                    <SelectItem value="medium">Média</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.priority && (
-                  <p className="text-sm text-red-500">
-                    {errors.priority.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Status *</Label>
-                <Select
-                  defaultValue={watch("status")}
-                  onValueChange={(value: ActivityStatus) =>
-                    setValue("status", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Futura</SelectItem>
-                    <SelectItem value="in-progress">Em andamento</SelectItem>
-                    <SelectItem value="completed">Concluída</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.status && (
-                  <p className="text-sm text-red-500">{errors.status.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Data de Início *</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  {...register("startDate")}
-                />
-                {errors.startDate && (
-                  <p className="text-sm text-red-500">
-                    {errors.startDate.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endDate">Data de Término</Label>
-                <Input id="endDate" type="date" {...register("endDate")} />
-                {errors.endDate && (
-                  <p className="text-sm text-red-500">
-                    {errors.endDate.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Colaboradores Responsáveis *</Label>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="collaborators">
-                  <AccordionTrigger className="py-3">
-                    Selecione os colaboradores
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 max-h-60 overflow-y-auto p-2">
-                      {collaborators.map((collaborator) => (
-                        <div
-                          key={collaborator.uid}
-                          className="flex items-center space-x-2"
-                        >
-                          <Checkbox
-                            id={`collaborator-${collaborator.uid}`}
-                            onCheckedChange={(checked) =>
-                              handleCollaboratorChange(
-                                collaborator.uid,
-                                checked as boolean
-                              )
-                            }
-                          />
-                          <Label
-                            htmlFor={`collaborator-${collaborator.uid}`}
-                            className="cursor-pointer"
-                          >
-                            {collaborator.name} ({collaborator.role === "admin"
-                              ? "Administrador"
-                              : collaborator.role === "manager"
-                              ? "Gerente"
-                              : "Colaborador"}
-                            )
-                          </Label>
-                        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+              control={form.control}
+              name="clientId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um cliente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.type === 'juridica' ? (client as any).companyName : client.name}
+                        </SelectItem>
                       ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-              {errors.assignedToIds && (
-                <p className="text-sm text-red-500">
-                  {errors.assignedToIds.message}
-                </p>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione o cliente associado a esta atividade.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
               )}
-              <div className="mt-2">
-                <p className="text-sm">
-                  Selecionados:{" "}
-                  {selectedCollaborators.length === 0
-                    ? "Nenhum"
-                    : selectedCollaborators.length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
+            />
 
-          <CardFooter className="flex justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate("/activities")}
-            >
-              Cancelar
+            <FormField
+              control={form.control}
+              name="assignedToIds"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Responsável(eis)</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value?.length > 0
+                            ? users
+                                .filter(user => field.value.includes(user.uid))
+                                .map(user => user.name)
+                                .join(", ")
+                            : "Selecione os responsáveis"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar responsável..." />
+                        <CommandEmpty>Nenhum responsável encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {users.map((user) => (
+                            <CommandItem
+                              key={user.uid}
+                              value={user.name}
+                              onSelect={() => {
+                                if (field.value?.includes(user.uid)) {
+                                  field.onChange(field.value?.filter((f) => f !== user.uid));
+                                } else {
+                                  field.onChange([...(field.value || []), user.uid]);
+                                }
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  field.value?.includes(user.uid) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {user.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    Selecione os responsáveis por esta atividade.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Prioridade</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a prioridade" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Baixa</SelectItem>
+                      <SelectItem value="medium">Média</SelectItem>
+                      <SelectItem value="high">Alta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione o nível de prioridade desta atividade.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="in-progress">Em Progresso</SelectItem>
+                      <SelectItem value="completed">Concluída</SelectItem>
+                      <SelectItem value="cancelled">Cancelada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione o status inicial desta atividade.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data de Início</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-[240px] pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Selecione uma data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value) : undefined}
+                        onSelect={(date) => field.onChange(format(date, "yyyy-MM-dd"))}
+                        disabled={(date) =>
+                          date > new Date()
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    Selecione a data de início desta atividade.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="endDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data de Término (Opcional)</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-[240px] pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Selecione uma data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value) : undefined}
+                        onSelect={(date) => field.onChange(format(date, "yyyy-MM-dd"))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    Selecione a data de término desta atividade, se aplicável.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <Link to="/activities">
+              <Button variant="outline">Cancelar</Button>
+            </Link>
+            <Button type="submit" disabled={isLoadingData || isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  Criando...
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                </>
+              ) : (
+                "Criar Atividade"
+              )}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Cadastrando..." : "Cadastrar Atividade"}
-            </Button>
-          </CardFooter>
+          </div>
         </form>
-      </Card>
+      </Form>
     </div>
   );
 };

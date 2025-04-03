@@ -93,3 +93,30 @@ export const getUserData = async (uid: string): Promise<UserData | null> => {
     throw error;
   }
 };
+
+// Função para obter todos os usuários ativos
+export const getAllActiveUsers = async (): Promise<(UserData & { uid: string })[]> => {
+  try {
+    const usersRef = ref(db, 'users');
+    const snapshot = await get(usersRef);
+    
+    if (snapshot.exists()) {
+      const usersData = snapshot.val();
+      const users: (UserData & { uid: string })[] = [];
+      
+      Object.entries(usersData).forEach(([uid, userData]) => {
+        const user = userData as UserData;
+        if (user.active) {
+          users.push({ ...user, uid });
+        }
+      });
+      
+      return users;
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Erro ao obter lista de usuários:', error);
+    throw error;
+  }
+};
