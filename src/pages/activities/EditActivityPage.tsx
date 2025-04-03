@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { 
   CalendarIcon, 
-  Check, 
-  ChevronsUpDown, 
-  Loader2,
-  AlertTriangle
+  Loader2
 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
@@ -31,13 +28,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -55,10 +45,9 @@ import {
 } from "@/services/firebase/activities";
 import { getClients } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllActiveUsers } from "@/services/firebase/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// O resto da definição do esquema é mantido...
+// Modify the form schema to remove assignedToIds field
 const formSchema = z.object({
   title: z.string().min(3, {
     message: "O título deve ter pelo menos 3 caracteres."
@@ -68,9 +57,6 @@ const formSchema = z.object({
   }),
   clientId: z.string({
     required_error: "Por favor, selecione um cliente."
-  }),
-  assignedToIds: z.array(z.string()).min(1, {
-    message: "Selecione pelo menos um responsável."
   }),
   priority: z.string({
     required_error: "Por favor, selecione uma prioridade."
@@ -91,7 +77,6 @@ const EditActivityPage = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clients, setClients] = useState([]);
-  const [users, setUsers] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [activity, setActivity] = useState<Activity | null>(null);
 
@@ -101,7 +86,6 @@ const EditActivityPage = () => {
     defaultValues: {
       title: "",
       description: "",
-      assignedToIds: [],
       priority: "medium",
       status: "pending",
       startDate: format(new Date(), "yyyy-MM-dd"),
@@ -134,16 +118,11 @@ const EditActivityPage = () => {
         const fetchedClients = await getClients();
         setClients(fetchedClients);
         
-        // Buscar colaboradores ativos usando a nova função getAllActiveUsers
-        const fetchedUsers = await getAllActiveUsers();
-        setUsers(fetchedUsers);
-        
         // Preencher o formulário com os dados da atividade
         form.reset({
           title: fetchedActivity.title,
           description: fetchedActivity.description,
           clientId: fetchedActivity.clientId,
-          assignedToIds: fetchedActivity.assignedTo,
           priority: fetchedActivity.priority,
           status: fetchedActivity.status,
           startDate: fetchedActivity.startDate ? format(new Date(fetchedActivity.startDate), "yyyy-MM-dd") : "",
@@ -182,11 +161,11 @@ const EditActivityPage = () => {
         ? new Date(`${data.endDate}T12:00:00`).toISOString() 
         : undefined;
 
+      // Keep the original assignees when updating an activity
       const activityData = {
         title: data.title,
         description: data.description,
         clientId: data.clientId,
-        assignedTo: data.assignedToIds,
         priority: data.priority as ActivityPriority,
         status: data.status as ActivityStatus,
         startDate,
@@ -297,71 +276,6 @@ const EditActivityPage = () => {
                   </Select>
                   <FormDescription>
                     Selecione o cliente associado a esta atividade.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="assignedToIds"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Responsável(eis)</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value?.length > 0
-                            ? users
-                                .filter((user) => field.value.includes(user.uid))
-                                .map((user) => user.name)
-                                .join(", ")
-                            : "Selecione os responsáveis"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Buscar responsável..." />
-                        <CommandEmpty>Nenhum responsável encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {users.map((user) => (
-                            <CommandItem
-                              key={user.uid}
-                              value={user.name}
-                              onSelect={() => {
-                                if (field.value?.includes(user.uid)) {
-                                  field.onChange(field.value?.filter((value) => value !== user.uid));
-                                } else {
-                                  field.onChange([...(field.value || []), user.uid]);
-                                }
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  field.value?.includes(user.uid) ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {user.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    Selecione os responsáveis por esta atividade.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

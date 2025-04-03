@@ -1,10 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { 
   CalendarIcon, 
-  Check, 
-  ChevronsUpDown, 
   Loader2,
   AlertTriangle
 } from "lucide-react";
@@ -31,13 +30,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -53,11 +45,10 @@ import {
 } from "@/services/firebase/activities";
 import { getClients } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllActiveUsers } from "@/services/firebase/auth";
 import { db } from "@/lib/firebase";
 import { ref, get } from "firebase/database";
 
-// Definição do esquema de validação
+// Definição do esquema de validação - removendo o assignedToIds
 const formSchema = z.object({
   title: z.string().min(3, {
     message: "O título deve ter pelo menos 3 caracteres."
@@ -67,9 +58,6 @@ const formSchema = z.object({
   }),
   clientId: z.string({
     required_error: "Por favor, selecione um cliente."
-  }),
-  assignedToIds: z.array(z.string()).min(1, {
-    message: "Selecione pelo menos um responsável."
   }),
   priority: z.string({
     required_error: "Por favor, selecione uma prioridade."
@@ -83,15 +71,12 @@ const formSchema = z.object({
   endDate: z.string().optional(),
 });
 
-// O resto da implementação segue...
-
 const NewActivityPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clients, setClients] = useState([]);
-  const [users, setUsers] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Inicializar o formulário
@@ -100,7 +85,6 @@ const NewActivityPage = () => {
     defaultValues: {
       title: "",
       description: "",
-      assignedToIds: [],
       priority: "medium",
       status: "pending",
       startDate: format(new Date(), "yyyy-MM-dd"),
@@ -117,14 +101,6 @@ const NewActivityPage = () => {
         const fetchedClients = await getClients();
         setClients(fetchedClients);
         
-        // Buscar colaboradores ativos
-        const fetchedUsers = await getAllActiveUsers();
-        setUsers(fetchedUsers);
-        
-        // Adicionar o usuário atual como responsável por padrão
-        if (user?.uid) {
-          form.setValue("assignedToIds", [user.uid]);
-        }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast({
@@ -138,7 +114,7 @@ const NewActivityPage = () => {
     };
 
     fetchData();
-  }, [form, toast, user]);
+  }, [toast]);
 
   // Função para lidar com o envio do formulário
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -169,7 +145,7 @@ const NewActivityPage = () => {
         title: data.title,
         description: data.description,
         clientId: data.clientId,
-        assignedTo: data.assignedToIds,
+        assignedTo: [user.uid], // Automatically set the current user as the only responsible person
         priority: data.priority as ActivityPriority,
         status: data.status as ActivityStatus,
         startDate,
@@ -275,73 +251,8 @@ const NewActivityPage = () => {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="assignedToIds"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Responsável(eis)</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value?.length > 0
-                            ? users
-                                .filter(user => field.value.includes(user.uid))
-                                .map(user => user.name)
-                                .join(", ")
-                            : "Selecione os responsáveis"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Buscar responsável..." />
-                        <CommandEmpty>Nenhum responsável encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {users.map((user) => (
-                            <CommandItem
-                              key={user.uid}
-                              value={user.name}
-                              onSelect={() => {
-                                if (field.value?.includes(user.uid)) {
-                                  field.onChange(field.value?.filter((f) => f !== user.uid));
-                                } else {
-                                  field.onChange([...(field.value || []), user.uid]);
-                                }
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  field.value?.includes(user.uid) ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {user.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    Selecione os responsáveis por esta atividade.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Note: Removed the assignedToIds field here */}
+            
             <FormField
               control={form.control}
               name="priority"
@@ -367,7 +278,9 @@ const NewActivityPage = () => {
                 </FormItem>
               )}
             />
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormField
               control={form.control}
               name="status"
@@ -394,54 +307,53 @@ const NewActivityPage = () => {
                 </FormItem>
               )}
             />
+            
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data de Início</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(new Date(field.value), "PPP")
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => field.onChange(format(date, "yyyy-MM-dd"))}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Selecione a data de início desta atividade.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data de Início</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-[240px] pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Selecione uma data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(format(date, "yyyy-MM-dd"))}
-                        disabled={(date) =>
-                          date > new Date()
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    Selecione a data de início desta atividade.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
             <FormField
               control={form.control}
               name="endDate"
@@ -454,7 +366,7 @@ const NewActivityPage = () => {
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-[240px] pl-3 text-left font-normal",
+                            "w-full pl-3 text-left font-normal",
                             !field.value && "text-muted-foreground"
                           )}
                         >
@@ -485,7 +397,7 @@ const NewActivityPage = () => {
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-4">
             <Link to="/activities">
               <Button variant="outline">Cancelar</Button>
             </Link>
