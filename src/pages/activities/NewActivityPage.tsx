@@ -4,11 +4,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { 
   CalendarIcon, 
-  Loader2,
-  AlertTriangle
+  Loader2
 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -45,8 +45,6 @@ import {
 } from "@/services/firebase/activities";
 import { getClients } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
-import { db } from "@/lib/firebase";
-import { ref, get } from "firebase/database";
 
 // Definição do esquema de validação - removendo o assignedToIds
 const formSchema = z.object({
@@ -326,7 +324,7 @@ const NewActivityPage = () => {
                             )}
                           >
                             {field.value ? (
-                              format(new Date(field.value), "PPP")
+                              format(new Date(field.value), "PPP", { locale: ptBR })
                             ) : (
                               <span>Selecione uma data</span>
                             )}
@@ -338,7 +336,8 @@ const NewActivityPage = () => {
                         <Calendar
                           mode="single"
                           selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(format(date, "yyyy-MM-dd"))}
+                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                          locale={ptBR}
                           initialFocus
                         />
                       </PopoverContent>
@@ -371,7 +370,7 @@ const NewActivityPage = () => {
                           )}
                         >
                           {field.value ? (
-                            format(new Date(field.value), "PPP")
+                            format(new Date(field.value), "PPP", { locale: ptBR })
                           ) : (
                             <span>Selecione uma data</span>
                           )}
@@ -383,7 +382,8 @@ const NewActivityPage = () => {
                       <Calendar
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(format(date, "yyyy-MM-dd"))}
+                        onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                        locale={ptBR}
                         initialFocus
                       />
                     </PopoverContent>

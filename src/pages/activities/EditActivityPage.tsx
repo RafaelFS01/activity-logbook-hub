@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -6,7 +7,8 @@ import {
   Loader2
 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -355,7 +357,7 @@ const EditActivityPage = () => {
                             )}
                           >
                             {field.value ? (
-                              format(new Date(field.value), "PPP")
+                              format(new Date(field.value), "PPP", { locale: ptBR })
                             ) : (
                               <span>Selecione a data</span>
                             )}
@@ -367,10 +369,8 @@ const EditActivityPage = () => {
                         <Calendar
                           mode="single"
                           selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(format(date, "yyyy-MM-dd"))}
-                          disabled={(date) =>
-                            date > new Date()
-                          }
+                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                          locale={ptBR}
                           initialFocus
                         />
                       </PopoverContent>
@@ -400,7 +400,7 @@ const EditActivityPage = () => {
                             )}
                           >
                             {field.value ? (
-                              format(new Date(field.value), "PPP")
+                              format(new Date(field.value), "PPP", { locale: ptBR })
                             ) : (
                               <span>Selecione a data</span>
                             )}
@@ -416,6 +416,7 @@ const EditActivityPage = () => {
                           disabled={(date) =>
                             date < new Date(form.getValues("startDate"))
                           }
+                          locale={ptBR}
                           initialFocus
                         />
                       </PopoverContent>
