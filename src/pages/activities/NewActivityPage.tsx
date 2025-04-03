@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -139,6 +140,17 @@ const NewActivityPage = () => {
     setIsSubmitting(true);
 
     try {
+      // Ensure dates are stored in ISO format but preserve the selected date
+      // This preserves the date by setting the time to noon in the local timezone
+      // which prevents timezone shifts from changing the day
+      const startDate = data.startDate 
+        ? new Date(`${data.startDate}T12:00:00`).toISOString()
+        : '';
+
+      const endDate = data.endDate 
+        ? new Date(`${data.endDate}T12:00:00`).toISOString() 
+        : undefined;
+
       const activityData = {
         title: data.title,
         description: data.description,
@@ -146,8 +158,8 @@ const NewActivityPage = () => {
         assignedTo: data.assignedToIds,
         priority: data.priority as ActivityPriority,
         status: data.status as ActivityStatus,
-        startDate: data.startDate,
-        endDate: data.endDate,
+        startDate,
+        endDate,
         createdBy: user.uid
       };
 

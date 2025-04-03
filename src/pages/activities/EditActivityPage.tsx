@@ -202,9 +202,16 @@ const EditActivityPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Ensure dates are stored in ISO format with appropriate timezone handling
-      const startDate = data.startDate ? new Date(data.startDate + 'T00:00:00').toISOString() : '';
-      const endDate = data.endDate ? new Date(data.endDate + 'T00:00:00').toISOString() : undefined;
+      // Ensure dates are stored in ISO format but preserve the selected date
+      // This preserves the date by setting the time to noon in the local timezone
+      // which prevents timezone shifts from changing the day
+      const startDate = data.startDate 
+        ? new Date(`${data.startDate}T12:00:00`).toISOString() 
+        : '';
+        
+      const endDate = data.endDate 
+        ? new Date(`${data.endDate}T12:00:00`).toISOString() 
+        : undefined;
 
       const activityData = {
         title: data.title,
@@ -213,8 +220,8 @@ const EditActivityPage = () => {
         assignedTo: data.assignedToIds,
         priority: data.priority as ActivityPriority,
         status: data.status as ActivityStatus,
-        startDate: startDate,
-        endDate: endDate,
+        startDate,
+        endDate,
       };
 
       await updateActivity(id, activityData);
