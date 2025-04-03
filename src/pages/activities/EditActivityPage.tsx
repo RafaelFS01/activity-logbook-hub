@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -9,6 +10,7 @@ import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { get, ref } from "firebase/database";
 import { db } from "@/lib/firebase";
+import { parseISO } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,9 +135,18 @@ const EditActivityPage = () => {
           setValue("clientId", activity.clientId);
           setValue("priority", activity.priority);
           setValue("status", activity.status);
-          setValue("startDate", activity.startDate.split('T')[0]);
+          
+          // Format the dates correctly for the date input
+          if (activity.startDate) {
+            // Extract just the date part from the ISO string (YYYY-MM-DD)
+            const startDate = activity.startDate.split('T')[0];
+            setValue("startDate", startDate);
+          }
+          
           if (activity.endDate) {
-            setValue("endDate", activity.endDate.split('T')[0]);
+            // Extract just the date part from the ISO string (YYYY-MM-DD)
+            const endDate = activity.endDate.split('T')[0];
+            setValue("endDate", endDate);
           }
           
           setSelectedCollaborators(activity.assignedTo);
@@ -191,6 +202,10 @@ const EditActivityPage = () => {
     setIsSubmitting(true);
 
     try {
+      // Ensure dates are stored in ISO format with appropriate timezone handling
+      const startDate = data.startDate ? new Date(data.startDate + 'T00:00:00').toISOString() : '';
+      const endDate = data.endDate ? new Date(data.endDate + 'T00:00:00').toISOString() : undefined;
+
       const activityData = {
         title: data.title,
         description: data.description,
@@ -198,8 +213,8 @@ const EditActivityPage = () => {
         assignedTo: data.assignedToIds,
         priority: data.priority as ActivityPriority,
         status: data.status as ActivityStatus,
-        startDate: data.startDate,
-        endDate: data.endDate,
+        startDate: startDate,
+        endDate: endDate,
       };
 
       await updateActivity(id, activityData);

@@ -59,13 +59,20 @@ export const createClient = async (data: Omit<Client, 'id' | 'createdAt' | 'upda
         active: true
       } as PessoaFisicaClient;
     } else {
+      // For juridica type, ensure we're using the companyName from the juridica client data
+      const juridicaData = data as Partial<PessoaJuridicaClient>;
       clientData = {
-        ...(data as PessoaJuridicaClient),
+        ...juridicaData,
         id: clientId,
-        name: data.companyName || '', // Use companyName as name for juridica
+        name: juridicaData.companyName || '', // Use companyName as name for juridica
+        companyName: juridicaData.companyName || '',
+        cnpj: juridicaData.cnpj || '',
+        email: juridicaData.email || '',
+        phone: juridicaData.phone || '',
+        type: 'juridica',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        createdBy: userId || 'unknown', // Ensure createdBy has a default value
+        createdBy: userId || 'unknown',
         active: true
       } as PessoaJuridicaClient;
     }

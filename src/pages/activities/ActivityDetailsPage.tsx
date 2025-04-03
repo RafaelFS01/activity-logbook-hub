@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getActivityById, Activity, updateActivityStatus, deleteActivity } from "@/services/firebase/activities";
@@ -10,13 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Calendar, Clock, FileEdit, CircleAlert, CheckCircle, Play, Ban, ClipboardList, AlertTriangle, UserCircle, Trash2, Building2 } from "lucide-react";
-import { formatDistanceToNow, format, isAfter, isBefore } from "date-fns";
+import { formatDistanceToNow, format, isAfter, isBefore, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-// Utility function to get status label
 const getStatusLabel = (status: "pending" | "in-progress" | "completed" | "cancelled") => {
   switch (status) {
     case "pending":
@@ -32,10 +30,12 @@ const getStatusLabel = (status: "pending" | "in-progress" | "completed" | "cance
   }
 };
 
-// Utility function to format date
 const formatDate = (date: string | undefined) => {
   if (!date) return "Não definida";
-  return format(new Date(date), "dd/MM/yyyy");
+  
+  const parsedDate = parseISO(date);
+  
+  return format(parsedDate, "dd/MM/yyyy");
 };
 
 const ActivityDetailsPage = () => {
@@ -60,11 +60,8 @@ const ActivityDetailsPage = () => {
         setActivity(activityData);
 
         if (activityData) {
-          // Fetch client data
-          const clientData = await getClientById(activityData.clientId);
-          setClient(clientData);
+          setClient(await getClientById(activityData.clientId));
 
-          // Fetch all assignees data in parallel
           setAssigneesLoading(true);
           const assigneesPromises = activityData.assignedTo.map(async (userId) => {
             try {
@@ -103,7 +100,6 @@ const ActivityDetailsPage = () => {
       setStatusLoading(true);
       await updateActivityStatus(activity.id, newStatus, user.uid);
       
-      // Update local state
       setActivity({
         ...activity,
         status: newStatus,
@@ -139,7 +135,6 @@ const ActivityDetailsPage = () => {
         description: "A atividade foi cancelada com sucesso."
       });
       
-      // Update local state
       setActivity({
         ...activity,
         status: "cancelled",
@@ -148,7 +143,6 @@ const ActivityDetailsPage = () => {
       
       setDeleteLoading(false);
       
-      // Optionally navigate away after a short delay
       setTimeout(() => {
         navigate("/activities");
       }, 1500);
