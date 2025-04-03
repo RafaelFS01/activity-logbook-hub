@@ -57,54 +57,90 @@ const ActivitiesPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
+      let fetchedActivities: Activity[] = []; // Variável temporária
+
       try {
-        setIsLoading(true);
-        const fetchedActivities = await getActivities();
-        
-        // Filter activities for collaborator users to only show their assigned activities
-        let activitiesToShow = fetchedActivities;
-        if (user?.role === 'collaborator' && user?.uid) {
-          activitiesToShow = fetchedActivities.filter(activity => 
-            activity.assignedTo.includes(user.uid)
-          );
-        }
-        
-        setActivities(activitiesToShow);
-        setFilteredActivities(activitiesToShow);
-        
-        const fetchedClients = await getClients();
-        const clientsMap: Record<string, Client> = {};
-        fetchedClients.forEach(client => {
-          clientsMap[client.id] = client;
-        });
-        setClients(clientsMap);
-        
-        const usersRef = ref(db, 'users');
-        const usersSnapshot = await get(usersRef);
-        if (usersSnapshot.exists()) {
-          const usersData = usersSnapshot.val();
-          const collaboratorsMap: Record<string, UserData & { uid: string }> = {};
-          
-          Object.entries(usersData).forEach(([uid, userData]) => {
-            collaboratorsMap[uid] = { ...(userData as UserData), uid };
+        // --- Bloco 1: Buscar Atividades ---
+        try {
+          fetchedActivities = await getActivities();
+
+          // Filter activities for collaborator users
+          let activitiesToShow = fetchedActivities;
+          if (user?.role === 'collaborator' && user?.uid) {
+            activitiesToShow = fetchedActivities.filter(activity =>
+                activity.assignedTo.includes(user.uid)
+            );
+          }
+          setActivities(activitiesToShow);
+          // Defina filteredActivities aqui também, ou deixe o outro useEffect cuidar disso
+          setFilteredActivities(activitiesToShow);
+
+        } catch (activityError) {
+          console.error('Erro ao buscar atividades:', activityError);
+          // Mostra erro específico para atividades E PARA AQUI, pois sem atividades, o resto não importa tanto
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar Atividades",
+            description: "Não foi possível buscar a lista de atividades."
           });
-          
-          setCollaborators(collaboratorsMap);
+          // Você pode querer limpar os estados ou retornar cedo se as atividades são essenciais
+          setActivities([]);
+          setFilteredActivities([]);
+          // return; // Descomente se quiser parar aqui se atividades falharem
         }
-      } catch (error) {
-        console.error('Erro ao buscar dados:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Não foi possível carregar as atividades."
-        });
+
+        // --- Bloco 2: Buscar Clientes (Continua mesmo se atividades falharam, se desejar) ---
+        try {
+          const fetchedClients = await getClients();
+          const clientsMap: Record<string, Client> = {};
+          fetchedClients.forEach(client => {
+            clientsMap[client.id] = client;
+          });
+          setClients(clientsMap);
+        } catch (clientError) {
+          console.error('Erro ao buscar clientes:', clientError);
+          // Mostra erro específico para clientes, mas a página pode continuar funcionando
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar Clientes",
+            description: "Não foi possível buscar os dados dos clientes. Nomes podem não aparecer corretamente."
+          });
+          setClients({}); // Define como vazio para evitar erros posteriores
+        }
+
+        // --- Bloco 3: Buscar Colaboradores --- DESABILITADO
+        /*try {
+          const usersRef = ref(db, 'users');
+          const usersSnapshot = await get(usersRef);
+          if (usersSnapshot.exists()) {
+            const usersData = usersSnapshot.val();
+            const collaboratorsMap: Record<string, UserData & { uid: string }> = {};
+            Object.entries(usersData).forEach(([uid, userData]) => {
+              collaboratorsMap[uid] = { ...(userData as UserData), uid };
+            });
+            setCollaborators(collaboratorsMap);
+          } else {
+            setCollaborators({}); // Nenhum usuário encontrado
+          }
+        } catch (userError) {
+          console.error('Erro ao buscar colaboradores:', userError);
+          // Mostra erro específico para colaboradores
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar Colaboradores",
+            description: "Não foi possível buscar os dados dos colaboradores."
+          });
+          setCollaborators({}); // Define como vazio
+        }*/
+
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Garante que o loading termine independentemente dos erros parciais
       }
     };
 
     fetchData();
-  }, [toast, user]);
+  }, [toast, user]); // Mantenha as dependências
 
   useEffect(() => {
     let filtered = activities;

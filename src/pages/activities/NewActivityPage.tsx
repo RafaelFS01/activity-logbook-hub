@@ -244,6 +244,14 @@ const NewActivityPage = () => {
                   <FormDescription>
                     Selecione o cliente associado a esta atividade.
                   </FormDescription>
+
+                    <Link
+                        to="/clients/new" // Usa a rota definida no App.tsx
+                        className="text-sm text-blue-600 hover:underline mt-1 inline-block" // Estilização opcional
+                    >
+                        Gostaria de cadastrar um novo cliente?
+                    </Link>
+
                   <FormMessage />
                 </FormItem>
               )}
@@ -308,92 +316,103 @@ const NewActivityPage = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
               <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de Início</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(new Date(field.value), "PPP", { locale: ptBR })
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
-                          locale={ptBR}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormDescription>
-                      Selecione a data de início desta atividade.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                      <FormItem className="flex-1"> {/* ou className="flex flex-col" dependendo do seu layout */}
+                        <FormLabel>Data de Início</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                  )}
+                              >
+                                {field.value ? (
+                                    // MODIFICAÇÃO AQUI: Adicione T12:00:00
+                                    format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
+                                ) : (
+                                    <span>Selecione a data</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                // MODIFICAÇÃO AQUI: Adicione T12:00:00
+                                selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
+                                onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                                locale={ptBR}
+                                initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription>
+                          Selecione a data de início desta atividade.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                  )}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
             <FormField
-              control={form.control}
-              name="endDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data de Término (Opcional)</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP", { locale: ptBR })
-                          ) : (
-                            <span>Selecione uma data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
-                        locale={ptBR}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    Selecione a data de término desta atividade, se aplicável.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                    <FormItem className="flex-1"> {/* ou className="flex flex-col" dependendo do seu layout */}
+                      <FormLabel>Data de Término (Opcional)</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                            >
+                              {field.value ? (
+                                  // MODIFICAÇÃO AQUI: Adicione T12:00:00
+                                  format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
+                              ) : (
+                                  <span>Selecione a data</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                              mode="single"
+                              // MODIFICAÇÃO AQUI: Adicione T12:00:00
+                              selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
+                              onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                              disabled={(date) => {
+                                const startDateValue = form.getValues("startDate");
+                                // MODIFICAÇÃO AQUI: Adicione T12:00:00 também na comparação se necessário
+                                // (Embora 'date < new Date(...)' possa já funcionar corretamente se 'date' for local)
+                                // Para segurança, pode-se comparar strings ou normalizar ambas as datas
+                                return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false; // Comparar com início do dia
+                              }}
+                              locale={ptBR}
+                              initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormDescription>
+                        Selecione a data de término desta atividade, se aplicável.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                )}
             />
           </div>
 

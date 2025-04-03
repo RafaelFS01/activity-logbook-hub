@@ -58,21 +58,42 @@ const ClientDetailsPage = () => {
           setClient(null);
         }
 
+        // 2. Buscar atividades DO CLIENTE
         const clientActivities = await getActivitiesByClient(id);
-        setActivities(clientActivities);
-        setFilteredActivities(clientActivities);
-        
-        const usersRef = ref(db, 'users');
-        const usersSnapshot = await get(usersRef);
-        if (usersSnapshot.exists()) {
-          const usersData = usersSnapshot.val();
-          const collaboratorsMap: Record<string, UserData & { uid: string }> = {};
-          
-          Object.entries(usersData).forEach(([uid, userData]) => {
-            collaboratorsMap[uid] = { ...(userData as UserData), uid };
-          });
-          
-          setCollaborators(collaboratorsMap);
+
+        // 3. *** APLICAR FILTRO POR COLABORADOR LOGADO ***
+        let activitiesToShow = clientActivities; // Por padrão, mostra todas do cliente
+        if (user?.role === 'collaborator' && user?.uid) {
+          // Se o usuário logado é 'collaborator', filtra as atividades do cliente
+          // para mostrar apenas aquelas atribuídas a ele.
+          activitiesToShow = clientActivities.filter(activity =>
+              activity.assignedTo && activity.assignedTo.includes(user.uid) // Verifica se assignedTo existe e inclui o UID
+          );
+        }
+        // Define o estado 'activities' com a lista (potencialmente filtrada)
+        setActivities(activitiesToShow);
+        // Inicializa 'filteredActivities' com a mesma lista
+        setFilteredActivities(activitiesToShow);
+
+        // 4. Buscar colaboradores (mantém a lógica, mas ainda sujeito a problemas de permissão)
+        try {
+          const usersRef = ref(db, 'users');
+          const usersSnapshot = await get(usersRef);
+          if (usersSnapshot.exists()) {
+            const usersData = usersSnapshot.val();
+            const collaboratorsMap: Record<string, UserData & { uid: string }> = {};
+            Object.entries(usersData).forEach(([uid, userData]) => {
+              collaboratorsMap[uid] = { ...(userData as UserData), uid };
+            });
+            setCollaborators(collaboratorsMap);
+          } else {
+            setCollaborators({});
+          }
+        } catch (userError) {
+          console.error("Erro ao buscar colaboradores (ClientDetailsPage):", userError);
+          // Opcional: Adicionar um toast específico para falha ao buscar colaboradores aqui
+          // toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar dados dos colaboradores." });
+          setCollaborators({}); // Define como vazio em caso de erro
         }
       } catch (error) {
         console.error("Erro ao buscar dados do cliente:", error);
@@ -82,7 +103,8 @@ const ClientDetailsPage = () => {
     };
 
     fetchData();
-  }, [id]);
+// Adiciona 'user' como dependência, pois a lógica de filtragem agora depende dele.
+  }, [id, user, toast, navigate]); // Certifique-se de incluir 'user' aqui
 
   useEffect(() => {
     let filtered = [...activities];
