@@ -61,6 +61,7 @@ const ActivityTypeModal = ({ onTypeCreated }: ActivityTypeModalProps) => {
         description: "O novo tipo de atividade foi adicionado com sucesso."
       });
       
+      // Passa o ID e nome do novo tipo para o componente pai
       onTypeCreated(newType.id, newType.name);
       form.reset();
       setOpen(false);

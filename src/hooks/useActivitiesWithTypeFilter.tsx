@@ -49,6 +49,7 @@ export function useActivitiesWithTypeFilter() {
   
   return {
     activities: filteredActivities,
+    originalActivities: activities,
     isLoading,
     error,
     selectedTypeId,

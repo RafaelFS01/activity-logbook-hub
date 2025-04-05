@@ -14,6 +14,13 @@ export function useActivityTypeFilter(activities: Activity[] | undefined) {
     );
   }, [activities, selectedTypeId]);
   
+  // Reset filter when activities change significantly
+  useEffect(() => {
+    if (!activities || activities.length === 0) {
+      setSelectedTypeId(null);
+    }
+  }, [activities]);
+  
   return {
     selectedTypeId,
     setSelectedTypeId,

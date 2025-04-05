@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { getActivityTypes } from '@/services/firebase/activityTypes';
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 interface ActivityDetailsTypeDisplayProps {
   typeId?: string | null;
@@ -35,7 +36,7 @@ const ActivityDetailsTypeDisplay = ({ typeId }: ActivityDetailsTypeDisplayProps)
     fetchTypeName();
   }, [typeId]);
   
-  if (isLoading) return <Badge variant="outline">Carregando...</Badge>;
+  if (isLoading) return <Badge variant="outline"><Loader2 className="h-3 w-3 animate-spin" /></Badge>;
   if (!typeId || !typeName) return <Badge variant="outline">Sem tipo</Badge>;
   
   return (

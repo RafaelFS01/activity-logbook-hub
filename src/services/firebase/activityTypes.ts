@@ -1,6 +1,6 @@
 
 import { db } from '@/lib/firebase';
-import { ref, set, get, push, remove } from 'firebase/database';
+import { ref, set, get, push, remove, update } from 'firebase/database';
 
 export interface ActivityType {
   id: string;
@@ -16,7 +16,12 @@ export const getActivityTypes = async (): Promise<ActivityType[]> => {
     
     if (snapshot.exists()) {
       const typesData = snapshot.val();
-      return Object.values(typesData) as ActivityType[];
+      // Convert object to array, ensuring we handle the Firebase data structure correctly
+      return Object.entries(typesData).map(([id, data]: [string, any]) => ({
+        id,
+        name: data.name,
+        createdAt: data.createdAt
+      }));
     }
     
     return [];
@@ -31,15 +36,19 @@ export const createActivityType = async (name: string): Promise<ActivityType> =>
   try {
     const typesRef = ref(db, 'activityTypes');
     const newTypeRef = push(typesRef);
-    const typeId = newTypeRef.key;
+    const typeId = newTypeRef.key as string;
     
     const typeData: ActivityType = {
-      id: typeId || '',
+      id: typeId,
       name,
       createdAt: new Date().toISOString()
     };
     
-    await set(newTypeRef, typeData);
+    // Use update to ensure proper data structure in Firebase
+    const updates: Record<string, any> = {};
+    updates[typeId] = typeData;
+    
+    await update(typesRef, updates);
     return typeData;
   } catch (error) {
     console.error('Erro ao criar tipo de atividade:', error);
