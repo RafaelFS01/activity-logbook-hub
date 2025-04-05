@@ -1,3 +1,4 @@
+
 import { db } from '@/lib/firebase';
 import { ref, set, get, push, query, orderByChild, remove, update } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,7 +20,6 @@ export interface Activity {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
-  typeId?: string;
 }
 
 // Create a new activity
@@ -114,25 +114,6 @@ export const getActivitiesByAssignee = async (userId: string): Promise<Activity[
     return [];
   } catch (error) {
     console.error('Erro ao buscar atividades do colaborador:', error);
-    throw error;
-  }
-};
-
-// Get activities by type
-export const getActivitiesByType = async (typeId: string): Promise<Activity[]> => {
-  try {
-    const activitiesRef = ref(db, 'activities');
-    const snapshot = await get(activitiesRef);
-    
-    if (snapshot.exists()) {
-      const activitiesData = snapshot.val();
-      const activities = Object.values(activitiesData) as Activity[];
-      return activities.filter(activity => activity.typeId === typeId);
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Erro ao buscar atividades por tipo:', error);
     throw error;
   }
 };
