@@ -23,7 +23,7 @@ export function useActivitiesWithTypeFilter() {
         let fetchedActivities: Activity[] = [];
         
         // Collaborators can only see their assigned activities
-        if (user.role === 'colaborador') {
+        if (user.role === 'collaborator') {
           fetchedActivities = await getActivitiesByAssignee(user.uid);
         } else {
           // Admins and managers can see all activities
