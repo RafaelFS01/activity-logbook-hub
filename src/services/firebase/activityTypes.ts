@@ -38,18 +38,19 @@ export const createActivityType = async (name: string): Promise<ActivityType> =>
     const newTypeRef = push(typesRef);
     const typeId = newTypeRef.key as string;
     
-    const typeData: ActivityType = {
-      id: typeId,
+    const typeData = {
       name,
       createdAt: new Date().toISOString()
     };
     
-    // Use update to ensure proper data structure in Firebase
-    const updates: Record<string, any> = {};
-    updates[typeId] = typeData;
+    // Store data without the id in the object itself (Firebase best practice)
+    await set(newTypeRef, typeData);
     
-    await update(typesRef, updates);
-    return typeData;
+    // Return the complete ActivityType with the id
+    return {
+      id: typeId,
+      ...typeData
+    };
   } catch (error) {
     console.error('Erro ao criar tipo de atividade:', error);
     throw error;

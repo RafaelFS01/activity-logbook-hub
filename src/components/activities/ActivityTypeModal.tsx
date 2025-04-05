@@ -55,10 +55,11 @@ const ActivityTypeModal = ({ onTypeCreated }: ActivityTypeModalProps) => {
     
     try {
       const newType = await createActivityType(data.name);
+      console.log("Novo tipo criado:", newType);
       
       toast({
         title: "Tipo de atividade criado",
-        description: "O novo tipo de atividade foi adicionado com sucesso."
+        description: `O tipo "${data.name}" foi adicionado com sucesso.`
       });
       
       // Passa o ID e nome do novo tipo para o componente pai
@@ -70,7 +71,7 @@ const ActivityTypeModal = ({ onTypeCreated }: ActivityTypeModalProps) => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível criar o tipo de atividade."
+        description: "Não foi possível criar o tipo de atividade. Tente novamente."
       });
     } finally {
       setIsSubmitting(false);
