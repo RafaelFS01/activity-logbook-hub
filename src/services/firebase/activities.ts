@@ -20,6 +20,7 @@ export interface Activity {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+  type?: string; // Adicionando o campo de tipo
 }
 
 // Create a new activity

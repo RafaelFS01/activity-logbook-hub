@@ -49,7 +49,7 @@ import { getClients } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Modify the form schema to remove assignedToIds field
+// Atualização do esquema de validação com o campo type
 const formSchema = z.object({
   title: z.string().min(3, {
     message: "O título deve ter pelo menos 3 caracteres."
@@ -70,6 +70,7 @@ const formSchema = z.object({
     required_error: "Por favor, selecione uma data de início."
   }),
   endDate: z.string().optional(),
+  type: z.string().optional(), // Campo tipo opcional
 });
 
 const EditActivityPage = () => {
@@ -91,6 +92,7 @@ const EditActivityPage = () => {
       priority: "medium",
       status: "pending",
       startDate: format(new Date(), "yyyy-MM-dd"),
+      type: "", // Valor padrão para o tipo
     },
   });
 
@@ -129,6 +131,7 @@ const EditActivityPage = () => {
           status: fetchedActivity.status,
           startDate: fetchedActivity.startDate ? format(new Date(fetchedActivity.startDate), "yyyy-MM-dd") : "",
           endDate: fetchedActivity.endDate ? format(new Date(fetchedActivity.endDate), "yyyy-MM-dd") : undefined,
+          type: fetchedActivity.type || "", // Adicionando o tipo existente ou vazio
         });
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -172,6 +175,7 @@ const EditActivityPage = () => {
         status: data.status as ActivityStatus,
         startDate,
         endDate,
+        type: data.type, // Adicionando o tipo aos dados da atividade
       };
 
       await updateActivity(id, activityData);
@@ -227,6 +231,24 @@ const EditActivityPage = () => {
                   </FormControl>
                   <FormDescription>
                     Dê um nome claro e conciso para esta atividade.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Novo Campo de Tipo */}
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Tipo da atividade" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Informe o tipo desta atividade (ex: Reunião, Desenvolvimento, Suporte).
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

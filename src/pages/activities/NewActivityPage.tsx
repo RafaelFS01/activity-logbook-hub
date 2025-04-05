@@ -46,7 +46,7 @@ import {
 import { getClients } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Definição do esquema de validação - removendo o assignedToIds
+// Atualização do esquema de validação com o campo type
 const formSchema = z.object({
   title: z.string().min(3, {
     message: "O título deve ter pelo menos 3 caracteres."
@@ -67,6 +67,7 @@ const formSchema = z.object({
     required_error: "Por favor, selecione uma data de início."
   }),
   endDate: z.string().optional(),
+  type: z.string().optional(), // Campo tipo opcional
 });
 
 const NewActivityPage = () => {
@@ -86,6 +87,7 @@ const NewActivityPage = () => {
       priority: "medium",
       status: "pending",
       startDate: format(new Date(), "yyyy-MM-dd"),
+      type: "", // Valor padrão para o tipo
     },
   });
 
@@ -148,6 +150,7 @@ const NewActivityPage = () => {
         status: data.status as ActivityStatus,
         startDate,
         endDate,
+        type: data.type, // Adicionando o tipo aos dados da atividade
         createdBy: user.uid
       };
 
@@ -193,6 +196,24 @@ const NewActivityPage = () => {
                 </FormControl>
                 <FormDescription>
                   Dê um nome claro e conciso para esta atividade.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Novo Campo de Tipo */}
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo</FormLabel>
+                <FormControl>
+                  <Input placeholder="Tipo da atividade" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Informe o tipo desta atividade (ex: Reunião, Desenvolvimento, Suporte).
                 </FormDescription>
                 <FormMessage />
               </FormItem>
