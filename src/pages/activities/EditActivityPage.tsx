@@ -7,7 +7,7 @@ import {
   Loader2
 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, addDays } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as z from "zod";
 
@@ -48,8 +48,11 @@ import {
 import { getClients } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getActivityTypes } from "@/services/firebase/activityTypes";
+import ActivityTypeModal from "@/components/activities/ActivityTypeModal";
+import { Combobox } from "@/components/ui/combobox";
 
-// Atualização do esquema de validação com o campo type
+// Updated schema to include typeId
 const formSchema = z.object({
   title: z.string().min(3, {
     message: "O título deve ter pelo menos 3 caracteres."
@@ -70,7 +73,7 @@ const formSchema = z.object({
     required_error: "Por favor, selecione uma data de início."
   }),
   endDate: z.string().optional(),
-  type: z.string().optional(), // Campo tipo opcional
+  typeId: z.string().optional(),
 });
 
 const EditActivityPage = () => {
@@ -80,6 +83,7 @@ const EditActivityPage = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clients, setClients] = useState([]);
+  const [activityTypes, setActivityTypes] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [activity, setActivity] = useState<Activity | null>(null);
 
@@ -92,7 +96,7 @@ const EditActivityPage = () => {
       priority: "medium",
       status: "pending",
       startDate: format(new Date(), "yyyy-MM-dd"),
-      type: "", // Valor padrão para o tipo
+      typeId: undefined,
     },
   });
 
@@ -122,6 +126,10 @@ const EditActivityPage = () => {
         const fetchedClients = await getClients();
         setClients(fetchedClients);
         
+        // Buscar tipos de atividade
+        const fetchedTypes = await getActivityTypes();
+        setActivityTypes(fetchedTypes);
+        
         // Preencher o formulário com os dados da atividade
         form.reset({
           title: fetchedActivity.title,
@@ -131,7 +139,7 @@ const EditActivityPage = () => {
           status: fetchedActivity.status,
           startDate: fetchedActivity.startDate ? format(new Date(fetchedActivity.startDate), "yyyy-MM-dd") : "",
           endDate: fetchedActivity.endDate ? format(new Date(fetchedActivity.endDate), "yyyy-MM-dd") : undefined,
-          type: fetchedActivity.type || "", // Adicionando o tipo existente ou vazio
+          typeId: fetchedActivity.typeId,
         });
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -147,6 +155,13 @@ const EditActivityPage = () => {
 
     fetchData();
   }, [id, form, toast, navigate]);
+
+  // Handler para quando um novo tipo é criado
+  const handleTypeCreated = (typeId: string, typeName: string) => {
+    const newType = { id: typeId, name: typeName, createdAt: new Date().toISOString() };
+    setActivityTypes([...activityTypes, newType]);
+    form.setValue("typeId", typeId);
+  };
 
   // Função para lidar com o envio do formulário
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -175,7 +190,7 @@ const EditActivityPage = () => {
         status: data.status as ActivityStatus,
         startDate,
         endDate,
-        type: data.type, // Adicionando o tipo aos dados da atividade
+        typeId: data.typeId,
       };
 
       await updateActivity(id, activityData);
@@ -197,6 +212,12 @@ const EditActivityPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Transformar os tipos de atividade para o formato do Combobox
+  const typeOptions = activityTypes.map((type: any) => ({
+    value: type.id,
+    label: type.name
+  }));
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -231,24 +252,6 @@ const EditActivityPage = () => {
                   </FormControl>
                   <FormDescription>
                     Dê um nome claro e conciso para esta atividade.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Novo Campo de Tipo */}
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Tipo da atividade" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Informe o tipo desta atividade (ex: Reunião, Desenvolvimento, Suporte).
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -300,6 +303,35 @@ const EditActivityPage = () => {
                   </Select>
                   <FormDescription>
                     Selecione o cliente associado a esta atividade.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="typeId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Atividade</FormLabel>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-grow">
+                      <Combobox
+                        options={typeOptions}
+                        selectedValue={field.value}
+                        onSelect={field.onChange}
+                        placeholder="Selecione ou busque um tipo"
+                        searchPlaceholder="Buscar tipo..."
+                        noResultsText="Nenhum tipo encontrado."
+                        allowClear
+                        onClear={() => field.onChange(undefined)}
+                      />
+                    </div>
+                    <ActivityTypeModal onTypeCreated={handleTypeCreated} />
+                  </div>
+                  <FormDescription>
+                    Selecione o tipo desta atividade ou adicione um novo.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -366,7 +398,7 @@ const EditActivityPage = () => {
                   control={form.control}
                   name="startDate"
                   render={({ field }) => (
-                      <FormItem className="flex-1"> {/* ou className="flex flex-col" dependendo do seu layout */}
+                      <FormItem className="flex-1">
                         <FormLabel>Data de Início</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -379,7 +411,6 @@ const EditActivityPage = () => {
                                   )}
                               >
                                 {field.value ? (
-                                    // MODIFICAÇÃO AQUI: Adicione T12:00:00
                                     format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
                                 ) : (
                                     <span>Selecione a data</span>
@@ -391,7 +422,6 @@ const EditActivityPage = () => {
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                                 mode="single"
-                                // MODIFICAÇÃO AQUI: Adicione T12:00:00
                                 selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
                                 onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
                                 locale={ptBR}
@@ -411,7 +441,7 @@ const EditActivityPage = () => {
                   control={form.control}
                   name="endDate"
                   render={({ field }) => (
-                      <FormItem className="flex-1"> {/* ou className="flex flex-col" dependendo do seu layout */}
+                      <FormItem className="flex-1">
                         <FormLabel>Data de Término (Opcional)</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -424,7 +454,6 @@ const EditActivityPage = () => {
                                   )}
                               >
                                 {field.value ? (
-                                    // MODIFICAÇÃO AQUI: Adicione T12:00:00
                                     format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
                                 ) : (
                                     <span>Selecione a data</span>
@@ -436,15 +465,11 @@ const EditActivityPage = () => {
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                                 mode="single"
-                                // MODIFICAÇÃO AQUI: Adicione T12:00:00
                                 selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
                                 onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
                                 disabled={(date) => {
                                   const startDateValue = form.getValues("startDate");
-                                  // MODIFICAÇÃO AQUI: Adicione T12:00:00 também na comparação se necessário
-                                  // (Embora 'date < new Date(...)' possa já funcionar corretamente se 'date' for local)
-                                  // Para segurança, pode-se comparar strings ou normalizar ambas as datas
-                                  return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false; // Comparar com início do dia
+                                  return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false;
                                 }}
                                 locale={ptBR}
                                 initialFocus

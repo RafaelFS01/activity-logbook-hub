@@ -7,7 +7,7 @@ import {
   Loader2
 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, addDays } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as z from "zod";
 
@@ -45,8 +45,11 @@ import {
 } from "@/services/firebase/activities";
 import { getClients } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
+import ActivityTypeModal from "@/components/activities/ActivityTypeModal";
+import { Combobox } from "@/components/ui/combobox";
+import { getActivityTypes } from "@/services/firebase/activityTypes";
 
-// Atualização do esquema de validação com o campo type
+// Updated schema to include typeId
 const formSchema = z.object({
   title: z.string().min(3, {
     message: "O título deve ter pelo menos 3 caracteres."
@@ -67,7 +70,7 @@ const formSchema = z.object({
     required_error: "Por favor, selecione uma data de início."
   }),
   endDate: z.string().optional(),
-  type: z.string().optional(), // Campo tipo opcional
+  typeId: z.string().optional(),
 });
 
 const NewActivityPage = () => {
@@ -76,6 +79,7 @@ const NewActivityPage = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clients, setClients] = useState([]);
+  const [activityTypes, setActivityTypes] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Inicializar o formulário
@@ -87,7 +91,7 @@ const NewActivityPage = () => {
       priority: "medium",
       status: "pending",
       startDate: format(new Date(), "yyyy-MM-dd"),
-      type: "", // Valor padrão para o tipo
+      typeId: undefined,
     },
   });
 
@@ -100,6 +104,10 @@ const NewActivityPage = () => {
         // Buscar clientes
         const fetchedClients = await getClients();
         setClients(fetchedClients);
+        
+        // Buscar tipos de atividade
+        const fetchedTypes = await getActivityTypes();
+        setActivityTypes(fetchedTypes);
         
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -115,6 +123,13 @@ const NewActivityPage = () => {
 
     fetchData();
   }, [toast]);
+
+  // Handler para quando um novo tipo é criado
+  const handleTypeCreated = (typeId: string, typeName: string) => {
+    const newType = { id: typeId, name: typeName, createdAt: new Date().toISOString() };
+    setActivityTypes([...activityTypes, newType]);
+    form.setValue("typeId", typeId);
+  };
 
   // Função para lidar com o envio do formulário
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -150,8 +165,8 @@ const NewActivityPage = () => {
         status: data.status as ActivityStatus,
         startDate,
         endDate,
-        type: data.type, // Adicionando o tipo aos dados da atividade
-        createdBy: user.uid
+        createdBy: user.uid,
+        typeId: data.typeId // Add type ID to activity data
       };
 
       await createActivity(activityData, user.uid);
@@ -173,6 +188,12 @@ const NewActivityPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Transformar os tipos de atividade para o formato do Combobox
+  const typeOptions = activityTypes.map((type: any) => ({
+    value: type.id,
+    label: type.name
+  }));
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -196,24 +217,6 @@ const NewActivityPage = () => {
                 </FormControl>
                 <FormDescription>
                   Dê um nome claro e conciso para esta atividade.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Novo Campo de Tipo */}
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo</FormLabel>
-                <FormControl>
-                  <Input placeholder="Tipo da atividade" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Informe o tipo desta atividade (ex: Reunião, Desenvolvimento, Suporte).
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -266,20 +269,49 @@ const NewActivityPage = () => {
                     Selecione o cliente associado a esta atividade.
                   </FormDescription>
 
-                    <Link
-                        to="/clients/new" // Usa a rota definida no App.tsx
-                        className="text-sm text-blue-600 hover:underline mt-1 inline-block" // Estilização opcional
-                    >
-                        Gostaria de cadastrar um novo cliente?
-                    </Link>
+                  <Link
+                    to="/clients/new"
+                    className="text-sm text-blue-600 hover:underline mt-1 inline-block"
+                  >
+                    Gostaria de cadastrar um novo cliente?
+                  </Link>
 
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            {/* Note: Removed the assignedToIds field here */}
             
+            <FormField
+              control={form.control}
+              name="typeId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Atividade</FormLabel>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-grow">
+                      <Combobox
+                        options={typeOptions}
+                        selectedValue={field.value}
+                        onSelect={field.onChange}
+                        placeholder="Selecione ou busque um tipo"
+                        searchPlaceholder="Buscar tipo..."
+                        noResultsText="Nenhum tipo encontrado."
+                        allowClear
+                        onClear={() => field.onChange(undefined)}
+                      />
+                    </div>
+                    <ActivityTypeModal onTypeCreated={handleTypeCreated} />
+                  </div>
+                  <FormDescription>
+                    Selecione o tipo desta atividade ou adicione um novo.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormField
               control={form.control}
               name="priority"
@@ -305,9 +337,7 @@ const NewActivityPage = () => {
                 </FormItem>
               )}
             />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
             <FormField
               control={form.control}
               name="status"
@@ -334,61 +364,57 @@ const NewActivityPage = () => {
                 </FormItem>
               )}
             />
-            
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
-              <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                      <FormItem className="flex-1"> {/* ou className="flex flex-col" dependendo do seu layout */}
-                        <FormLabel>Data de Início</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                  )}
-                              >
-                                {field.value ? (
-                                    // MODIFICAÇÃO AQUI: Adicione T12:00:00
-                                    format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
-                                ) : (
-                                    <span>Selecione a data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                // MODIFICAÇÃO AQUI: Adicione T12:00:00
-                                selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
-                                onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
-                                locale={ptBR}
-                                initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormDescription>
-                          Selecione a data de início desta atividade.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                  )}
-              />
-            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Data de Início</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                            >
+                              {field.value ? (
+                                  format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
+                              ) : (
+                                  <span>Selecione a data</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                              mode="single"
+                              selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
+                              onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                              locale={ptBR}
+                              initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormDescription>
+                        Selecione a data de início desta atividade.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                )}
+            />
+
             <FormField
                 control={form.control}
                 name="endDate"
                 render={({ field }) => (
-                    <FormItem className="flex-1"> {/* ou className="flex flex-col" dependendo do seu layout */}
+                    <FormItem className="flex-1">
                       <FormLabel>Data de Término (Opcional)</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -401,7 +427,6 @@ const NewActivityPage = () => {
                                 )}
                             >
                               {field.value ? (
-                                  // MODIFICAÇÃO AQUI: Adicione T12:00:00
                                   format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
                               ) : (
                                   <span>Selecione a data</span>
@@ -413,15 +438,11 @@ const NewActivityPage = () => {
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                               mode="single"
-                              // MODIFICAÇÃO AQUI: Adicione T12:00:00
                               selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
                               onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
                               disabled={(date) => {
                                 const startDateValue = form.getValues("startDate");
-                                // MODIFICAÇÃO AQUI: Adicione T12:00:00 também na comparação se necessário
-                                // (Embora 'date < new Date(...)' possa já funcionar corretamente se 'date' for local)
-                                // Para segurança, pode-se comparar strings ou normalizar ambas as datas
-                                return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false; // Comparar com início do dia
+                                return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false;
                               }}
                               locale={ptBR}
                               initialFocus

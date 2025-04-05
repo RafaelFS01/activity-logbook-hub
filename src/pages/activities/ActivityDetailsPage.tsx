@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar, Clock, FileEdit, CircleAlert, CheckCircle, Play, Ban, ClipboardList, AlertTriangle, UserCircle, Trash2, Building2, Tag } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, FileEdit, CircleAlert, CheckCircle, Play, Ban, ClipboardList, AlertTriangle, UserCircle, Trash2, Building2 } from "lucide-react";
 import { formatDistanceToNow, format, isAfter, isBefore, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
@@ -289,17 +289,6 @@ const ActivityDetailsPage = () => {
                   {getStatusLabel(activity.status)}
                 </Badge>
               </div>
-              
-              {activity.type && (
-                <div className="flex justify-between items-center pb-2 border-b">
-                  <span className="font-medium">Tipo:</span>
-                  <div className="flex items-center">
-                    <Tag className="h-4 w-4 mr-1" />
-                    <span>{activity.type}</span>
-                  </div>
-                </div>
-              )}
-
               <div className="flex justify-between items-center pb-2 border-b">
                 <span className="font-medium">Cliente:</span>
                 <div className="flex items-center">
@@ -320,7 +309,25 @@ const ActivityDetailsPage = () => {
                   )}
                 </div>
               </div>
-              
+              <div className="flex justify-between items-center pb-2 border-b">
+                <span className="font-medium">Responsáveis:</span>
+                <div>
+                  {assigneesLoading ? (
+                    <span className="text-sm text-muted-foreground">Carregando responsáveis...</span>
+                  ) : Object.entries(assignees).length > 0 ? (
+                    <div className="space-y-1">
+                      {Object.entries(assignees).map(([userId, assignee]) => (
+                        <div key={userId} className="flex items-center space-x-2">
+                          <UserCircle className="h-4 w-4" />
+                          <span>{assignee?.name || 'Usuário não encontrado'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Nenhum responsável atribuído</span>
+                  )}
+                </div>
+              </div>
               <div className="space-y-1">
                 <div className="flex justify-between items-center pb-2 border-b">
                   <span className="font-medium">Prioridade:</span>
