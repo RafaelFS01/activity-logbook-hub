@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"; // PLANO: Adicionado useMemo
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   PlusCircle,
@@ -6,12 +6,12 @@ import {
   Calendar,
   Clock,
   CheckCircle2,
-  // AlertCircle, // Não usado diretamente no código final
   RotateCcw,
   XCircle,
   Filter,
   CalendarIcon,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ListFilter
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -24,25 +24,26 @@ import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { UserData } from "@/services/firebase/auth"; // Assume que UserData tem pelo menos 'name' e 'role'
-import { get, ref } from "firebase/database"; // Removido 'update' pois não é usado aqui
+import { UserData } from "@/services/firebase/auth";
+import { get, ref } from "firebase/database";
 import { db } from "@/lib/firebase";
 import {
   getActivities,
   Activity,
   ActivityStatus,
-  updateActivityStatus
+  updateActivityStatus,
+  getActivityTypes
 } from "@/services/firebase/activities";
 import { getClients, Client } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
-// import { Checkbox } from "@/components/ui/checkbox"; // Não usado diretamente no código final
 import { exportActivitiesToExcel } from "@/utils/exportUtils";
-import { Combobox } from "@/components/ui/combobox"; // PLANO: Importar o componente Combobox (verifique o caminho!)
+import { Combobox } from "@/components/ui/combobox";
+import { Users } from "lucide-react";
 
 const ActivitiesPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth(); // user deve ter { uid: string, role: 'admin' | 'manager' | 'collaborator', name?: string, ... }
+  const { user } = useAuth();
   const { toast } = useToast();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [filteredActivities, setFilteredActivities] = useState<Activity[]>([]);
@@ -55,20 +56,20 @@ const ActivitiesPage = () => {
   const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [collaborators, setCollaborators] = useState<Record<string, UserData & { uid: string }>>({});
-
-  // PLANO Passo 2: Adicionar Novo Estado para o Filtro
   const [selectedCollaboratorId, setSelectedCollaboratorId] = useState<string | null>(null);
+  const [activityTypes, setActivityTypes] = useState<string[]>([]);
+  const [selectedActivityType, setSelectedActivityType] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      setActivities([]); // Limpa antes de buscar novos dados
+      setActivities([]);
       setFilteredActivities([]);
       setClients({});
       setCollaborators({});
+      setActivityTypes([]);
 
       try {
-        // --- Bloco 1: Buscar Atividades ---
         let fetchedActivities: Activity[] = [];
         try {
           fetchedActivities = await getActivities();
@@ -79,24 +80,21 @@ const ActivitiesPage = () => {
             title: "Erro ao carregar Atividades",
             description: "Não foi possível buscar a lista de atividades."
           });
-          // Continua para tentar buscar o resto, mas activities ficará vazio
         }
 
-        // Filtragem inicial baseada no role ANTES de definir o estado principal
         let activitiesToShow = fetchedActivities;
         if (user?.role === 'collaborator' && user?.uid) {
           activitiesToShow = fetchedActivities.filter(activity =>
-              activity.assignedTo?.includes(user.uid) // Usar optional chaining
+              activity.assignedTo?.includes(user.uid)
           );
         }
-        setActivities(activitiesToShow); // Define o estado principal já pré-filtrado se for colaborador
+        setActivities(activitiesToShow);
 
-        // --- Bloco 2: Buscar Clientes ---
         try {
           const fetchedClients = await getClients();
           const clientsMap: Record<string, Client> = {};
           fetchedClients.forEach(client => {
-            if (client && client.id) { // Verificação extra
+            if (client && client.id) {
               clientsMap[client.id] = client;
             }
           });
@@ -108,10 +106,8 @@ const ActivitiesPage = () => {
             title: "Erro ao carregar Clientes",
             description: "Não foi possível buscar os dados dos clientes."
           });
-          // Continua, mas clients estará vazio
         }
 
-        // --- PLANO Passo 1: Habilitar e Refinar a Busca de Colaboradores ---
         try {
           const usersRef = ref(db, 'users');
           const usersSnapshot = await get(usersRef);
@@ -119,16 +115,12 @@ const ActivitiesPage = () => {
             const usersData = usersSnapshot.val();
             const collaboratorsMap: Record<string, UserData & { uid: string }> = {};
             Object.entries(usersData).forEach(([uid, userData]) => {
-              const typedUserData = userData as UserData; // Faz o cast
-              // Adiciona verificação se userData é válido e tem as propriedades esperadas
+              const typedUserData = userData as UserData;
               if (uid && typedUserData && typeof typedUserData === 'object') {
                 collaboratorsMap[uid] = { ...typedUserData, uid };
               }
             });
             setCollaborators(collaboratorsMap);
-          } else {
-            console.log("Nenhum colaborador encontrado no banco.");
-            // setCollaborators({}); // Já inicializado como vazio
           }
         } catch (userError) {
           console.error('Erro ao buscar colaboradores:', userError);
@@ -137,11 +129,21 @@ const ActivitiesPage = () => {
             title: "Erro ao carregar Colaboradores",
             description: "Não foi possível buscar os dados dos colaboradores."
           });
-          // setCollaborators({}); // Já inicializado como vazio
+        }
+
+        try {
+          const types = await getActivityTypes();
+          setActivityTypes(types);
+        } catch (typesError) {
+          console.error('Erro ao buscar tipos de atividade:', typesError);
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar Tipos",
+            description: "Não foi possível buscar os tipos de atividade."
+          });
         }
 
       } catch (globalError) {
-        // Captura erros não pegos nos blocos try/catch internos (improvável com a estrutura atual)
         console.error("Erro inesperado no fetchData:", globalError);
         toast({
           variant: "destructive",
@@ -149,83 +151,72 @@ const ActivitiesPage = () => {
           description: "Ocorreu um erro ao carregar os dados da página."
         });
       } finally {
-        setIsLoading(false); // Garante que o loading termine
+        setIsLoading(false);
       }
     };
 
-    // Só executa fetchData se o usuário estiver carregado
     if (user) {
       fetchData();
     } else {
-      // Se o usuário ainda não carregou (useAuth pode ser assíncrono),
-      // você pode optar por mostrar loading ou uma mensagem.
-      // O estado isLoading inicial já cobre isso.
-      // Ou limpar os dados se o usuário deslogar
       setActivities([]);
       setFilteredActivities([]);
       setClients({});
       setCollaborators({});
-      setIsLoading(false); // Para o loading se não houver usuário
+      setActivityTypes([]);
+      setIsLoading(false);
     }
+  }, [toast, user]);
 
-  }, [toast, user]); // Dependência principal é o usuário (para buscar dados e aplicar filtro inicial)
-
-  // PLANO Passo 3: Preparar Dados para o Combobox (usando useMemo)
   const collaboratorOptions = useMemo(() => {
-    // Verifica se collaborators não é nulo ou vazio
     if (!collaborators || Object.keys(collaborators).length === 0) return [];
     return Object.values(collaborators)
-        // Opcional: Filtrar por status 'ativo' se existir no UserData
-        // .filter(collab => collab.active === true)
         .map(collab => ({
           value: collab.uid,
-          // Usa o nome, se não existir, usa um fallback com o início do UID
           label: collab.name || `Usuário ${collab.uid.substring(0, 6)}...`,
         }))
-        // Ordena por nome (label)
         .sort((a, b) => a.label.localeCompare(b.label));
-  }, [collaborators]); // Recalcula apenas quando 'collaborators' mudar
+  }, [collaborators]);
 
-  // PLANO Passo 5: Atualizar Lógica de Filtragem Principal
+  const activityTypeOptions = useMemo(() => {
+    if (!activityTypes || activityTypes.length === 0) return [];
+    return activityTypes.map(type => ({
+      value: type,
+      label: type
+    }));
+  }, [activityTypes]);
+
   useEffect(() => {
-    // Começa com as atividades base (já filtradas por role para colaborador no useEffect anterior)
     let filtered = [...activities];
 
-    // 1. Filtro por Status
     if (statusFilters.length > 0) {
       filtered = filtered.filter(activity => statusFilters.includes(activity.status));
     }
 
-    // 2. Filtro por Termo de Busca
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(activity => {
-        // Tenta buscar nome do cliente com segurança
         const clientData = activity.clientId ? clients[activity.clientId] : null;
         const clientName = clientData
             ? (clientData.type === 'juridica'
-                ? (clientData as any).companyName?.toLowerCase() ?? '' // Nome fantasia
-                : clientData.name?.toLowerCase() ?? '') // Nome pessoa física
+                ? (clientData as any).companyName?.toLowerCase() ?? ''
+                : clientData.name?.toLowerCase() ?? '')
             : '';
 
-        // Verifica título, descrição e nome do cliente
         return (activity.title?.toLowerCase() ?? '').includes(lowerSearchTerm) ||
             (activity.description?.toLowerCase() ?? '').includes(lowerSearchTerm) ||
             clientName.includes(lowerSearchTerm);
       });
     }
 
-    // 3. Filtro por Período de Data
     if (startPeriod || endPeriod) {
       filtered = filtered.filter(activity => {
         const dateStringToCompare = dateType === "startDate" ? activity.startDate : (activity.endDate || activity.startDate);
-        if (!dateStringToCompare) return false; // Ignora se não houver data relevante
+        if (!dateStringToCompare) return false;
 
         try {
           const activityDate = new Date(dateStringToCompare);
-          if (isNaN(activityDate.getTime())) return false; // Data inválida
+          if (isNaN(activityDate.getTime())) return false;
 
-          // Normaliza para comparar apenas dia/mês/ano
           const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
           const activityDay = startOfDay(activityDate);
           const startDay = startPeriod ? startOfDay(startPeriod) : null;
@@ -237,21 +228,24 @@ const ActivitiesPage = () => {
 
         } catch (e) {
           console.error("Erro ao processar data da atividade para filtro:", dateStringToCompare, e);
-          return false; // Ignora atividade com data problemática
+          return false;
         }
-        return true; // Não deveria chegar aqui se startPeriod ou endPeriod estiver definido
+        return true;
       });
     }
 
-    // 4. PLANO Passo 5: NOVO FILTRO por Colaborador Selecionado (APENAS para Admin/Manager)
     if (selectedCollaboratorId && user && (user.role === 'admin' || user.role === 'manager')) {
       filtered = filtered.filter(activity =>
-          // Verifica se assignedTo existe (é um array) e inclui o ID selecionado
           Array.isArray(activity.assignedTo) && activity.assignedTo.includes(selectedCollaboratorId)
       );
     }
 
-    // 5. Ordenação Final
+    if (selectedActivityType) {
+      filtered = filtered.filter(activity => 
+        activity.type === selectedActivityType
+      );
+    }
+
     filtered.sort((a, b) => {
       const statusPriority: Record<ActivityStatus, number> = {
         'pending': 0, 'in-progress': 1, 'completed': 2, 'cancelled': 3
@@ -259,34 +253,29 @@ const ActivitiesPage = () => {
       const statusDiff = statusPriority[a.status] - statusPriority[b.status];
       if (statusDiff !== 0) return statusDiff;
 
-      // Se status for igual, ordena pela data de início (mais recente primeiro)
       try {
         const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
         const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
         return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
       } catch (e) {
-        return 0; // Não quebra se a data for inválida
+        return 0;
       }
     });
 
     setFilteredActivities(filtered);
-
-    // PLANO Passo 5: Adicionar selectedCollaboratorId e user às dependências
-    // Incluir também activities, clients, etc., pois a filtragem depende deles.
   }, [
     searchTerm,
     statusFilters,
     dateType,
     startPeriod,
     endPeriod,
-    selectedCollaboratorId, // Nova dependência
-    user,                  // Nova dependência (para role check no filtro)
-    activities,            // Fonte dos dados
-    clients,               // Para buscar nome do cliente no filtro
-    collaborators          // Necessário para getAssigneeNames (usado no export e potencialmente na UI)
+    selectedCollaboratorId,
+    selectedActivityType,
+    user,
+    activities,
+    clients,
+    collaborators
   ]);
-
-  // --- Funções Auxiliares ---
 
   const getStatusBadge = (status: ActivityStatus) => {
     switch (status) {
@@ -294,7 +283,7 @@ const ActivitiesPage = () => {
       case "in-progress": return <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-200"><RotateCcw className="h-3 w-3 mr-1" /> Em Progresso</Badge>;
       case "completed": return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-200"><CheckCircle2 className="h-3 w-3 mr-1" /> Concluída</Badge>;
       case "cancelled": return <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-200"><XCircle className="h-3 w-3 mr-1" /> Cancelada</Badge>;
-      default: return <Badge variant="secondary">Desconhecido</Badge>; // Fallback
+      default: return <Badge variant="secondary">Desconhecido</Badge>;
     }
   };
 
@@ -303,7 +292,7 @@ const ActivitiesPage = () => {
       case "low": return <Badge variant="outline">Baixa</Badge>;
       case "medium": return <Badge variant="secondary">Média</Badge>;
       case "high": return <Badge variant="destructive">Alta</Badge>;
-      default: return null; // Ou <Badge variant="outline">N/D</Badge>
+      default: return null;
     }
   };
 
@@ -316,15 +305,13 @@ const ActivitiesPage = () => {
         : client.name || 'Nome Indisponível';
   };
 
-  // Função para obter nomes dos responsáveis (pode ser usada na UI ou Export)
   const getAssigneeNames = (assigneeIds: string[] | undefined): string => {
     if (!assigneeIds || assigneeIds.length === 0) return 'Nenhum responsável';
-    // Verifica se collaborators foi carregado
     if (Object.keys(collaborators).length === 0 && isLoading) return 'Carregando...';
     if (Object.keys(collaborators).length === 0 && !isLoading) return 'Responsáveis não carregados';
 
     return assigneeIds
-        .map(id => collaborators[id]?.name || `ID ${id.substring(0,6)}...`) // Usa fallback
+        .map(id => collaborators[id]?.name || `ID ${id.substring(0,6)}...`)
         .join(', ');
   };
 
@@ -335,10 +322,7 @@ const ActivitiesPage = () => {
     }
     if (!activityId) return;
 
-    // Salva o estado atual para possível rollback
     const previousActivities = [...activities];
-
-    // Atualização otimista da UI
     setActivities(prevActivities =>
         prevActivities.map(activity =>
             activity.id === activityId
@@ -362,7 +346,6 @@ const ActivitiesPage = () => {
         title: "Erro ao atualizar",
         description: "Não foi possível salvar a alteração de status. Revertendo."
       });
-      // Rollback em caso de erro
       setActivities(previousActivities);
     }
   };
@@ -375,15 +358,15 @@ const ActivitiesPage = () => {
 
   const isStatusFilterActive = (status: ActivityStatus) => statusFilters.includes(status);
 
-  // PLANO Passo 6: Atualizar Funcionalidade de Reset
   const resetFilters = () => {
     setSearchTerm("");
     setStatusFilters([]);
     setStartPeriod(undefined);
     setEndPeriod(undefined);
     setDateType("startDate");
-    setSelectedCollaboratorId(null); // <-- ADICIONADO
-    setIsFilterOpen(false); // Fecha o popover de filtros avançados também
+    setSelectedCollaboratorId(null);
+    setSelectedActivityType(null);
+    setIsFilterOpen(false);
   };
 
   const handleExport = () => {
@@ -397,22 +380,16 @@ const ActivitiesPage = () => {
     }
 
     try {
-      // Prepara os dados para exportação, incluindo nomes
       const activitiesToExport = filteredActivities.map(activity => ({
         ...activity,
         clientName: getClientName(activity.clientId),
-        assigneeNames: getAssigneeNames(activity.assignedTo), // Inclui nomes dos responsáveis
-        // Formata datas se necessário para o Excel (opcional)
+        assigneeNames: getAssigneeNames(activity.assignedTo),
         startDateFormatted: activity.startDate ? format(new Date(activity.startDate), 'dd/MM/yyyy') : '',
         endDateFormatted: activity.endDate ? format(new Date(activity.endDate), 'dd/MM/yyyy') : '',
-        // Mapeia status para texto legível (opcional)
         statusText: { pending: 'Futura', 'in-progress': 'Em Progresso', completed: 'Concluída', cancelled: 'Cancelada' }[activity.status] || activity.status,
-        // Mapeia prioridade (opcional)
         priorityText: { low: 'Baixa', medium: 'Média', high: 'Alta' }[activity.priority] || activity.priority,
       }));
 
-      // O mapa de assignees pode não ser mais necessário se já incluímos os nomes
-      // Mas podemos mantê-lo se a função de exportação o utiliza de alguma forma específica
       const assigneeMap: Record<string, string> = {};
       if (collaborators) {
         Object.entries(collaborators).forEach(([id, collab]) => {
@@ -436,10 +413,8 @@ const ActivitiesPage = () => {
     }
   };
 
-  // --- Renderização do Componente ---
   return (
       <div className="container mx-auto py-6 px-4 md:px-6">
-        {/* Cabeçalho */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold">Gerenciamento de Atividades</h1>
           <div className="flex flex-wrap gap-2">
@@ -454,12 +429,9 @@ const ActivitiesPage = () => {
           </div>
         </div>
 
-        {/* Barra de Filtros Principal */}
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-center">
-            {/* Barra de Busca */}
-            {/* REMOVIDO flex-grow, sm:w-auto. ADICIONADO sm:w-4/12 (ou ajuste) */}
-            <div className="relative min-w-[200px] w-full sm:w-4/12">
+            <div className="relative min-w-[200px] w-full sm:w-3/12">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                   type="search"
@@ -471,28 +443,40 @@ const ActivitiesPage = () => {
               />
             </div>
 
-            {/* PLANO Passo 3 e 4: Combobox de Colaborador (Condicional) */}
-            {user && (user.role === 'admin' || user.role === 'manager') && (
-                /* REMOVIDO flex-none, sm:w-auto. ADICIONADO sm:w-5/12 (ou ajuste) */
-                <div className="min-w-[220px] w-full sm:w-5/12">
-                  <Combobox
-                      id="collaborator-filter"
-                      options={collaboratorOptions}
-                      selectedValue={selectedCollaboratorId}
-                      onSelect={(value) => setSelectedCollaboratorId(value as string | null)}
-                      placeholder="Filtrar por colaborador"
-                      searchPlaceholder="Buscar colaborador..."
-                      noResultsText="Nenhum colaborador encontrado."
-                      triggerClassName="w-full" // Botão interno ocupa container
-                      contentClassName="w-[var(--radix-popover-trigger-width)]"
-                      allowClear={true}
-                      onClear={() => setSelectedCollaboratorId(null)}
-                      disabled={isLoading || collaboratorOptions.length === 0}
-                  />
-                </div>
-            )}
+            <div className="min-w-[220px] w-full sm:w-3/12">
+              <Combobox
+                  id="collaborator-filter"
+                  options={collaboratorOptions}
+                  selectedValue={selectedCollaboratorId}
+                  onSelect={(value) => setSelectedCollaboratorId(value as string | null)}
+                  placeholder="Filtrar por colaborador"
+                  searchPlaceholder="Buscar colaborador..."
+                  noResultsText="Nenhum colaborador encontrado."
+                  triggerClassName="w-full"
+                  contentClassName="w-[var(--radix-popover-trigger-width)]"
+                  allowClear={true}
+                  onClear={() => setSelectedCollaboratorId(null)}
+                  disabled={isLoading || collaboratorOptions.length === 0}
+              />
+            </div>
 
-            {/* Botão Filtros Avançados (Data) */}
+            <div className="min-w-[220px] w-full sm:w-3/12">
+              <Combobox
+                  id="activity-type-filter"
+                  options={activityTypeOptions}
+                  selectedValue={selectedActivityType}
+                  onSelect={(value) => setSelectedActivityType(value as string | null)}
+                  placeholder="Filtrar por tipo de atividade"
+                  searchPlaceholder="Buscar tipo..."
+                  noResultsText="Nenhum tipo encontrado."
+                  triggerClassName="w-full"
+                  contentClassName="w-[var(--radix-popover-trigger-width)]"
+                  allowClear={true}
+                  onClear={() => setSelectedActivityType(null)}
+                  disabled={isLoading || activityTypeOptions.length === 0}
+              />
+            </div>
+
             <div className="flex-none w-full sm:w-auto">
               <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <PopoverTrigger asChild>
@@ -505,7 +489,6 @@ const ActivitiesPage = () => {
                 <PopoverContent className="w-80 p-4" align="end">
                   <div className="space-y-4">
                     <h3 className="font-medium text-center">Filtrar por Período</h3>
-                    {/* Tipo de Data */}
                     <div>
                       <Label className="mb-2 block text-sm font-medium text-center">Aplicar filtro sobre:</Label>
                       <RadioGroup
@@ -523,9 +506,7 @@ const ActivitiesPage = () => {
                         </div>
                       </RadioGroup>
                     </div>
-                    {/* Separador */}
                     <hr className="my-3"/>
-                    {/* Data Início */}
                     <div>
                       <Label htmlFor="start-date-picker-btn" className="mb-1 block text-sm">De:</Label>
                       <Popover>
@@ -539,7 +520,6 @@ const ActivitiesPage = () => {
                         <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={startPeriod} onSelect={setStartPeriod} initialFocus /></PopoverContent>
                       </Popover>
                     </div>
-                    {/* Data Fim */}
                     <div>
                       <Label htmlFor="end-date-picker-btn" className="mb-1 block text-sm">Até:</Label>
                       <Popover>
@@ -553,7 +533,6 @@ const ActivitiesPage = () => {
                         <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={endPeriod} onSelect={setEndPeriod} initialFocus disabled={startPeriod ? { before: startPeriod } : undefined} /></PopoverContent>
                       </Popover>
                     </div>
-                    {/* Botões Ação */}
                     <div className="flex justify-between pt-3">
                       <Button variant="ghost" size="sm" onClick={() => { setStartPeriod(undefined); setEndPeriod(undefined); }}>Limpar Datas</Button>
                       <Button size="sm" onClick={() => setIsFilterOpen(false)}>Aplicar</Button>
@@ -564,7 +543,6 @@ const ActivitiesPage = () => {
             </div>
           </div>
 
-          {/* Filtros Rápidos por Status */}
           <div className="flex flex-wrap gap-2">
             <Button variant={statusFilters.length === 0 ? "secondary" : "outline"} size="sm" onClick={() => setStatusFilters([])} disabled={isLoading}>Todas</Button>
             <Button variant={isStatusFilterActive("pending") ? "secondary" : "outline"} size="sm" onClick={() => toggleStatusFilter("pending")} className={!isStatusFilterActive("pending") ? "border-yellow-300 text-yellow-800 hover:bg-yellow-50" : ""} disabled={isLoading}><Clock className="h-4 w-4 mr-1" /> Futuras</Button>
@@ -573,12 +551,17 @@ const ActivitiesPage = () => {
             <Button variant={isStatusFilterActive("cancelled") ? "secondary" : "outline"} size="sm" onClick={() => toggleStatusFilter("cancelled")} className={!isStatusFilterActive("cancelled") ? "border-red-300 text-red-800 hover:bg-red-50" : ""} disabled={isLoading}><XCircle className="h-4 w-4 mr-1" /> Canceladas</Button>
           </div>
 
-          {/* Indicadores de Filtros Ativos */}
-          {(statusFilters.length > 0 || startPeriod || endPeriod || selectedCollaboratorId) && !isLoading && (
+          {(statusFilters.length > 0 || startPeriod || endPeriod || selectedCollaboratorId || selectedActivityType) && !isLoading && (
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <span>Filtros ativos:</span>
                 {selectedCollaboratorId && collaborators[selectedCollaboratorId] && (
                     <Badge variant="outline" className="py-1">Colaborador: {collaborators[selectedCollaboratorId].name}</Badge>
+                )}
+                {selectedActivityType && (
+                    <Badge variant="outline" className="py-1">
+                      <ListFilter className="h-3 w-3 mr-1" />
+                      Tipo: {selectedActivityType}
+                    </Badge>
                 )}
                 {statusFilters.length > 0 && (
                     <Badge variant="outline" className="py-1">
@@ -600,9 +583,7 @@ const ActivitiesPage = () => {
           )}
         </div>
 
-        {/* Conteúdo Principal: Loading, Lista de Atividades ou Mensagem de Vazio */}
         {isLoading ? (
-            // Esqueleto de Loading
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {[...Array(6)].map((_, index) => (
                   <Card key={index} className="overflow-hidden">
@@ -613,7 +594,6 @@ const ActivitiesPage = () => {
               ))}
             </div>
         ) : filteredActivities.length > 0 ? (
-            // Lista de Atividades Filtradas
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredActivities.map((activity) => (
                   <Card key={activity.id} className="overflow-hidden flex flex-col">
@@ -626,6 +606,11 @@ const ActivitiesPage = () => {
                           </CardTitle>
                           <CardDescription>
                             {getClientName(activity.clientId)}
+                            {activity.type && (
+                              <span className="block text-xs mt-1">
+                                Tipo: {activity.type}
+                              </span>
+                            )}
                           </CardDescription>
                         </div>
                         <div className="flex-shrink-0">
@@ -642,27 +627,24 @@ const ActivitiesPage = () => {
                           {activity.endDate && ` | Fim: ${new Date(activity.endDate).toLocaleDateString('pt-BR')}`}
                   </span>
                       </div>
-                      {/* Opcional: Mostrar responsáveis */}
                       {user?.role !== 'collaborator' && activity.assignedTo && activity.assignedTo.length > 0 && (
                           <div className="flex items-start text-sm text-muted-foreground">
-                            <Users className="h-4 w-4 mr-1.5 flex-shrink-0 mt-0.5" /> {/* Use Users icon from lucide-react */}
+                            <Users className="h-4 w-4 mr-1.5 flex-shrink-0 mt-0.5" />
                             <span className="line-clamp-2">Responsáveis: {getAssigneeNames(activity.assignedTo)}</span>
                           </div>
                       )}
                     </CardContent>
                     <CardFooter className="flex flex-col gap-3 pt-3 border-t">
-                      {/* Botões Ação Padrão */}
                       <div className="flex justify-end w-full gap-2">
                         <Button variant="outline" size="sm" onClick={() => navigate(`/activities/${activity.id}`)}>Detalhes</Button>
                         <Button variant="default" size="sm" onClick={() => navigate(`/activities/edit/${activity.id}`)}>Editar</Button>
                       </div>
-                      {/* Botões Ação Status (Condicional) */}
                       {activity.status !== 'completed' && activity.status !== 'cancelled' && (
                           <div className="flex justify-between w-full gap-2">
                             <Button variant="outline" size="sm" className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800 flex-1 justify-center" onClick={() => handleStatusChange(activity.id, 'cancelled')}><XCircle className="h-4 w-4 mr-1" /> Cancelar</Button>
                             {activity.status === 'pending' ? (
                                 <Button variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-800 flex-1 justify-center" onClick={() => handleStatusChange(activity.id, 'in-progress')}><RotateCcw className="h-4 w-4 mr-1" /> Iniciar</Button>
-                            ) : ( // status é 'in-progress'
+                            ) : (
                                 <Button variant="outline" size="sm" className="border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800 flex-1 justify-center" onClick={() => handleStatusChange(activity.id, 'completed')}><CheckCircle2 className="h-4 w-4 mr-1" /> Concluir</Button>
                             )}
                           </div>
@@ -672,15 +654,14 @@ const ActivitiesPage = () => {
               ))}
             </div>
         ) : (
-            // Mensagem de Nenhuma Atividade Encontrada
             <div className="text-center p-10 border rounded-lg bg-card shadow-sm mt-6">
               <h3 className="text-xl font-semibold mb-2">Nenhuma atividade encontrada</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod || selectedCollaboratorId
+                {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod || selectedCollaboratorId || selectedActivityType
                     ? "Não encontramos atividades que correspondam aos seus filtros."
                     : "Ainda não há atividades cadastradas no sistema ou visíveis para você."}
               </p>
-              {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod || selectedCollaboratorId ? (
+              {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod || selectedCollaboratorId || selectedActivityType ? (
                   <Button onClick={resetFilters} variant="outline" className="mr-2">
                     <RotateCcw className="mr-2 h-4 w-4" /> Limpar Filtros
                   </Button>
@@ -694,8 +675,5 @@ const ActivitiesPage = () => {
       </div>
   );
 };
-
-// Adicione o ícone Users se for usá-lo
-import { Users } from "lucide-react";
 
 export default ActivitiesPage;

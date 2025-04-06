@@ -1,4 +1,3 @@
-
 import { db } from '@/lib/firebase';
 import { ref, set, get, push, query, orderByChild, remove, update } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
@@ -20,7 +19,7 @@ export interface Activity {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
-  type?: string; // Adicionando o campo de tipo
+  type?: string; // Field for activity type
 }
 
 // Create a new activity
@@ -192,6 +191,31 @@ export const deleteActivity = async (activityId: string) => {
     return true;
   } catch (error) {
     console.error('Erro ao cancelar atividade:', error);
+    throw error;
+  }
+};
+
+// Get all activity types
+export const getActivityTypes = async (): Promise<string[]> => {
+  try {
+    const activitiesRef = ref(db, 'activities');
+    const snapshot = await get(activitiesRef);
+    
+    if (snapshot.exists()) {
+      const activitiesData = snapshot.val();
+      const activities = Object.values(activitiesData) as Activity[];
+      
+      // Extract all types, filter out undefined/null, and remove duplicates
+      const types = activities
+        .map(activity => activity.type)
+        .filter(type => type !== undefined && type !== null && type !== '') as string[];
+      
+      return [...new Set(types)].sort(); // Remove duplicates and sort
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Erro ao buscar tipos de atividades:', error);
     throw error;
   }
 };
