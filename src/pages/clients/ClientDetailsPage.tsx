@@ -28,6 +28,7 @@ import { UserData } from "@/services/firebase/auth";
 import { get, ref, update } from "firebase/database";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/components/ui/use-toast";
+import { Combobox } from "@/components/ui/combobox";
 
 const ClientDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +45,9 @@ const ClientDetailsPage = () => {
   const [endPeriod, setEndPeriod] = useState<Date | undefined>(undefined);
   const [collaborators, setCollaborators] = useState<Record<string, UserData & { uid: string }>>({});
   const { toast } = useToast();
+  
+  const [activityTypes, setActivityTypes] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,24 +62,21 @@ const ClientDetailsPage = () => {
           setClient(null);
         }
 
-        // 2. Buscar atividades DO CLIENTE
         const clientActivities = await getActivitiesByClient(id);
 
-        // 3. *** APLICAR FILTRO POR COLABORADOR LOGADO ***
-        let activitiesToShow = clientActivities; // Por padrão, mostra todas do cliente
+        const types = Array.from(new Set(clientActivities.map(activity => activity.type).filter(Boolean))) as string[];
+        setActivityTypes(types);
+
+        let activitiesToShow = clientActivities;
         if (user?.role === 'collaborator' && user?.uid) {
-          // Se o usuário logado é 'collaborator', filtra as atividades do cliente
-          // para mostrar apenas aquelas atribuídas a ele.
           activitiesToShow = clientActivities.filter(activity =>
-              activity.assignedTo && activity.assignedTo.includes(user.uid) // Verifica se assignedTo existe e inclui o UID
+              activity.assignedTo && activity.assignedTo.includes(user.uid)
           );
         }
-        // Define o estado 'activities' com a lista (potencialmente filtrada)
+        
         setActivities(activitiesToShow);
-        // Inicializa 'filteredActivities' com a mesma lista
         setFilteredActivities(activitiesToShow);
 
-        // 4. Buscar colaboradores (mantém a lógica, mas ainda sujeito a problemas de permissão)
         try {
           const usersRef = ref(db, 'users');
           const usersSnapshot = await get(usersRef);
@@ -91,9 +92,7 @@ const ClientDetailsPage = () => {
           }
         } catch (userError) {
           console.error("Erro ao buscar colaboradores (ClientDetailsPage):", userError);
-          // Opcional: Adicionar um toast específico para falha ao buscar colaboradores aqui
-          // toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar dados dos colaboradores." });
-          setCollaborators({}); // Define como vazio em caso de erro
+          setCollaborators({});
         }
       } catch (error) {
         console.error("Erro ao buscar dados do cliente:", error);
@@ -103,8 +102,7 @@ const ClientDetailsPage = () => {
     };
 
     fetchData();
-// Adiciona 'user' como dependência, pois a lógica de filtragem agora depende dele.
-  }, [id, user, toast, navigate]); // Certifique-se de incluir 'user' aqui
+  }, [id, user, toast, navigate]);
 
   useEffect(() => {
     let filtered = [...activities];
@@ -118,6 +116,10 @@ const ClientDetailsPage = () => {
     
     if (statusFilters.length > 0) {
       filtered = filtered.filter(activity => statusFilters.includes(activity.status));
+    }
+    
+    if (selectedType) {
+      filtered = filtered.filter(activity => activity.type === selectedType);
     }
     
     if (startPeriod || endPeriod) {
@@ -137,7 +139,7 @@ const ClientDetailsPage = () => {
     }
     
     setFilteredActivities(filtered);
-  }, [activities, searchTerm, statusFilters, dateType, startPeriod, endPeriod]);
+  }, [activities, searchTerm, statusFilters, dateType, startPeriod, endPeriod, selectedType]);
 
   if (loading) {
     return (
@@ -234,6 +236,7 @@ const ClientDetailsPage = () => {
     setStatusFilters([]);
     setStartPeriod(undefined);
     setEndPeriod(undefined);
+    setSelectedType(null);
   };
 
   const handleExport = () => {
@@ -280,6 +283,11 @@ const ClientDetailsPage = () => {
       });
     }
   };
+
+  const typeOptions = activityTypes.map(type => ({
+    value: type,
+    label: type
+  }));
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -414,6 +422,19 @@ const ClientDetailsPage = () => {
                           onChange={(e) => setSearchTerm(e.target.value)}
                         />
                       </div>
+                      
+                      {typeOptions.length > 0 && (
+                        <div className="mb-4">
+                          <Label className="mb-2 block">Tipo de Atividade</Label>
+                          <Combobox
+                            options={typeOptions}
+                            selectedValue={selectedType}
+                            onSelect={(value) => setSelectedType(value)}
+                            placeholder="Filtrar por tipo..."
+                            allowClear={true}
+                          />
+                        </div>
+                      )}
                       
                       <div className="flex flex-wrap gap-2 mb-4">
                         <div className="flex items-center gap-2">
