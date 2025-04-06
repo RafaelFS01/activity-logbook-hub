@@ -14,6 +14,7 @@ import AppLayout from "@/components/layout/AppLayout";
 // Pages
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Index";
+import Home from "@/pages/Home";
 import ActivitiesPage from "@/pages/activities/ActivitiesPage";
 import ActivityDetailsPage from "@/pages/activities/ActivityDetailsPage";
 import NewActivityPage from "@/pages/activities/NewActivityPage";
@@ -54,6 +55,13 @@ const App = () => (
                 </ProtectedRoute>
               }>
                 <Route index element={<Dashboard />} />
+                
+                {/* Home - apenas admin e manager podem acessar */}
+                <Route path="home" element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <Home />
+                  </ProtectedRoute>
+                } />
                 
                 {/* Atividades */}
                 <Route path="activities" element={<ActivitiesPage />} />

@@ -56,8 +56,8 @@ const MainSidebar = () => {
     }
   };
 
-  // Verificar se o usuário tem permissão para ver a seção de relatórios
-  const canAccessReports = user?.role === "admin" || user?.role === "manager";
+  // Verificar se o usuário tem permissão para ver a seção de relatórios e Home
+  const isManagerOrAdmin = user?.role === "admin" || user?.role === "manager";
 
   return (
     <Sidebar>
@@ -92,11 +92,22 @@ const MainSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/" className={activeClass} onClick={handleMenuItemClick}>
-                    <Home />
+                    <ClipboardList />
                     <span>Dashboard</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              
+              {isManagerOrAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/home" className={activeClass} onClick={handleMenuItemClick}>
+                      <Home />
+                      <span>Home</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
@@ -128,7 +139,7 @@ const MainSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         
-        {canAccessReports && (
+        {isManagerOrAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
             <SidebarGroupContent>
