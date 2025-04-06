@@ -12,10 +12,16 @@ import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface CollaboratorData extends UserData {
+  status: CollaboratorStatus;
+  photoURL?: string;
+  createdAt?: string;
+}
+
 const CollaboratorDetailsPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [collaborator, setCollaborator] = useState<UserData | null>(null);
+    const [collaborator, setCollaborator] = useState<CollaboratorData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
     const { user } = useAuth();
@@ -36,7 +42,7 @@ const CollaboratorDetailsPage: React.FC = () => {
             try {
                 const fetchedCollaborator = await getCollaboratorById(id);
                 if (fetchedCollaborator) {
-                    setCollaborator(fetchedCollaborator);
+                    setCollaborator(fetchedCollaborator as CollaboratorData);
                 } else {
                     toast({
                         title: "Colaborador não encontrado",
@@ -110,7 +116,6 @@ const CollaboratorDetailsPage: React.FC = () => {
 
     return (
         <div className="container mx-auto py-6 px-4 md:px-6">
-            {/* Cabeçalho com botão de retorno */}
             <div className="mb-4">
                 <Button variant="ghost" onClick={() => navigate(-1)}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -218,7 +223,7 @@ const CollaboratorDetailsPage: React.FC = () => {
                                 <Phone className="mr-2 inline-block h-4 w-4" /> {collaborator.phone || 'Não informado'}
                             </div>
                             <div className="text-sm font-medium">
-                                <Calendar className="mr-2 inline-block h-4 w-4" /> Criado em: {collaborator.createdAt}
+                                <Calendar className="mr-2 inline-block h-4 w-4" /> Criado em: {collaborator.createdAt || 'Data não disponível'}
                             </div>
                         </div>
                     </CardContent>

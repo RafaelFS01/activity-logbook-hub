@@ -11,6 +11,7 @@ import { ref, set, get } from 'firebase/database';
 import { db } from '@/lib/firebase';
 
 export type UserRole = 'admin' | 'manager' | 'collaborator';
+export type CollaboratorStatus = 'active' | 'inactive' | 'pending';
 
 export interface UserData {
   name: string;
@@ -21,6 +22,11 @@ export interface UserData {
   birthDate: string;
   admissionDate: string;
   active: boolean;
+  status?: CollaboratorStatus;  // Add status property
+  photoURL?: string;            // Add photoURL property
+  createdAt?: string;           // Add createdAt property
+  updatedAt?: string;           // Add updatedAt property
+  uid?: string;                 // Add uid property
 }
 
 // Função para criar um novo usuário (colaborador)
