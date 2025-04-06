@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "h12";
 
 interface ThemeContextType {
   theme: Theme;
@@ -21,20 +21,25 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       : "light";
   });
 
-  // Toggle theme function
+  // Toggle theme function - now cycles through light, dark, and h12
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+    setTheme((prevTheme) => {
+      if (prevTheme === "light") return "dark";
+      if (prevTheme === "dark") return "h12";
+      return "light";
+    });
   };
 
   // Update localStorage and document class when theme changes
   useEffect(() => {
     localStorage.setItem("theme", theme);
     
-    // Update document class for Tailwind dark mode
+    // Update document class for Tailwind dark mode and h12 mode
+    document.documentElement.classList.remove("dark", "h12");
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    } else if (theme === "h12") {
+      document.documentElement.classList.add("h12");
     }
   }, [theme]);
 

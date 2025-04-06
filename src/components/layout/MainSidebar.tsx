@@ -23,7 +23,8 @@ import {
   Settings, 
   Sun,
   UserCircle, 
-  Users 
+  Users,
+  Palette
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -59,6 +60,34 @@ const MainSidebar = () => {
   // Verificar se o usuário tem permissão para ver a seção de relatórios e Home
   const isManagerOrAdmin = user?.role === "admin" || user?.role === "manager";
 
+  // Função para renderizar o ícone do tema de acordo com o tema atual
+  const renderThemeIcon = () => {
+    switch (theme) {
+      case 'light':
+        return <Moon className="h-5 w-5" />;
+      case 'dark':
+        return <Palette className="h-5 w-5" />;
+      case 'h12':
+        return <Sun className="h-5 w-5" />;
+      default:
+        return <Moon className="h-5 w-5" />;
+    }
+  };
+
+  // Função para obter o título do botão de tema
+  const getThemeButtonTitle = () => {
+    switch (theme) {
+      case 'light':
+        return 'Ativar modo escuro';
+      case 'dark':
+        return 'Ativar modo H12';
+      case 'h12':
+        return 'Ativar modo claro';
+      default:
+        return 'Alternar tema';
+    }
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -72,13 +101,9 @@ const MainSidebar = () => {
             size="icon" 
             onClick={toggleTheme} 
             className="ml-2"
-            title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+            title={getThemeButtonTitle()}
           >
-            {theme === 'light' ? (
-              <Moon className="h-5 w-5" />
-            ) : (
-              <Sun className="h-5 w-5" />
-            )}
+            {renderThemeIcon()}
             <span className="sr-only">Alternar tema</span>
           </Button>
         </div>

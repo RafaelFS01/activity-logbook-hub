@@ -2,7 +2,7 @@
 import type { Config } from "tailwindcss";
 
 export default {
-	darkMode: ["class"],
+	darkMode: ["class", ".dark"],
 	content: [
 		"./pages/**/*.{ts,tsx}",
 		"./components/**/*.{ts,tsx}",
@@ -62,7 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Cores específicas do tema H12
+				h12: {
+					background: '#F4F6F8',
+					foreground: '#636466',
+					primary: '#203C81',
+					secondary: '#8AB4E1',
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

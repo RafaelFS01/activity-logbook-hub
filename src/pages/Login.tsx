@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity, Sun, Moon } from "lucide-react";
+import { Activity, Sun, Moon, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +40,20 @@ const Login = () => {
     }
   };
 
+  // Função para renderizar o ícone do tema de acordo com o tema atual
+  const renderThemeIcon = () => {
+    switch (theme) {
+      case 'light':
+        return <Moon className="h-5 w-5" />;
+      case 'dark':
+        return <Palette className="h-5 w-5" />;
+      case 'h12':
+        return <Sun className="h-5 w-5" />;
+      default:
+        return <Moon className="h-5 w-5" />;
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 transition-colors login-container">
       <div className="w-full max-w-md p-4">
@@ -50,8 +64,8 @@ const Login = () => {
             onClick={toggleTheme}
             className="rounded-full"
           >
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            <span className="sr-only">Toggle theme</span>
+            {renderThemeIcon()}
+            <span className="sr-only">Alternar tema</span>
           </Button>
         </div>
         

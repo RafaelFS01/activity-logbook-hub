@@ -85,6 +85,46 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+  
+  /* H12 Theme - Custom theme with blue as primary color */
+  .h12 {
+    --background: 210 30% 98%; /* #F4F6F8 */
+    --foreground: 220 1% 39%; /* #636466 */
+
+    --card: 210 30% 98%; /* #F4F6F8 */
+    --card-foreground: 220 1% 39%; /* #636466 */
+
+    --popover: 210 30% 98%; /* #F4F6F8 */
+    --popover-foreground: 220 1% 39%; /* #636466 */
+
+    --primary: 218 59% 31%; /* #203C81 - Dark Blue */
+    --primary-foreground: 210 30% 98%; /* #F4F6F8 */
+
+    --secondary: 212 60% 71%; /* #8AB4E1 - Light Blue */
+    --secondary-foreground: 218 59% 31%; /* #203C81 */
+
+    --muted: 220 9% 89%;
+    --muted-foreground: 220 1% 50%;
+
+    --accent: 212 60% 71%; /* #8AB4E1 */
+    --accent-foreground: 218 59% 31%; /* #203C81 */
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 30% 98%;
+
+    --border: 212 30% 84%;
+    --input: 212 30% 84%;
+    --ring: 218 59% 31%; /* #203C81 */
+    
+    --sidebar-background: 218 59% 25%; /* Darker version of #203C81 */
+    --sidebar-foreground: 210 30% 98%; /* #F4F6F8 */
+    --sidebar-primary: 212 60% 71%; /* #8AB4E1 */
+    --sidebar-primary-foreground: 218 59% 31%; /* #203C81 */
+    --sidebar-accent: 218 59% 35%; /* Slightly lighter than primary */
+    --sidebar-accent-foreground: 210 30% 98%; /* #F4F6F8 */
+    --sidebar-border: 218 30% 40%;
+    --sidebar-ring: 212 60% 71%; /* #8AB4E1 */
+  }
 }
 
 @layer base {
@@ -104,6 +144,11 @@
 
 /* Light mode active link indicator */
 .sidebar-active {
+  @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
+}
+
+/* H12 mode active link indicator */
+.h12 .sidebar-active {
   @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
 }
 
@@ -132,9 +177,24 @@
   @apply hover:bg-gray-700 hover:text-white;
 }
 
+/* Button styles in H12 mode */
+.h12 button[class*='outline'] {
+  @apply hover:bg-secondary hover:text-primary;
+}
+
+.h12 button[type='submit'],
+.h12 [class*='primary'] {
+  @apply hover:bg-primary/80;
+}
+
 /* Dark mode background for login page */
 .dark .login-container {
   @apply bg-gray-900;
+}
+
+/* H12 mode background for login page */
+.h12 .login-container {
+  @apply bg-primary/10;
 }
 
 /* Fixed button styles for action buttons in dark mode */
@@ -145,10 +205,26 @@
   @apply hover:bg-gray-700 hover:text-white;
 }
 
+/* Fixed button styles for action buttons in H12 mode */
+.h12 button.border-red-200,
+.h12 button.border-green-200,
+.h12 button.border-blue-200,
+.h12 button.border-yellow-200 {
+  @apply hover:bg-secondary hover:text-primary;
+}
+
 /* Status filter buttons in dark mode */
 .dark button[class*='border-yellow-200'],
 .dark button[class*='border-blue-200'],
 .dark button[class*='border-green-200'],
 .dark button[class*='border-red-200'] {
   @apply hover:bg-gray-700 hover:text-white;
+}
+
+/* Status filter buttons in H12 mode */
+.h12 button[class*='border-yellow-200'],
+.h12 button[class*='border-blue-200'],
+.h12 button[class*='border-green-200'],
+.h12 button[class*='border-red-200'] {
+  @apply hover:bg-secondary hover:text-primary;
 }
