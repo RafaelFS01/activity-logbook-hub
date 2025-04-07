@@ -158,9 +158,16 @@ export const updateActivityStatus = async (activityId: string, status: ActivityS
       updatedAt: new Date().toISOString()
     };
     
-    // If status is completed, add completed date
+    // If status is completed, add completed date and end date if not already set
     if (status === 'completed') {
-      updatedData.completedDate = new Date().toISOString();
+      const now = new Date().toISOString();
+      updatedData.completedDate = now;
+      
+      // Add endDate if it's not already set
+      const activity = snapshot.val() as Activity;
+      if (!activity.endDate) {
+        updatedData.endDate = now;
+      }
     }
     
     await update(activityRef, updatedData);

@@ -62,11 +62,12 @@ const Home = () => {
 
     const startDate = parseISO(activity.startDate);
     
+    // Corrigido: Para incluir a data de início na verificação
     // Se não há data de término ou está concluída
     if (!activity.endDate) {
       // Para atividades em progresso, elas continuam até hoje
       if (activity.status === 'in-progress') {
-        return startDate <= date;
+        return isSameDay(startDate, date) || startDate <= date;
       }
       // Para outras atividades sem data fim, só considere a data de início
       return isSameDay(startDate, date);

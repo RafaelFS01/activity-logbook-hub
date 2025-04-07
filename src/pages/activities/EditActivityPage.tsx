@@ -152,6 +152,16 @@ const EditActivityPage = () => {
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!id || !user?.uid) return;
     
+    // Validar data de término para atividades concluídas
+    if (data.status === 'completed' && !data.endDate) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Atividades concluídas precisam ter uma data de término definida."
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
