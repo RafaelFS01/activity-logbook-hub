@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { getActivities, Activity, ActivityStatus } from '@/services/firebase/activities';
-import { format, isToday, isThisWeek, isThisMonth, isPast } from 'date-fns';
+import { format, isToday, isThisWeek, isThisMonth, isPast, startOfDay } from 'date-fns';
 
 export type ActivityStats = {
   total: number;
@@ -30,9 +29,8 @@ export const useActivityStats = () => {
 
   // Função para determinar se uma atividade é futura
   const isFutureActivity = (activity: Activity): boolean => {
-    const startDate = new Date(activity.startDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const startDate = startOfDay(new Date(activity.startDate));
+    const today = startOfDay(new Date());
     return startDate > today;
   };
   
@@ -42,9 +40,8 @@ export const useActivityStats = () => {
       return false;
     }
     
-    const endDate = new Date(activity.endDate);
-    endDate.setHours(23, 59, 59, 999); // Fim do dia
-    const today = new Date();
+    const endDate = startOfDay(new Date(activity.endDate));
+    const today = startOfDay(new Date());
     
     return isPast(endDate) && (activity.status === 'pending' || activity.status === 'in-progress');
   };

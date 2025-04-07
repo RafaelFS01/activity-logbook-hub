@@ -60,22 +60,24 @@ const Home = () => {
       return false;
     }
 
-    const startDate = parseISO(activity.startDate);
+    // Converter as datas para início do dia (00:00:00) para comparação apenas por data
+    const selectedDateStart = startOfDay(date);
+    const startDate = startOfDay(parseISO(activity.startDate));
     
-    // Corrigido: Para incluir a data de início na verificação
-    // Se não há data de término ou está concluída
+    // Se não há data de término
     if (!activity.endDate) {
       // Para atividades em progresso, elas continuam até hoje
       if (activity.status === 'in-progress') {
-        return isSameDay(startDate, date) || startDate <= date;
+        return isSameDay(startDate, selectedDateStart) || startDate <= selectedDateStart;
       }
       // Para outras atividades sem data fim, só considere a data de início
-      return isSameDay(startDate, date);
+      return isSameDay(startDate, selectedDateStart);
     }
     
     // Se tem data de término, verifica se a data selecionada está dentro do intervalo
-    const endDate = parseISO(activity.endDate);
-    return isWithinInterval(date, { start: startDate, end: endDate });
+    // Usamos startOfDay para normalizar as datas e comparar apenas o dia
+    const endDate = startOfDay(parseISO(activity.endDate));
+    return isWithinInterval(selectedDateStart, { start: startDate, end: endDate });
   };
 
   // Filtrar atividades para a data selecionada considerando o período
