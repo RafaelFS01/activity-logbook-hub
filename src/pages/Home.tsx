@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, addDays, subDays, startOfDay, isSameDay, isWithinInterval, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Filter } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Filter, UserRound, Building } from 'lucide-react';
 import { getActivities, Activity, ActivityStatus } from '@/services/firebase/activities';
+import { getClients, Client } from '@/services/firebase/clients';
+import { getCollaboratorById, CollaboratorData } from '@/services/firebase/collaborators';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +14,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Combobox } from '@/components/ui/combobox';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -29,6 +32,11 @@ const Home = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [statusFilter, setStatusFilter] = useState<ActivityStatus[]>(['in-progress']);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [collaborators, setCollaborators] = useState<CollaboratorData[]>([]);
+  const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
+  const [loadingCollaborators, setLoadingCollaborators] = useState<boolean>(false);
 
   // Status options
   const statusOptions: { label: string; value: ActivityStatus }[] = [
@@ -44,6 +52,10 @@ const Home = () => {
         setLoading(true);
         const allActivities = await getActivities();
         setActivities(allActivities);
+
+        // Fetch clients
+        const allClients = await getClients();
+        setClients(allClients.filter(client => client.active));
       } catch (error) {
         console.error('Erro ao buscar atividades:', error);
       } finally {
@@ -54,9 +66,49 @@ const Home = () => {
     fetchActivities();
   }, []);
 
+  useEffect(() => {
+    // Extract unique collaborator IDs from activities
+    const fetchCollaborators = async () => {
+      if (activities.length === 0) return;
+      
+      try {
+        setLoadingCollaborators(true);
+        // Get unique collaborator IDs from all activities
+        const collaboratorIds = [...new Set(activities.flatMap(activity => activity.assignedTo))];
+        
+        // Fetch collaborator data for each ID
+        const collaboratorData = await Promise.all(
+          collaboratorIds.map(async (id) => {
+            const data = await getCollaboratorById(id);
+            return data;
+          })
+        );
+        
+        // Filter out null values and set collaborators
+        setCollaborators(collaboratorData.filter((data): data is CollaboratorData => data !== null));
+      } catch (error) {
+        console.error('Erro ao buscar colaboradores:', error);
+      } finally {
+        setLoadingCollaborators(false);
+      }
+    };
+
+    fetchCollaborators();
+  }, [activities]);
+
   // Função para verificar se a atividade está ativa na data selecionada
   const isActivityActiveOnDate = (activity: Activity, date: Date) => {
     if (!statusFilter.includes(activity.status)) {
+      return false;
+    }
+
+    // Filter by client if selected
+    if (selectedClient && activity.clientId !== selectedClient) {
+      return false;
+    }
+
+    // Filter by collaborator if selected
+    if (selectedCollaborator && !activity.assignedTo.includes(selectedCollaborator)) {
       return false;
     }
 
@@ -104,6 +156,25 @@ const Home = () => {
     });
   };
 
+  // Reset all filters
+  const resetFilters = () => {
+    setStatusFilter(['in-progress']);
+    setSelectedClient(null);
+    setSelectedCollaborator(null);
+  };
+
+  // Generate client options for combobox
+  const clientOptions = clients.map(client => ({
+    value: client.id,
+    label: client.name
+  }));
+
+  // Generate collaborator options for combobox
+  const collaboratorOptions = collaborators.map(collaborator => ({
+    value: collaborator.uid,
+    label: collaborator.displayName || collaborator.email || 'Sem nome'
+  }));
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex flex-col gap-2">
@@ -142,35 +213,68 @@ const Home = () => {
           </div>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              <span>Filtrar por status ({statusFilter.length})</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56 bg-background">
-            <DropdownMenuLabel>Status da atividade</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="p-2 space-y-2">
-              {statusOptions.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`status-${option.value}`} 
-                    checked={statusFilter.includes(option.value)} 
-                    onCheckedChange={() => handleStatusToggle(option.value)}
-                  />
-                  <label 
-                    htmlFor={`status-${option.value}`}
-                    className="text-sm cursor-pointer"
-                  >
-                    {option.label}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 min-w-[200px]">
+            <UserRound className="h-4 w-4 text-muted-foreground" />
+            <Combobox
+              options={collaboratorOptions}
+              selectedValue={selectedCollaborator}
+              onSelect={setSelectedCollaborator}
+              placeholder="Filtrar por colaborador"
+              searchPlaceholder="Buscar colaborador..."
+              noResultsText="Nenhum colaborador encontrado"
+              allowClear={true}
+              disabled={loadingCollaborators}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 min-w-[200px]">
+            <Building className="h-4 w-4 text-muted-foreground" />
+            <Combobox
+              options={clientOptions}
+              selectedValue={selectedClient}
+              onSelect={setSelectedClient}
+              placeholder="Filtrar por cliente"
+              searchPlaceholder="Buscar cliente..."
+              noResultsText="Nenhum cliente encontrado"
+              allowClear={true}
+            />
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                <span>Status ({statusFilter.length})</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 bg-background">
+              <DropdownMenuLabel>Status da atividade</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="p-2 space-y-2">
+                {statusOptions.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`status-${option.value}`} 
+                      checked={statusFilter.includes(option.value)} 
+                      onCheckedChange={() => handleStatusToggle(option.value)}
+                    />
+                    <label 
+                      htmlFor={`status-${option.value}`}
+                      className="text-sm cursor-pointer"
+                    >
+                      {option.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button variant="outline" onClick={resetFilters} className="whitespace-nowrap">
+            Limpar filtros
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-4">
