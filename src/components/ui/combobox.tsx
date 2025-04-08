@@ -1,3 +1,4 @@
+
 "use client"; // Necessário se estiver usando App Router e componentes de cliente
 
 import * as React from "react";
@@ -97,16 +98,16 @@ const Combobox = React.forwardRef<
                         aria-expanded={open}
                         aria-controls={open ? `combobox-list-${id || ''}` : undefined} // Associa ao conteúdo
                         className={cn(
-                            "w-full justify-between text-ellipsis overflow-hidden whitespace-nowrap",
+                            "w-full justify-between text-ellipsis overflow-hidden whitespace-nowrap border-2 border-[#8AB4E1]",
                             !selectedLabel && "text-muted-foreground", // Estilo quando placeholder é mostrado
                             triggerClassName
                         )}
                         disabled={disabled}
                     >
-            <span className="flex-1 text-left text-ellipsis overflow-hidden whitespace-nowrap">
-             {selectedLabel || placeholder}
-            </span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <span className="flex-1 text-left text-ellipsis overflow-hidden whitespace-nowrap">
+                       {selectedLabel || placeholder}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
                 {/* Botão de Limpar (Opcional) */}
@@ -122,14 +123,14 @@ const Combobox = React.forwardRef<
                     </Button>
                 )}
                 <PopoverContent
-                    className={cn("w-[var(--radix-popover-trigger-width)] p-0", contentClassName)} // Faz o popover ter a largura do botão
+                    className={cn("w-[var(--radix-popover-trigger-width)] p-0 border-2 border-[#8AB4E1]", contentClassName)} // Adicionando borda azul também ao popover
                     style={{ zIndex: 50 }} // Garante que fique acima de outros elementos se necessário
                 >
                     <Command
                         // Adiciona um filtro customizado se necessário, por padrão filtra pelo texto
                         // filter={(value, search) => ...}
                     >
-                        <CommandInput placeholder={searchPlaceholder} disabled={disabled} />
+                        <CommandInput placeholder={searchPlaceholder} disabled={disabled} className="border-b-2 border-[#8AB4E1]" />
                         <CommandList id={`combobox-list-${id || ''}`}> {/* ID para aria-controls */}
                             <CommandEmpty>{noResultsText}</CommandEmpty>
                             {/* Usar ScrollArea para listas potencialmente longas */}

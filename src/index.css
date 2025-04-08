@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -188,15 +189,16 @@
 }
 
 .input, input, select, textarea {
-  @apply border-2 shadow-sm;
+  @apply border-2 border-[#8AB4E1] shadow-sm;
 }
 .card, [class*='card'] {
-  @apply border-2 shadow-md;
+  @apply border-2 border-[#8AB4E1] shadow-md;
 }
 .form-group, [class*='form-item'] {
   @apply border-opacity-100;
 }
 
+/* Customizações para temas específicos */
 .dark button[class*='outline']:hover {
   @apply hover:bg-gray-700 hover:text-white;
 }
