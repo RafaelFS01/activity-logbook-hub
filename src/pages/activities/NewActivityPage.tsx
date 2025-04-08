@@ -46,26 +46,39 @@ import { getClients } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
-  title: z.string().min(3, {
-    message: "O título deve ter pelo menos 3 caracteres."
-  }),
-  description: z.string().min(10, {
-    message: "A descrição deve ter pelo menos 10 caracteres."
-  }),
-  clientId: z.string({
-    required_error: "Por favor, selecione um cliente."
-  }),
-  priority: z.string({
-    required_error: "Por favor, selecione uma prioridade."
-  }),
-  status: z.string({
-    required_error: "Por favor, selecione um status."
-  }),
-  startDate: z.string({
-    required_error: "Por favor, selecione uma data de início."
-  }),
-  endDate: z.string().optional(),
-  type: z.string().optional(),
+    title: z.string().min(3, {
+        message: "O título deve ter pelo menos 3 caracteres."
+    }),
+    description: z.string().min(10, {
+        message: "A descrição deve ter pelo menos 10 caracteres."
+    }),
+    clientId: z.string({
+        required_error: "Por favor, selecione um cliente."
+    }),
+    priority: z.string({
+        required_error: "Por favor, selecione uma prioridade."
+    }),
+    status: z.string({
+        required_error: "Por favor, selecione um status."
+    }),
+    startDate: z.string({ // Mantém como string 'yyyy-MM-dd'
+        required_error: "Por favor, selecione uma data de início."
+    }),
+    // NOVO: Campo para hora de início (obrigatório, formato HH:MM)
+    startTime: z.string({
+        required_error: "Por favor, informe a hora de início."
+    }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { // Valida HH:MM (00:00 - 23:59)
+        message: "Formato de hora inválido (use HH:MM)."
+    }),
+    endDate: z.string().optional(), // Mantém como string 'yyyy-MM-dd', opcional
+    // NOVO: Campo para hora de término (opcional, formato HH:MM)
+    endTime: z.string()
+        .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { // Valida HH:MM se preenchido
+            message: "Formato de hora inválido (use HH:MM)."
+        })
+        .optional()
+        .or(z.literal("")), // Permite vazio ou formato HH:MM
+    type: z.string().optional(),
 });
 
 const NewActivityPage = () => {
@@ -77,15 +90,19 @@ const NewActivityPage = () => {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      priority: "medium",
-      status: "pending",
-      startDate: format(new Date(), "yyyy-MM-dd"),
-      type: "",
-    },
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+          title: "",
+          description: "",
+          priority: "medium",
+          status: "pending",
+          startDate: format(new Date(), "yyyy-MM-dd"), // Data de hoje como padrão
+          startTime: "", // Vazio por padrão, ou defina um como "09:00"
+          endDate: "",   // Vazio por padrão
+          endTime: "",   // Vazio por padrão
+          type: "",
+          // clientId não precisa de valor padrão aqui se o Select lida com isso
+      },
   });
 
   const watchStatus = form.watch("status");
@@ -150,63 +167,62 @@ const NewActivityPage = () => {
 
     setIsSubmitting(true);
 
-    try {
+      try {
+          // 1. Monta o objeto base
+          const activityData: any = {
+              title: data.title,
+              description: data.description,
+              clientId: data.clientId,
+              assignedTo: [user.uid], // Assumindo que sempre é o criador inicialmente
+              priority: data.priority as ActivityPriority,
+              status: data.status as ActivityStatus,
+              type: data.type || "", // Garante que seja string vazia se opcional e não preenchido
+              createdBy: user.uid,
+              // MODIFICADO: Combina data e hora de início (obrigatórios)
+              startDate: new Date(`${data.startDate}T${data.startTime}:00`).toISOString(),
+          };
 
-        const activityData: any = {
-            title: data.title,
-            description: data.description,
-            clientId: data.clientId,
-            assignedTo: [user.uid],
-            priority: data.priority as ActivityPriority,
-            status: data.status as ActivityStatus,
-            // Processa startDate como antes (assumindo que é sempre obrigatório)
-            startDate: data.startDate
-                ? new Date(`${data.startDate}T12:00:00`).toISOString()
-                : '', // Ou trate erro se startDate puder estar vazio
-            type: data.type,
-            createdBy: user.uid
-        };
+          // 2. Adiciona endDate SOMENTE se data.endDate tiver valor
+          if (data.endDate) {
+              // Usa a hora de término se fornecida, senão usa 00:00:00 como padrão
+              const timePart = data.endTime ? `${data.endTime}:00` : '00:00:00';
+              try {
+                  // MODIFICADO: Combina data e hora de término
+                  activityData.endDate = new Date(`${data.endDate}T${timePart}`).toISOString();
+              } catch (dateError) {
+                  console.error("Erro ao converter data/hora de término:", dateError, "Valores:", data.endDate, data.endTime);
+                  toast({
+                      variant: "destructive",
+                      title: "Erro de Formato",
+                      description: "A data ou hora de término fornecida parece inválida."
+                  });
+                  setIsSubmitting(false);
+                  return;
+              }
+          }
+          // Se data.endDate for vazio/undefined, o campo 'endDate' não será adicionado
 
-        // 2. Adicione endDate SOMENTE se houver valor
-        if (data.endDate) {
-            try {
-                // Adiciona um try-catch para a conversão da data para segurança extra
-                activityData.endDate = new Date(`${data.endDate}T12:00:00`).toISOString();
-            } catch (dateError) {
-                console.error("Erro ao converter data de término:", dateError, "Valor:", data.endDate);
-                toast({
-                    variant: "destructive",
-                    title: "Erro de Formato",
-                    description: "A data de término fornecida parece inválida."
-                });
-                setIsSubmitting(false); // Pare a submissão
-                return; // Saia da função onSubmit
-            }
-        }
-        // Se data.endDate for vazio ou undefined, o campo 'endDate'
-        // simplesmente não existirá no objeto 'activityData'.
+          // console.log("Dados a serem enviados:", activityData); // BOM PARA DEBUG
 
-        // 3. Chame createActivity com o objeto potencialmente modificado
-        await createActivity(activityData, user.uid);
+          // 3. Chame createActivity com o objeto atualizado
+          await createActivity(activityData, user.uid); // Assumindo que createActivity aceita o objeto e o uid
 
-        toast({
-            title: "Atividade criada",
-            description: "A atividade foi criada com sucesso.",
-        });
+          toast({
+              title: "Atividade criada",
+              description: "A atividade foi criada com sucesso.",
+          });
 
-        navigate("/activities");
-    } catch (error) {
-        console.error("Erro ao criar atividade:", error);
-        // O erro genérico ainda pode aparecer se houver outros problemas
-        // na função createActivity ou no backend.
-        toast({
-            variant: "destructive",
-            title: "Erro",
-            description: "Não foi possível criar a atividade."
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
+          navigate("/activities");
+      } catch (error) {
+          console.error("Erro ao criar atividade:", error);
+          toast({
+              variant: "destructive",
+              title: "Erro",
+              description: "Não foi possível criar a atividade." // Mensagem genérica
+          });
+      } finally {
+          setIsSubmitting(false);
+      }
   };
 
   return (
@@ -366,105 +382,162 @@ const NewActivityPage = () => {
                 </FormItem>
               )}
             />
-            
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
-              <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Data de Início</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                  )}
-                              >
-                                {field.value ? (
-                                    format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
-                                ) : (
-                                    <span>Selecione a data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
-                                onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
-                                locale={ptBR}
-                                initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormDescription>
-                          Selecione a data de início desta atividade.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                  )}
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
-            <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>
-                        Data de Término 
-                        {watchStatus === 'completed' ? ' (Obrigatório)' : ' (Opcional)'}
-                      </FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                )}
-                            >
-                              {field.value ? (
-                                  format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
-                              ) : (
-                                  <span>Selecione a data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                              mode="single"
-                              selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
-                              onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
-                              disabled={(date) => {
-                                const startDateValue = form.getValues("startDate");
-                                return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false;
-                              }}
-                              locale={ptBR}
-                              initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormDescription>
-                        {watchStatus === 'completed' 
-                          ? 'Para atividades concluídas, a data de término é obrigatória.' 
-                          : 'Selecione a data de término desta atividade, se aplicável.'}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                )}
-            />
+              {/* Agrupando Data e Hora de Início (Exemplo com Grid) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* FormField da Data de Início (existente, sem alterações internas) */}
+                  <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                          <FormItem> {/* Removido flex-1 se estiver dentro de um grid */}
+                              <FormLabel>Data de Início</FormLabel>
+                              <Popover>
+                                  <PopoverTrigger asChild>
+                                      <FormControl>
+                                          <Button
+                                              variant={"outline"}
+                                              className={cn(
+                                                  "w-full pl-3 text-left font-normal",
+                                                  !field.value && "text-muted-foreground"
+                                              )}
+                                          >
+                                              {field.value ? (
+                                                  format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR }) // Mantém T12 para exibição
+                                              ) : (
+                                                  <span>Selecione a data</span>
+                                              )}
+                                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                          </Button>
+                                      </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                      <Calendar
+                                          mode="single"
+                                          selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined} // Mantém T12 para seleção
+                                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                                          locale={ptBR}
+                                          initialFocus
+                                      />
+                                  </PopoverContent>
+                              </Popover>
+                              <FormDescription>
+                                  Selecione a data de início desta atividade.
+                              </FormDescription>
+                              <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+
+                  {/* NOVO: FormField da Hora de Início */}
+                  {/* CORRIGIDO: FormField da Hora de Início (usando input type="time" nativo estilizado) */}
+                  <FormField
+                      control={form.control}
+                      name="endDate"
+                      render={({ field }) => (
+                          <FormItem> {/* Removido flex-1 */}
+                              <FormLabel>
+                                  Data de Término
+                                  {watchStatus === 'completed' ? ' (Obrigatório)' : ' (Opcional)'}
+                              </FormLabel>
+                              <Popover>
+                                  <PopoverTrigger asChild>
+                                      <FormControl>
+                                          <Button
+                                              variant={"outline"}
+                                              className={cn(
+                                                  "w-full pl-3 text-left font-normal",
+                                                  !field.value && "text-muted-foreground"
+                                              )}
+                                          >
+                                              {field.value ? (
+                                                  format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR }) // Mantém T12 para exibição
+                                              ) : (
+                                                  <span>Selecione a data</span>
+                                              )}
+                                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                          </Button>
+                                      </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                      <Calendar
+                                          mode="single"
+                                          selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined} // Mantém T12 para seleção
+                                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                                          disabled={(date) => {
+                                              const startDateValue = form.getValues("startDate");
+                                              // A lógica de desabilitar datas anteriores à data de início
+                                              // pode precisar considerar a hora de início também,
+                                              // mas para simplificar, manteremos a comparação apenas de data.
+                                              return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false;
+                                          }}
+                                          locale={ptBR}
+                                          initialFocus
+                                      />
+                                  </PopoverContent>
+                              </Popover>
+                              <FormDescription>
+                                  {watchStatus === 'completed'
+                                      ? 'Data de término é obrigatória para atividades concluídas.'
+                                      : 'Selecione a data de término (opcional).'}
+                              </FormDescription>
+                              <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+              </div>
+
+              {/* Agrupando Data e Hora de Término (Exemplo com Grid) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* FormField da Data de Término (existente, ajustar label e descrição) */}
+                  <FormField
+                      control={form.control}
+                      name="startTime"
+                      render={({ field }) => (
+                          <FormItem> {/* Mantenha ou ajuste classes de layout */}
+                              <FormLabel>Hora de Início</FormLabel>
+                              <FormControl>
+                                  {/* Simplesmente use Input com type="time" */}
+                                  <Input
+                                      type="time"
+                                      {...field}
+                                      className="w-20" // Descomente se precisar forçar largura total explicitamente
+                                  />
+                              </FormControl>
+                              <FormDescription>
+                                  Informe a hora de início (HH:MM).
+                              </FormDescription>
+                              <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+                  {/* NOVO: FormField da Hora de Término */}
+                  {/* CORRIGIDO: FormField da Hora de Término (usando input type="time" nativo estilizado) */}
+                  <FormField
+                      control={form.control}
+                      name="endTime"
+                      render={({ field }) => (
+                          <FormItem> {/* Mantenha ou ajuste classes de layout */}
+                              <FormLabel>Hora de Término (Opcional)</FormLabel>
+                              <FormControl>
+                                  {/* Simplesmente use Input com type="time" */}
+                                  <Input
+                                      type="time"
+                                      {...field}
+                                      // Garante que o valor seja uma string vazia se nulo/undefined,
+                                      // o que é importante para inputs controlados.
+                                      value={field.value || ""}
+                                      className="w-20" // Descomente se precisar forçar largura total explicitamente
+                                  />
+                              </FormControl>
+                              <FormDescription>
+                                  Informe a hora de término (HH:MM), se aplicável.
+                              </FormDescription>
+                              <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+              </div>
           </div>
 
           <div className="flex justify-end gap-4">
