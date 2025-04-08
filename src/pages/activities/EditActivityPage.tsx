@@ -156,57 +156,62 @@ const EditActivityPage = () => {
   }, [id, form, toast, navigate]);
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    if (!id || !user?.uid) return;
-    
-    if (data.status === 'completed' && !data.endDate) {
-      form.setError("endDate", {
-        type: "manual",
-        message: "Data de término é obrigatória para atividades concluídas."
-      });
-      toast({
-        variant: "destructive",
-        title: "Erro de validação",
-        description: "Atividades concluídas precisam ter uma data de término definida."
-      });
+    if (!user?.uid || !id) {
+      toast({ variant: "destructive", title: "Erro", description: "Informações de usuário ou atividade ausentes." });
       return;
     }
-    
+
+    if (data.status === 'completed' && !data.endDate) {
+      form.setError("endDate", { type: "manual", message: "Data de término é obrigatória para atividades concluídas." });
+      toast({ variant: "destructive", title: "Erro de validação", description: "Atividades concluídas precisam ter uma data de término definida." });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const startDate = data.startDate 
-        ? new Date(`${data.startDate}T12:00:00`).toISOString() 
-        : '';
-        
-      const endDate = data.endDate 
-        ? new Date(`${data.endDate}T12:00:00`).toISOString() 
-        : undefined;
+      let endDateValue: string | null = null; // Default para null (para limpar o campo no Firestore se vazio)
 
-      const activityData = {
+      if (data.endDate) { // Se o campo NÃO estiver vazio
+        try {
+          endDateValue = new Date(`${data.endDate}T12:00:00`).toISOString(); // Converte para ISOString
+        } catch (dateError) {
+          console.error("Erro ao converter data de término:", dateError, "Valor:", data.endDate);
+          toast({ variant: "destructive", title: "Erro de Formato", description: "A data de término fornecida parece inválida."});
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      // Se data.endDate estiver vazio, endDateValue permanece null
+
+      // Objeto SÓ com os campos que podem ser atualizados por este form
+      const updatedData = {
         title: data.title,
         description: data.description,
         clientId: data.clientId,
         priority: data.priority as ActivityPriority,
         status: data.status as ActivityStatus,
-        startDate,
-        endDate,
+        startDate: data.startDate ? new Date(`${data.startDate}T12:00:00`).toISOString() : '', // Tratar se startDate puder ser vazio
         type: data.type,
+        endDate: endDateValue, // Envia a ISOString ou null
+        // Considere adicionar um campo 'updatedAt: new Date().toISOString()' ou similar
+        // Considere adicionar 'updatedBy: user.uid'
       };
 
-      await updateActivity(id, activityData);
-      
+      await updateActivity(id, updatedData); // Passa o objeto com endDate como ISOString ou null
+
       toast({
         title: "Atividade atualizada",
         description: "A atividade foi atualizada com sucesso.",
       });
-      
-      navigate(`/activities/${id}`);
+
+      navigate("/activities");
     } catch (error) {
       console.error("Erro ao atualizar atividade:", error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível atualizar a atividade."
+        description: "Não foi possível atualizar a atividade." // Erro genérico
       });
     } finally {
       setIsSubmitting(false);

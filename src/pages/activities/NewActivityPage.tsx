@@ -151,44 +151,61 @@ const NewActivityPage = () => {
     setIsSubmitting(true);
 
     try {
-      const startDate = data.startDate 
-        ? new Date(`${data.startDate}T12:00:00`).toISOString()
-        : '';
 
-      const endDate = data.endDate 
-        ? new Date(`${data.endDate}T12:00:00`).toISOString() 
-        : undefined;
+        const activityData: any = {
+            title: data.title,
+            description: data.description,
+            clientId: data.clientId,
+            assignedTo: [user.uid],
+            priority: data.priority as ActivityPriority,
+            status: data.status as ActivityStatus,
+            // Processa startDate como antes (assumindo que é sempre obrigatório)
+            startDate: data.startDate
+                ? new Date(`${data.startDate}T12:00:00`).toISOString()
+                : '', // Ou trate erro se startDate puder estar vazio
+            type: data.type,
+            createdBy: user.uid
+        };
 
-      const activityData = {
-        title: data.title,
-        description: data.description,
-        clientId: data.clientId,
-        assignedTo: [user.uid],
-        priority: data.priority as ActivityPriority,
-        status: data.status as ActivityStatus,
-        startDate,
-        endDate,
-        type: data.type,
-        createdBy: user.uid
-      };
+        // 2. Adicione endDate SOMENTE se houver valor
+        if (data.endDate) {
+            try {
+                // Adiciona um try-catch para a conversão da data para segurança extra
+                activityData.endDate = new Date(`${data.endDate}T12:00:00`).toISOString();
+            } catch (dateError) {
+                console.error("Erro ao converter data de término:", dateError, "Valor:", data.endDate);
+                toast({
+                    variant: "destructive",
+                    title: "Erro de Formato",
+                    description: "A data de término fornecida parece inválida."
+                });
+                setIsSubmitting(false); // Pare a submissão
+                return; // Saia da função onSubmit
+            }
+        }
+        // Se data.endDate for vazio ou undefined, o campo 'endDate'
+        // simplesmente não existirá no objeto 'activityData'.
 
-      await createActivity(activityData, user.uid);
-      
-      toast({
-        title: "Atividade criada",
-        description: "A atividade foi criada com sucesso.",
-      });
-      
-      navigate("/activities");
+        // 3. Chame createActivity com o objeto potencialmente modificado
+        await createActivity(activityData, user.uid);
+
+        toast({
+            title: "Atividade criada",
+            description: "A atividade foi criada com sucesso.",
+        });
+
+        navigate("/activities");
     } catch (error) {
-      console.error("Erro ao criar atividade:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível criar a atividade."
-      });
+        console.error("Erro ao criar atividade:", error);
+        // O erro genérico ainda pode aparecer se houver outros problemas
+        // na função createActivity ou no backend.
+        toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Não foi possível criar a atividade."
+        });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   };
 
