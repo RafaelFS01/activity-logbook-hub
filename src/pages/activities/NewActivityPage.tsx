@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -7,7 +6,7 @@ import {
   Loader2
 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, addDays } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as z from "zod";
 
@@ -46,7 +45,6 @@ import {
 import { getClients } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Atualização do esquema de validação com o campo type
 const formSchema = z.object({
   title: z.string().min(3, {
     message: "O título deve ter pelo menos 3 caracteres."
@@ -67,7 +65,7 @@ const formSchema = z.object({
     required_error: "Por favor, selecione uma data de início."
   }),
   endDate: z.string().optional(),
-  type: z.string().optional(), // Campo tipo opcional
+  type: z.string().optional(),
 });
 
 const NewActivityPage = () => {
@@ -78,7 +76,6 @@ const NewActivityPage = () => {
   const [clients, setClients] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Inicializar o formulário
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -87,17 +84,29 @@ const NewActivityPage = () => {
       priority: "medium",
       status: "pending",
       startDate: format(new Date(), "yyyy-MM-dd"),
-      type: "", // Valor padrão para o tipo
+      type: "",
     },
   });
 
-  // Carregar dados necessários
+  const watchStatus = form.watch("status");
+  const watchEndDate = form.watch("endDate");
+
+  useEffect(() => {
+    if (watchStatus === "completed" && !watchEndDate) {
+      form.setError("endDate", {
+        type: "manual",
+        message: "Data de término é obrigatória para atividades concluídas."
+      });
+    } else {
+      form.clearErrors("endDate");
+    }
+  }, [watchStatus, watchEndDate, form]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoadingData(true);
         
-        // Buscar clientes
         const fetchedClients = await getClients();
         setClients(fetchedClients);
         
@@ -116,7 +125,6 @@ const NewActivityPage = () => {
     fetchData();
   }, [toast]);
 
-  // Função para lidar com o envio do formulário
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!user?.uid) {
       toast({
@@ -127,11 +135,14 @@ const NewActivityPage = () => {
       return;
     }
 
-    // Validar data de término para atividades concluídas
     if (data.status === 'completed' && !data.endDate) {
+      form.setError("endDate", {
+        type: "manual",
+        message: "Data de término é obrigatória para atividades concluídas."
+      });
       toast({
         variant: "destructive",
-        title: "Erro",
+        title: "Erro de validação",
         description: "Atividades concluídas precisam ter uma data de término definida."
       });
       return;
@@ -140,9 +151,6 @@ const NewActivityPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Ensure dates are stored in ISO format but preserve the selected date
-      // This preserves the date by setting the time to noon in the local timezone
-      // which prevents timezone shifts from changing the day
       const startDate = data.startDate 
         ? new Date(`${data.startDate}T12:00:00`).toISOString()
         : '';
@@ -155,12 +163,12 @@ const NewActivityPage = () => {
         title: data.title,
         description: data.description,
         clientId: data.clientId,
-        assignedTo: [user.uid], // Automatically set the current user as the only responsible person
+        assignedTo: [user.uid],
         priority: data.priority as ActivityPriority,
         status: data.status as ActivityStatus,
         startDate,
         endDate,
-        type: data.type, // Adicionando o tipo aos dados da atividade
+        type: data.type,
         createdBy: user.uid
       };
 
@@ -212,7 +220,6 @@ const NewActivityPage = () => {
             )}
           />
 
-          {/* Novo Campo de Tipo */}
           <FormField
             control={form.control}
             name="type"
@@ -277,8 +284,8 @@ const NewActivityPage = () => {
                   </FormDescription>
 
                     <Link
-                        to="/clients/new" // Usa a rota definida no App.tsx
-                        className="text-sm text-blue-600 hover:underline mt-1 inline-block" // Estilização opcional
+                        to="/clients/new"
+                        className="text-sm text-blue-600 hover:underline mt-1 inline-block"
                     >
                         Gostaria de cadastrar um novo cliente?
                     </Link>
@@ -288,8 +295,6 @@ const NewActivityPage = () => {
               )}
             />
 
-            {/* Note: Removed the assignedToIds field here */}
-            
             <FormField
               control={form.control}
               name="priority"
@@ -350,7 +355,7 @@ const NewActivityPage = () => {
                   control={form.control}
                   name="startDate"
                   render={({ field }) => (
-                      <FormItem className="flex-1"> {/* ou className="flex flex-col" dependendo do seu layout */}
+                      <FormItem className="flex-1">
                         <FormLabel>Data de Início</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -363,7 +368,6 @@ const NewActivityPage = () => {
                                   )}
                               >
                                 {field.value ? (
-                                    // MODIFICAÇÃO AQUI: Adicione T12:00:00
                                     format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
                                 ) : (
                                     <span>Selecione a data</span>
@@ -375,7 +379,6 @@ const NewActivityPage = () => {
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                                 mode="single"
-                                // MODIFICAÇÃO AQUI: Adicione T12:00:00
                                 selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
                                 onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
                                 locale={ptBR}
@@ -398,8 +401,11 @@ const NewActivityPage = () => {
                 control={form.control}
                 name="endDate"
                 render={({ field }) => (
-                    <FormItem className="flex-1"> {/* ou className="flex flex-col" dependendo do seu layout */}
-                      <FormLabel>Data de Término (Opcional)</FormLabel>
+                    <FormItem className="flex-1">
+                      <FormLabel>
+                        Data de Término 
+                        {watchStatus === 'completed' ? ' (Obrigatório)' : ' (Opcional)'}
+                      </FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -411,7 +417,6 @@ const NewActivityPage = () => {
                                 )}
                             >
                               {field.value ? (
-                                  // MODIFICAÇÃO AQUI: Adicione T12:00:00
                                   format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
                               ) : (
                                   <span>Selecione a data</span>
@@ -423,15 +428,11 @@ const NewActivityPage = () => {
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                               mode="single"
-                              // MODIFICAÇÃO AQUI: Adicione T12:00:00
                               selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
                               onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
                               disabled={(date) => {
                                 const startDateValue = form.getValues("startDate");
-                                // MODIFICAÇÃO AQUI: Adicione T12:00:00 também na comparação se necessário
-                                // (Embora 'date < new Date(...)' possa já funcionar corretamente se 'date' for local)
-                                // Para segurança, pode-se comparar strings ou normalizar ambas as datas
-                                return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false; // Comparar com início do dia
+                                return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false;
                               }}
                               locale={ptBR}
                               initialFocus
@@ -439,7 +440,9 @@ const NewActivityPage = () => {
                         </PopoverContent>
                       </Popover>
                       <FormDescription>
-                        Selecione a data de término desta atividade, se aplicável.
+                        {watchStatus === 'completed' 
+                          ? 'Para atividades concluídas, a data de término é obrigatória.' 
+                          : 'Selecione a data de término desta atividade, se aplicável.'}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
