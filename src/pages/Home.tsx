@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, addDays, subDays, startOfDay, isSameDay, isWithinInterval, parseISO } from 'date-fns';
@@ -38,7 +37,6 @@ const Home = () => {
   const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
   const [loadingCollaborators, setLoadingCollaborators] = useState<boolean>(false);
 
-  // Status options
   const statusOptions: { label: string; value: ActivityStatus }[] = [
     { label: 'Pendente', value: 'pending' },
     { label: 'Em Progresso', value: 'in-progress' },
@@ -53,7 +51,6 @@ const Home = () => {
         const allActivities = await getActivities();
         setActivities(allActivities);
 
-        // Fetch clients
         const allClients = await getClients();
         setClients(allClients.filter(client => client.active));
       } catch (error) {
@@ -67,16 +64,13 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    // Extract unique collaborator IDs from activities
     const fetchCollaborators = async () => {
       if (activities.length === 0) return;
       
       try {
         setLoadingCollaborators(true);
-        // Get unique collaborator IDs from all activities
         const collaboratorIds = [...new Set(activities.flatMap(activity => activity.assignedTo))];
         
-        // Fetch collaborator data for each ID
         const collaboratorData = await Promise.all(
           collaboratorIds.map(async (id) => {
             const data = await getCollaboratorById(id);
@@ -84,7 +78,6 @@ const Home = () => {
           })
         );
         
-        // Filter out null values and set collaborators
         setCollaborators(collaboratorData.filter((data): data is CollaboratorData => data !== null));
       } catch (error) {
         console.error('Erro ao buscar colaboradores:', error);
@@ -96,43 +89,33 @@ const Home = () => {
     fetchCollaborators();
   }, [activities]);
 
-  // Função para verificar se a atividade está ativa na data selecionada
   const isActivityActiveOnDate = (activity: Activity, date: Date) => {
     if (!statusFilter.includes(activity.status)) {
       return false;
     }
 
-    // Filter by client if selected
     if (selectedClient && activity.clientId !== selectedClient) {
       return false;
     }
 
-    // Filter by collaborator if selected
     if (selectedCollaborator && !activity.assignedTo.includes(selectedCollaborator)) {
       return false;
     }
 
-    // Converter as datas para início do dia (00:00:00) para comparação apenas por data
     const selectedDateStart = startOfDay(date);
     const startDate = startOfDay(parseISO(activity.startDate));
     
-    // Se não há data de término
     if (!activity.endDate) {
-      // Para atividades em progresso, elas continuam até hoje
       if (activity.status === 'in-progress') {
         return isSameDay(startDate, selectedDateStart) || startDate <= selectedDateStart;
       }
-      // Para outras atividades sem data fim, só considere a data de início
       return isSameDay(startDate, selectedDateStart);
     }
     
-    // Se tem data de término, verifica se a data selecionada está dentro do intervalo
-    // Usamos startOfDay para normalizar as datas e comparar apenas o dia
     const endDate = startOfDay(parseISO(activity.endDate));
     return isWithinInterval(selectedDateStart, { start: startDate, end: endDate });
   };
 
-  // Filtrar atividades para a data selecionada considerando o período
   const activitiesForSelectedDate = activities.filter(activity =>
     isActivityActiveOnDate(activity, selectedDate)
   );
@@ -145,7 +128,6 @@ const Home = () => {
     setSelectedDate(prevDate => subDays(prevDate, 1));
   };
 
-  // Handler para alternar status no filtro
   const handleStatusToggle = (status: ActivityStatus) => {
     setStatusFilter(prevFilter => {
       if (prevFilter.includes(status)) {
@@ -156,23 +138,20 @@ const Home = () => {
     });
   };
 
-  // Reset all filters
   const resetFilters = () => {
     setStatusFilter(['in-progress']);
     setSelectedClient(null);
     setSelectedCollaborator(null);
   };
 
-  // Generate client options for combobox
   const clientOptions = clients.map(client => ({
     value: client.id,
     label: client.name
   }));
 
-  // Generate collaborator options for combobox
   const collaboratorOptions = collaborators.map(collaborator => ({
     value: collaborator.uid,
-    label: collaborator.displayName || collaborator.email || 'Sem nome'
+    label: collaborator.name || collaborator.email || 'Sem nome'
   }));
 
   return (
@@ -214,7 +193,7 @@ const Home = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 min-w-[200px]">
+          <div className="flex items-center gap-2 w-[250px]">
             <UserRound className="h-4 w-4 text-muted-foreground" />
             <Combobox
               options={collaboratorOptions}
@@ -228,7 +207,7 @@ const Home = () => {
             />
           </div>
 
-          <div className="flex items-center gap-2 min-w-[200px]">
+          <div className="flex items-center gap-2 w-[250px]">
             <Building className="h-4 w-4 text-muted-foreground" />
             <Combobox
               options={clientOptions}
@@ -283,7 +262,6 @@ const Home = () => {
         </h2>
         
         {loading ? (
-          // Loading skeleton
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <Card key={i}>
@@ -302,7 +280,6 @@ const Home = () => {
             ))}
           </div>
         ) : activitiesForSelectedDate.length > 0 ? (
-          // Display activities
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {activitiesForSelectedDate.map((activity) => (
               <Card 
