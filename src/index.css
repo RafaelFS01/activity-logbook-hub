@@ -75,7 +75,7 @@
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%; /* Ajustado para azul mais vibrante no escuro */
+    --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
@@ -85,8 +85,8 @@
 
   /* H12 Theme - Original (Light background, dark blue primary) */
   .h12 {
-    --background: 210 30% 98%; /* #F4F6F8 - Light */
-    --foreground: 220 1% 39%; /* #636466 - Dark Text */
+    --background: 210 30% 98%;
+    --foreground: 220 1% 39%;
 
     --card: 210 30% 98%;
     --card-foreground: 220 1% 39%;
@@ -94,84 +94,73 @@
     --popover: 210 30% 98%;
     --popover-foreground: 220 1% 39%;
 
-    --primary: 218 59% 31%; /* #203C81 - Dark Blue */
-    --primary-foreground: 210 30% 98%; /* Light Text */
+    --primary: 218 59% 31%;
+    --primary-foreground: 210 30% 98%;
 
-    --secondary: 212 60% 71%; /* #8AB4E1 - Light Blue */
-    --secondary-foreground: 218 59% 31%; /* Dark Blue Text */
+    --secondary: 212 60% 71%;
+    --secondary-foreground: 218 59% 31%;
 
-    --muted: 220 9% 89%; /* Light Gray */
-    --muted-foreground: 220 1% 50%; /* Dark Gray Text */
+    --muted: 220 9% 89%;
+    --muted-foreground: 220 1% 50%;
 
-    --accent: 212 60% 71%; /* Light Blue */
-    --accent-foreground: 218 59% 31%; /* Dark Blue Text */
+    --accent: 212 60% 71%;
+    --accent-foreground: 218 59% 31%;
 
-    --destructive: 0 84.2% 60.2%; /* Red */
-    --destructive-foreground: 210 30% 98%; /* Light Text */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 30% 98%;
 
-    --border: 212 30% 84%; /* Light Blue/Gray Border */
+    --border: 212 30% 84%;
     --input: 212 30% 84%;
-    --ring: 218 59% 31%; /* Dark Blue Ring */
+    --ring: 218 59% 31%;
 
-    /* Sidebar H12: Dark Blue Background */
-    --sidebar-background: 218 59% 25%; /* Darker Blue */
-    --sidebar-foreground: 210 30% 98%; /* Light Text */
-    --sidebar-primary: 212 60% 71%; /* Light Blue */
-    --sidebar-primary-foreground: 218 59% 31%; /* Dark Blue Text */
-    --sidebar-accent: 218 59% 35%; /* Medium Blue */
-    --sidebar-accent-foreground: 210 30% 98%; /* Light Text */
-    --sidebar-border: 218 30% 40%; /* Darker Border */
-    --sidebar-ring: 212 60% 71%; /* Light Blue Ring */
+    --sidebar-background: 218 59% 25%;
+    --sidebar-foreground: 210 30% 98%;
+    --sidebar-primary: 212 60% 71%;
+    --sidebar-primary-foreground: 218 59% 31%;
+    --sidebar-accent: 218 59% 35%;
+    --sidebar-accent-foreground: 210 30% 98%;
+    --sidebar-border: 218 30% 40%;
+    --sidebar-ring: 212 60% 71%;
   }
 
   /* Passo 2: Definir variáveis para .h12-alt (inversão do .h12) */
   .h12-alt {
-    /* Inversão Principal */
-    --background: 218 59% 31%; /* #203C81 - Dark Blue */
-    --foreground: 210 30% 98%; /* #F4F6F8 - Light Text */
+    --background: 218 59% 31%;
+    --foreground: 210 30% 98%;
 
-    /* Card/Popover seguem background/foreground */
     --card: 218 59% 31%;
     --card-foreground: 210 30% 98%;
 
     --popover: 218 59% 31%;
     --popover-foreground: 210 30% 98%;
 
-    /* Primário agora é claro, Foreground é escuro */
-    --primary: 210 30% 98%; /* #F4F6F8 - Light */
-    --primary-foreground: 218 59% 31%; /* #203C81 - Dark Blue Text */
+    --primary: 210 30% 98%;
+    --primary-foreground: 218 59% 31%;
 
-    /* Secundário (Light Blue) e seu foreground (Dark Blue) podem ser mantidos */
-    --secondary: 212 60% 71%; /* #8AB4E1 - Light Blue */
-    --secondary-foreground: 218 59% 31%; /* #203C81 - Dark Blue Text */
+    --secondary: 212 60% 71%;
+    --secondary-foreground: 218 59% 31%;
 
-    /* Muted precisa ser ajustado para fundo escuro */
-    --muted: 220 15% 20%; /* Darker Gray/Blue */
-    --muted-foreground: 220 10% 65%; /* Lighter Gray Text */
+    --muted: 220 15% 20%;
+    --muted-foreground: 220 10% 65%;
 
-    /* Accent segue Secondary */
-    --accent: 212 60% 71%; /* Light Blue */
-    --accent-foreground: 218 59% 31%; /* Dark Blue Text */
+    --accent: 212 60% 71%;
+    --accent-foreground: 218 59% 31%;
 
-    /* Destructive (Red) ok, mas foreground precisa ser claro */
-    --destructive: 0 84.2% 60.2%; /* Red */
-    --destructive-foreground: 210 30% 98%; /* Light Text */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 30% 98%;
 
-    /* Border/Input precisam ser visíveis no fundo azul escuro */
-    --border: 212 30% 50%; /* Medium Blue/Gray Border */
+    --border: 212 30% 50%;
     --input: 212 30% 50%;
-    /* Ring usa secundário (Light Blue) pois primário agora é claro */
-    --ring: 212 60% 71%; /* Light Blue Ring */
+    --ring: 212 60% 71%;
 
-    /* Sidebar H12-Alt: Inversão (Light Background) */
-    --sidebar-background: 210 30% 98%; /* Light Background */
-    --sidebar-foreground: 220 1% 39%; /* Dark Text */
-    --sidebar-primary: 218 59% 31%; /* Dark Blue Primary */
-    --sidebar-primary-foreground: 210 30% 98%; /* Light Text */
-    --sidebar-accent: 210 30% 93%; /* Lighter Gray Accent */
-    --sidebar-accent-foreground: 218 59% 31%; /* Dark Blue Text */
-    --sidebar-border: 212 30% 84%; /* Light Border */
-    --sidebar-ring: 218 59% 31%; /* Dark Blue Ring */
+    --sidebar-background: 212 60% 71%;
+    --sidebar-foreground: 220 28% 19%;
+    --sidebar-primary: 218 59% 31%;
+    --sidebar-primary-foreground: 210 30% 98%;
+    --sidebar-accent: 213 66% 84%;
+    --sidebar-accent-foreground: 220 28% 19%;
+    --sidebar-border: 213 54% 65%;
+    --sidebar-ring: 218 59% 31%;
   }
 }
 
@@ -181,12 +170,11 @@
   }
 
   body {
-    @apply bg-background text-foreground transition-colors duration-200 ease-in-out; /* Added transition */
+    @apply bg-background text-foreground transition-colors duration-200 ease-in-out;
   }
 }
 
-/* Active link indicators */
-.sidebar-active { /* Default/Light */
+.sidebar-active {
   @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
 }
 .dark .sidebar-active {
@@ -195,13 +183,10 @@
 .h12 .sidebar-active {
   @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
 }
-/* Passo 4: Adicionar estilo para .h12-alt .sidebar-active */
 .h12-alt .sidebar-active {
   @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
 }
 
-
-/* Enhanced styling for common elements */
 .input, input, select, textarea {
   @apply border-2 shadow-sm;
 }
@@ -212,16 +197,13 @@
   @apply border-opacity-100;
 }
 
-
-/* Button hover states per theme */
-/* Dark */
 .dark button[class*='outline']:hover {
   @apply hover:bg-gray-700 hover:text-white;
 }
 .dark button[type='submit']:hover,
-.dark button[class*='bg-primary']:hover, /* More specific */
-.dark button[class*='primary']:not([class*='outline']):hover { /* Capture primary variants */
-  @apply hover:bg-primary/90; /* Slightly dimmer primary on hover */
+.dark button[class*='bg-primary']:hover,
+.dark button[class*='primary']:not([class*='outline']):hover {
+  @apply hover:bg-primary/90;
 }
 .dark button.border-red-200:hover,
 .dark button.border-green-200:hover,
@@ -230,14 +212,13 @@
   @apply hover:bg-gray-700 hover:text-white;
 }
 
-/* H12 */
 .h12 button[class*='outline']:hover {
-  @apply hover:bg-secondary hover:text-secondary-foreground; /* Use secondary colors */
+  @apply hover:bg-secondary hover:text-secondary-foreground;
 }
 .h12 button[type='submit']:hover,
 .h12 button[class*='bg-primary']:hover,
 .h12 button[class*='primary']:not([class*='outline']):hover {
-  @apply hover:bg-primary/90; /* Darker blue on hover */
+  @apply hover:bg-primary/90;
 }
 .h12 button.border-red-200:hover,
 .h12 button.border-green-200:hover,
@@ -246,16 +227,12 @@
   @apply hover:bg-secondary hover:text-secondary-foreground;
 }
 
-/* Passo 4: Adicionar estilos hover para .h12-alt */
-/* H12 Alternativo */
 .h12-alt button[class*='outline']:hover {
-  /* Hover com cor secundária (azul claro) e texto (azul escuro) */
   @apply hover:bg-secondary hover:text-secondary-foreground;
 }
 .h12-alt button[type='submit']:hover,
 .h12-alt button[class*='bg-primary']:hover,
 .h12-alt button[class*='primary']:not([class*='outline']):hover {
-  /* Hover com cor primária (clara) um pouco mais escura/transparente */
   @apply hover:bg-primary/90;
 }
 .h12-alt button.border-red-200:hover,
@@ -265,19 +242,12 @@
   @apply hover:bg-secondary hover:text-secondary-foreground;
 }
 
-
-/* Login container background per theme */
-/* Light mode uses default body background */
 .dark .login-container {
-  @apply bg-gray-900; /* Specific dark for login */
+  @apply bg-gray-900;
 }
 .h12 .login-container {
-  @apply bg-primary/10; /* Very light blue tint */
+  @apply bg-primary/10;
 }
-/* Passo 4: Adicionar estilo para .h12-alt .login-container */
 .h12-alt .login-container {
-  /* Usa a variável --background (azul escuro) */
   @apply bg-background;
 }
-
-/* Specific button adjustments if needed - inherit from above for now */
