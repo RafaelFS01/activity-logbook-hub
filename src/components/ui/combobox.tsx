@@ -1,4 +1,3 @@
-
 "use client"; // Necessário se estiver usando App Router e componentes de cliente
 
 import * as React from "react";
@@ -19,7 +18,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area"; // Importante para listas longas
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Interface para as opções do Combobox
 export interface ComboboxOption {
@@ -30,17 +29,18 @@ export interface ComboboxOption {
 // Props do componente Combobox
 interface ComboboxProps {
     options: ComboboxOption[];
-    selectedValue: string | null | undefined; // O valor da opção atualmente selecionada
-    onSelect: (value: string | null) => void; // Função chamada quando uma opção é selecionada (ou limpa)
-    placeholder?: string; // Placeholder para o botão quando nada está selecionado
-    searchPlaceholder?: string; // Placeholder para a caixa de busca dentro do popover
-    noResultsText?: string; // Texto exibido quando a busca não encontra resultados
-    disabled?: boolean; // Para desabilitar o combobox
-    id?: string; // ID para acessibilidade (associar com label externa)
-    triggerClassName?: string; // Classes adicionais para o botão trigger
-    contentClassName?: string; // Classes adicionais para o conteúdo do popover
-    allowClear?: boolean; // Habilita um botão para limpar a seleção
-    onClear?: () => void; // Função chamada quando o botão de limpar é clicado (necessário se allowClear=true)
+    selectedValue: string | null | undefined;
+    onSelect: (value: string | null) => void;
+    placeholder?: string;
+    searchPlaceholder?: string;
+    noResultsText?: string;
+    disabled?: boolean;
+    id?: string;
+    triggerClassName?: string; // Classes para o botão Trigger
+    contentClassName?: string; // Classes para o PopoverContent
+    allowClear?: boolean;
+    onClear?: () => void; // Função específica para limpar (opcional, onSelect(null) é o fallback)
+    className?: string; // <<< PROP ADICIONADA PARA O CONTAINER EXTERNO >>>
 }
 
 const Combobox = React.forwardRef<
@@ -59,97 +59,121 @@ const Combobox = React.forwardRef<
        contentClassName,
        allowClear = false,
        onClear,
+       className, // <<< RECEBENDO A PROP className >>>
    }, ref) => {
     const [open, setOpen] = React.useState(false);
 
-    // Encontra o label da opção selecionada para exibir no botão
+    // Encontra o label da opção selecionada
     const selectedLabel = React.useMemo(() => {
         return options.find((option) => option.value === selectedValue)?.label;
     }, [options, selectedValue]);
 
     // Handler para seleção de item
     const handleSelect = (currentValue: string) => {
+        // Desseleciona se clicar no item já selecionado, senão seleciona o novo
         const newValue = currentValue === selectedValue ? null : currentValue;
-        onSelect(newValue); // Chama a função do pai com o valor selecionado (ou null se desselecionado)
-        setOpen(false); // Fecha o popover
+        onSelect(newValue);
+        setOpen(false);
     };
 
     // Handler para o botão de limpar
     const handleClear = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation(); // Impede que o clique abra/feche o popover
+        e.stopPropagation(); // Impede que o clique no X feche/abra o popover
         if (onClear) {
-            onClear();
+            onClear(); // Usa a função específica se fornecida
         } else {
-            // Comportamento padrão se onClear não for fornecido mas allowClear for true
-            onSelect(null);
+            onSelect(null); // Fallback: chama onSelect com null
         }
-        setOpen(false); // Garante que o popover feche se estiver aberto
+        // Não precisa mexer no `open` state aqui, pois o Popover já trata o fechamento
+        // Se precisar garantir que feche: setOpen(false);
     };
 
+    // ID único para associar aria-controls, caso id não seja fornecido
+    const generatedId = React.useId();
+    const listboxId = `combobox-list-${id || generatedId}`;
+
     return (
-        <div className="relative flex items-center w-full">
-            <Popover open={open} onOpenChange={setOpen}>
+        // <<< APLICANDO A className RECEBIDA AO DIV EXTERNO >>>
+        // Este div é o container principal do componente Combobox
+        <div className={cn("relative flex items-center w-full", className)}>
+            <Popover open={open} onOpenChange={setOpen} >
                 <PopoverTrigger asChild>
                     <Button
-                        ref={ref}
-                        id={id}
+                        ref={ref} // Encaminha a ref para o botão
+                        id={id || `combobox-trigger-${generatedId}`} // Usa ID fornecido ou gerado
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        aria-controls={open ? `combobox-list-${id || ''}` : undefined} // Associa ao conteúdo
+                        aria-controls={open ? listboxId : undefined}
                         className={cn(
-                            "w-full justify-between text-ellipsis overflow-hidden whitespace-nowrap border-2 border-[#8AB4E1]",
-                            !selectedLabel && "text-muted-foreground", // Estilo quando placeholder é mostrado
+                            // Estilos padrão do botão trigger
+                            "w-full justify-between text-ellipsis overflow-hidden whitespace-nowrap",
+                            // Estilo quando nada está selecionado (mostrando placeholder)
+                            !selectedLabel && "text-muted-foreground",
+                            // Adiciona classes específicas do trigger passadas via props
                             triggerClassName
                         )}
                         disabled={disabled}
                     >
-                      <span className="flex-1 text-left text-ellipsis overflow-hidden whitespace-nowrap">
+                        {/* Span para garantir que o texto não empurre os ícones */}
+                        <span className="flex-1 text-left text-ellipsis overflow-hidden whitespace-nowrap">
                        {selectedLabel || placeholder}
                       </span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        {/* Ícone de Abrir/Fechar */}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
-                {/* Botão de Limpar (Opcional) */}
+
+                {/* Botão de Limpar (Renderizado condicionalmente) */}
                 {allowClear && selectedValue && !disabled && (
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute right-10 h-6 w-6 p-0 text-muted-foreground hover:text-foreground" // Posicionado antes do ícone ChevronsUpDown
+                        // Posicionamento absoluto à direita, antes do ícone ChevronsUpDown
+                        className="absolute right-[calc(0.5rem+16px+0.5rem)] top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground hover:text-foreground z-10" // Ajuste right-[...] e adicione z-10
                         onClick={handleClear}
                         aria-label="Limpar seleção"
+                        tabIndex={-1} // Evita que entre na ordem de tabulação normal
                     >
                         <X className="h-4 w-4"/>
                     </Button>
                 )}
+
                 <PopoverContent
-                    className={cn("w-[var(--radix-popover-trigger-width)] p-0 border-2 border-[#8AB4E1]", contentClassName)} // Adicionando borda azul também ao popover
-                    style={{ zIndex: 50 }} // Garante que fique acima de outros elementos se necessário
+                    className={cn(
+                        // Faz o conteúdo ter a mesma largura do trigger
+                        "w-[var(--radix-popover-trigger-width)] p-0",
+                        // Adiciona classes específicas do conteúdo passadas via props
+                        contentClassName
+                    )}
+                    style={{ zIndex: 50 }} // Garante sobreposição se necessário
                 >
-                    <Command
-                        // Adiciona um filtro customizado se necessário, por padrão filtra pelo texto
-                        // filter={(value, search) => ...}
-                    >
-                        <CommandInput placeholder={searchPlaceholder} disabled={disabled} className="border-b-2 border-[#8AB4E1]" />
-                        <CommandList id={`combobox-list-${id || ''}`}> {/* ID para aria-controls */}
+                    <Command>
+                        <CommandInput
+                            placeholder={searchPlaceholder}
+                            disabled={disabled}
+                        />
+                        <CommandList id={listboxId}> {/* ID para aria-controls */}
                             <CommandEmpty>{noResultsText}</CommandEmpty>
-                            {/* Usar ScrollArea para listas potencialmente longas */}
+                            {/* Garante scroll para listas longas */}
                             <ScrollArea className="max-h-[200px] overflow-y-auto">
                                 <CommandGroup>
                                     {options.map((option) => (
                                         <CommandItem
                                             key={option.value}
-                                            value={option.value} // Importante: usa o 'value' para identificação interna e seleção
-                                            onSelect={handleSelect}
+                                            value={option.value} // Usa o valor real para o Command identificar
+                                            onSelect={handleSelect} // Chama nosso handler ao selecionar
                                             disabled={disabled}
-                                            className="cursor-pointer"
+                                            className="cursor-pointer" // Feedback visual
                                         >
                                             <Check
                                                 className={cn(
                                                     "mr-2 h-4 w-4",
+                                                    // Mostra o check se for o item selecionado
                                                     selectedValue === option.value ? "opacity-100" : "opacity-0"
                                                 )}
                                             />
+                                            {/* Exibe o label para o usuário */}
                                             {option.label}
                                         </CommandItem>
                                     ))}
@@ -162,6 +186,6 @@ const Combobox = React.forwardRef<
         </div>
     );
 });
-Combobox.displayName = "Combobox"; // Ajuda na depuração
+Combobox.displayName = "Combobox"; // Facilita a depuração no React DevTools
 
 export { Combobox };
