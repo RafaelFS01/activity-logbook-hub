@@ -3,11 +3,12 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import {
   CalendarIcon,
-  Loader2
-  // ClockIcon não é mais necessário se usamos type="time" nativo
+  Loader2,
+  Check, // Ícone para o item selecionado no Combobox (Se for usar Combobox para cliente)
+  ChevronsUpDown // Ícone para o botão do Combobox (Se for usar Combobox para cliente)
 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns"; // Importa isValid
 import { ptBR } from "date-fns/locale";
 import * as z from "zod";
 
@@ -29,13 +30,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+// Removido Select para cliente, caso decida usar Combobox como no NewActivityPage
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Adicionar imports do Command se for usar Combobox para cliente
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+// Mantido Select para Prioridade e Status
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -43,13 +50,14 @@ import {
   getActivityById,
   ActivityStatus,
   ActivityPriority,
-  Activity
+  // Activity // Não é mais necessário importar Activity se usamos o tipo inferido
 } from "@/services/firebase/activities";
-import { getClients, Client } from "@/services/firebase/clients"; // Assumindo que Client está exportado
+import { getClients, Client } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// 1. Atualizar Schema Zod
+// --- MODIFICAÇÃO 1: Schema Zod ---
+// endDate agora é sempre obrigatório e não vazio
 const formSchema = z.object({
   title: z.string().min(3, {
     message: "O título deve ter pelo menos 3 caracteres."
@@ -59,30 +67,33 @@ const formSchema = z.object({
   }),
   clientId: z.string({
     required_error: "Por favor, selecione um cliente."
-  }),
+  }).nonempty({ message: "Por favor, selecione um cliente." }), // Garante não vazio
   priority: z.string({
     required_error: "Por favor, selecione uma prioridade."
   }),
   status: z.string({
     required_error: "Por favor, selecione um status."
   }),
-  startDate: z.string({ // Data como 'yyyy-MM-dd'
+  startDate: z.string({
     required_error: "Por favor, selecione uma data de início."
-  }),
-  // NOVO: Campo de hora de início
+  }).nonempty({ message: "Por favor, selecione uma data de início." }), // Garante não vazio
   startTime: z.string({
     required_error: "Por favor, informe a hora de início."
   }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, {
     message: "Formato de hora inválido (use HH:MM)."
   }),
-  endDate: z.string().optional(), // Data como 'yyyy-MM-dd', opcional
-  // NOVO: Campo de hora de término
+  // MODIFICADO: endDate agora é obrigatório e não vazio
+  endDate: z.string({
+    required_error: "Por favor, selecione uma data de término." // Mensagem se undefined/null
+  }).nonempty({
+    message: "Por favor, selecione uma data de término." // Mensagem se string vazia ""
+  }),
   endTime: z.string()
-      .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+      .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { // Valida HH:MM se preenchido
         message: "Formato de hora inválido (use HH:MM)."
       })
       .optional()
-      .or(z.literal("")), // Permite vazio ou formato HH:MM
+      .or(z.literal("")), // Permite vazio ou formato HH:MM (mantido opcional)
   type: z.string().optional(),
 });
 
@@ -95,44 +106,35 @@ const EditActivityPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [clients, setClients] = useState<Client[]>([]); // Tipar o estado dos clientes
+  const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  // Removido estado 'activity', pois os dados vão direto pro form via reset
+  // const [openCombobox, setOpenCombobox] = useState(false); // Se usar Combobox para cliente
 
-  // 2. Atualizar useForm com novos campos e tipo inferido
   const form = useForm<EditActivityFormData>({
     resolver: zodResolver(formSchema),
-    // Os defaultValues serão sobrescritos pelo reset, mas é bom tê-los
-    defaultValues: {
+    defaultValues: { // Default values são úteis antes do reset
       title: "",
       description: "",
       clientId: "",
       priority: "medium",
       status: "pending",
-      startDate: "", // Será preenchido no useEffect
-      startTime: "", // Será preenchido no useEffect
-      endDate: "",   // Será preenchido no useEffect
-      endTime: "",   // Será preenchido no useEffect
+      startDate: "",
+      startTime: "",
+      endDate: "", // Inicialmente vazio, será validado pelo Zod
+      endTime: "",
       type: "",
     },
   });
 
-  const watchStatus = form.watch("status");
-  const watchEndDate = form.watch("endDate"); // Monitora a data, não a hora
+  // --- MODIFICAÇÃO 2: Remoção do useEffect condicional ---
+  // const watchStatus = form.watch("status"); // Não é mais necessário para a validação de endDate
+  // const watchEndDate = form.watch("endDate"); // Não é mais necessário
+  // Este useEffect foi removido pois a validação agora é feita diretamente pelo Zod
+  // useEffect(() => {
+  //     if (watchStatus === "completed" && !watchEndDate) { /* ... */ }
+  // }, [watchStatus, watchEndDate, form]);
 
-  // Lógica condicional para endDate (sem alterações)
-  useEffect(() => {
-    if (watchStatus === "completed" && !watchEndDate) {
-      form.setError("endDate", {
-        type: "manual",
-        message: "Data de término é obrigatória para atividades concluídas."
-      });
-    } else {
-      form.clearErrors("endDate");
-    }
-  }, [watchStatus, watchEndDate, form]);
-
-  // 3. Atualizar useEffect de busca e preenchimento (form.reset)
+  // --- MODIFICAÇÃO 5: Atualização do useEffect de busca e preenchimento ---
   useEffect(() => {
     const fetchData = async () => {
       if (!id) {
@@ -143,8 +145,6 @@ const EditActivityPage = () => {
 
       try {
         setIsLoadingData(true);
-
-        // Busca atividade e clientes em paralelo para otimizar
         const [fetchedActivity, fetchedClients] = await Promise.all([
           getActivityById(id),
           getClients()
@@ -158,22 +158,24 @@ const EditActivityPage = () => {
 
         setClients(fetchedClients);
 
-        // Extrair data E HORA dos campos da atividade buscada
-        const startDateStr = fetchedActivity.startDate
-            ? format(new Date(fetchedActivity.startDate), "yyyy-MM-dd")
-            : "";
-        const startTimeStr = fetchedActivity.startDate
-            ? format(new Date(fetchedActivity.startDate), "HH:mm")
-            : ""; // Pega HH:mm
+        // Helper para formatar data/hora de forma segura
+        const formatDate = (dateString: string | undefined | null): string => {
+          if (!dateString) return "";
+          const date = new Date(dateString);
+          return isValid(date) ? format(date, "yyyy-MM-dd") : "";
+        };
+        const formatTime = (dateString: string | undefined | null): string => {
+          if (!dateString) return "";
+          const date = new Date(dateString);
+          return isValid(date) ? format(date, "HH:mm") : "";
+        };
 
-        const endDateStr = fetchedActivity.endDate
-            ? format(new Date(fetchedActivity.endDate), "yyyy-MM-dd")
-            : undefined; // undefined para campo opcional vazio
-        const endTimeStr = fetchedActivity.endDate
-            ? format(new Date(fetchedActivity.endDate), "HH:mm")
-            : ""; // Pega HH:mm ou string vazia
+        // Formata os valores para o formulário, garantindo strings vazias se inválido/nulo
+        const startDateStr = formatDate(fetchedActivity.startDate);
+        const startTimeStr = formatTime(fetchedActivity.startDate);
+        const endDateStr = formatDate(fetchedActivity.endDate); // Será "" se endDate for nulo/inválido
+        const endTimeStr = formatTime(fetchedActivity.endDate); // Será "" se endDate for nulo/inválido
 
-        // Usar form.reset para preencher TODOS os campos
         form.reset({
           title: fetchedActivity.title,
           description: fetchedActivity.description,
@@ -181,59 +183,55 @@ const EditActivityPage = () => {
           priority: fetchedActivity.priority,
           status: fetchedActivity.status,
           startDate: startDateStr,
-          startTime: startTimeStr, // Preenche a hora de início
+          startTime: startTimeStr,
+          // endDate será "" se não existir no Firebase ou for inválido.
+          // A validação Zod (.nonempty) exigirá que o usuário preencha ao salvar.
           endDate: endDateStr,
-          endTime: endTimeStr,     // Preenche a hora de término
+          endTime: endTimeStr,
           type: fetchedActivity.type || "",
         });
 
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
-        toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar os dados necessários." });
-        // Considerar redirecionar ou mostrar mensagem mais específica
+        toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar os dados da atividade." });
+        navigate("/activities"); // Redireciona em caso de erro grave
       } finally {
         setIsLoadingData(false);
       }
     };
 
     fetchData();
-  }, [id, form, toast, navigate]); // form é dependência do reset
+  }, [id, form, toast, navigate]);
 
-  // 4. Atualizar onSubmit para incluir startTime e endTime
+  // --- MODIFICAÇÃO 3 & 6: Atualização do onSubmit ---
   const onSubmit = async (data: EditActivityFormData) => {
+    // Zod já garantiu que data.endDate é uma string não vazia
+
     if (!user?.uid || !id) {
       toast({ variant: "destructive", title: "Erro", description: "Informações de usuário ou atividade ausentes." });
       return;
     }
 
-    // Validação da data de término se status for 'completed' (sem alterações)
-    if (data.status === 'completed' && !data.endDate) {
-      form.setError("endDate", { type: "manual", message: "Data de término é obrigatória para atividades concluídas." });
-      toast({ variant: "destructive", title: "Erro de validação", description: "Atividades concluídas precisam ter uma data de término definida." });
-      return;
-    }
+    // Verificação condicional baseada no status foi removida
 
     setIsSubmitting(true);
 
     try {
-      // Combina startDate e startTime (ambos obrigatórios pelo schema)
+      // Combina startDate e startTime (ambos garantidos pelo Zod como não vazios)
       const finalStartDate = new Date(`${data.startDate}T${data.startTime}:00`).toISOString();
 
-      // Combina endDate e endTime (se endDate existir)
-      let finalEndDate: string | null = null; // Default para null
-      if (data.endDate) {
-        // Usa a hora de término se fornecida, senão usa 00:00:00
-        const timePart = data.endTime ? `${data.endTime}:00` : '00:00:00';
-        try {
-          finalEndDate = new Date(`${data.endDate}T${timePart}`).toISOString();
-        } catch (dateError) {
-          console.error("Erro ao converter data/hora de término:", dateError, "Valores:", data.endDate, data.endTime);
-          toast({ variant: "destructive", title: "Erro de Formato", description: "A data ou hora de término fornecida parece inválida." });
-          setIsSubmitting(false);
-          return;
-        }
+      // Combina endDate e endTime (endDate garantido como não vazio pelo Zod)
+      const timePart = data.endTime ? `${data.endTime}:00` : '00:00:00'; // Default time se endTime não for fornecido
+      let finalEndDate: string;
+      try {
+        // Esta linha agora é segura porque data.endDate não será ""
+        finalEndDate = new Date(`${data.endDate}T${timePart}`).toISOString();
+      } catch (dateError) {
+        console.error("Erro ao converter data/hora de término:", dateError, "Valores:", data.endDate, data.endTime);
+        toast({ variant: "destructive", title: "Erro de Formato", description: "A data ou hora de término fornecida parece inválida." });
+        setIsSubmitting(false);
+        return;
       }
-      // Se data.endDate for vazio, finalEndDate permanece null
 
       // Objeto com os dados a serem atualizados
       const updatedData = {
@@ -243,9 +241,9 @@ const EditActivityPage = () => {
         priority: data.priority as ActivityPriority,
         status: data.status as ActivityStatus,
         startDate: finalStartDate, // Envia ISOString combinada
-        type: data.type || "",     // Garante string vazia se opcional
-        endDate: finalEndDate,     // Envia ISOString combinada ou null
-        // Adicionar campos de auditoria se desejado:
+        endDate: finalEndDate,     // Envia ISOString combinada (sempre presente)
+        type: data.type || "",
+        // Poderia adicionar campos de auditoria
         // updatedAt: new Date().toISOString(),
         // updatedBy: user.uid,
       };
@@ -270,42 +268,76 @@ const EditActivityPage = () => {
     }
   };
 
-  // 5. Atualizar JSX para incluir os campos de hora com largura reduzida
+  // --- MODIFICAÇÃO 4: Atualização do JSX (Label/Description de endDate) ---
   return (
       <div className="container mx-auto py-6 px-4 md:px-6">
-        <div className="mb-6">
+        <div className="mb-6 flex justify-between items-center">
+          <h1 className="text-3xl font-bold">
+            Editar Atividade
+          </h1>
           <Link to="/activities" className="text-sm text-blue-600 hover:underline">
             ← Voltar para Atividades
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold mb-6">
-          Editar Atividade
-        </h1>
 
         {isLoadingData ? (
-            // Skeleton Loader (sem alterações)
-            <div className="space-y-6">
-              <Skeleton className="h-10 w-3/4" />
-              <Skeleton className="h-24 w-full" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+            // Skeleton Loader
+            <div className="space-y-8"> {/* Aumenta espaço entre skeletons */}
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-24" /> {/* Label */}
+                <Skeleton className="h-10 w-full" /> {/* Input */}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-24" /> {/* Label */}
+                <Skeleton className="h-10 w-full" /> {/* Input */}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-24" /> {/* Label */}
+                <Skeleton className="h-32 w-full" /> {/* Textarea */}
               </div>
-              <Skeleton className="h-10 w-32" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-24" /> {/* Label */}
+                <Skeleton className="h-10 w-full" /> {/* Select */}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-24" /> {/* Label */}
+                  <Skeleton className="h-10 w-full" /> {/* Select */}
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-24" /> {/* Label */}
+                  <Skeleton className="h-10 w-full" /> {/* Select */}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-24" /> {/* Label */}
+                  <Skeleton className="h-10 w-full" /> {/* Date */}
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-24" /> {/* Label */}
+                  <Skeleton className="h-10 w-32" /> {/* Time */}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-24" /> {/* Label */}
+                  <Skeleton className="h-10 w-full" /> {/* Date */}
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-24" /> {/* Label */}
+                  <Skeleton className="h-10 w-32" /> {/* Time */}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Skeleton className="h-10 w-32" /> {/* Button */}
+              </div>
             </div>
         ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                {/* Campos Título, Tipo, Descrição, Cliente (sem alterações) */}
+                {/* Título */}
                 <FormField
                     control={form.control}
                     name="title"
@@ -318,6 +350,7 @@ const EditActivityPage = () => {
                         </FormItem>
                     )}
                 />
+                {/* Tipo */}
                 <FormField
                     control={form.control}
                     name="type"
@@ -330,6 +363,7 @@ const EditActivityPage = () => {
                         </FormItem>
                     )}
                 />
+                {/* Descrição */}
                 <FormField
                     control={form.control}
                     name="description"
@@ -339,8 +373,7 @@ const EditActivityPage = () => {
                           <FormControl>
                             <Textarea
                                 placeholder="Detalhes da atividade"
-                                // Adicione a classe de altura aqui (ex: h-32)
-                                className="resize-none h-60"
+                                className="resize-none h-32" // Altura consistente
                                 {...field}
                             />
                           </FormControl>
@@ -349,33 +382,78 @@ const EditActivityPage = () => {
                         </FormItem>
                     )}
                 />
+
+                {/* Cliente (Usando Combobox como exemplo, igual ao NewActivity) */}
+                {/* Se preferir manter o Select simples, reverta para a versão anterior deste campo */}
                 <FormField
                     control={form.control}
                     name="clientId"
                     render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Cliente</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}> {/* Usar value aqui */}
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione um cliente" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {clients.map((client) => (
-                                  <SelectItem key={client.id} value={client.id}>
-                                    {client.type === 'juridica' ? client.companyName : client.name}
-                                  </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className={cn(
+                                        "w-full justify-between",
+                                        !field.value && "text-muted-foreground"
+                                    )}
+                                >
+                                  {field.value
+                                      ? (() => {
+                                        const client = clients.find(c => c.id === field.value);
+                                        if (!client) return "Selecione um cliente";
+                                        const companyName = (client as any).companyName;
+                                        return client.type === 'juridica' && companyName ? companyName : client.name;
+                                      })()
+                                      : "Selecione um cliente"}
+                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                              <Command>
+                                <CommandInput placeholder="Buscar cliente..." />
+                                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                                <CommandList>
+                                  <CommandGroup>
+                                    {clients.map((client) => {
+                                      const companyName = (client as any).companyName;
+                                      const displayValue = client.type === 'juridica' && companyName ? companyName : client.name;
+                                      return (
+                                          <CommandItem
+                                              value={displayValue}
+                                              key={client.id}
+                                              onSelect={() => {
+                                                form.setValue("clientId", client.id, { shouldValidate: true });
+                                              }}
+                                          >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    field.value === client.id ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                            {displayValue}
+                                          </CommandItem>
+                                      );
+                                    })}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                           <FormDescription>Cliente associado à atividade.</FormDescription>
                           <FormMessage />
                         </FormItem>
                     )}
                 />
 
-                {/* Linha para Prioridade e Status */}
+
+                {/* Prioridade e Status (usando Select normal) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <FormField
                       control={form.control}
@@ -383,7 +461,7 @@ const EditActivityPage = () => {
                       render={({ field }) => (
                           <FormItem>
                             <FormLabel>Prioridade</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}> {/* Usar value */}
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl><SelectTrigger><SelectValue placeholder="Prioridade" /></SelectTrigger></FormControl>
                               <SelectContent>
                                 <SelectItem value="low">Baixa</SelectItem>
@@ -391,6 +469,7 @@ const EditActivityPage = () => {
                                 <SelectItem value="high">Alta</SelectItem>
                               </SelectContent>
                             </Select>
+                            <FormDescription>Nível de prioridade.</FormDescription>
                             <FormMessage />
                           </FormItem>
                       )}
@@ -401,7 +480,7 @@ const EditActivityPage = () => {
                       render={({ field }) => (
                           <FormItem>
                             <FormLabel>Status</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}> {/* Usar value */}
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl><SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger></FormControl>
                               <SelectContent>
                                 <SelectItem value="pending">Pendente</SelectItem>
@@ -410,20 +489,20 @@ const EditActivityPage = () => {
                                 <SelectItem value="cancelled">Cancelada</SelectItem>
                               </SelectContent>
                             </Select>
+                            <FormDescription>Status atual.</FormDescription>
                             <FormMessage />
                           </FormItem>
                       )}
                   />
                 </div>
 
-                {/* Linha para Data e Hora de Início */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start"> {/* items-start para alinhar labels */}
-                  {/* Data de Início */}
+                {/* Data e Hora de Início */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                   <FormField
                       control={form.control}
                       name="startDate"
                       render={({ field }) => (
-                          <FormItem> {/* Não precisa de flex-1 se no grid */}
+                          <FormItem>
                             <FormLabel>Data de Início</FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
@@ -433,7 +512,7 @@ const EditActivityPage = () => {
                                       className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
                                   >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {field.value ? format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR }) : <span>Selecione</span>}
+                                    {field.value ? format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR }) : <span>Selecione a data</span>}
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
@@ -441,48 +520,43 @@ const EditActivityPage = () => {
                                 <Calendar
                                     mode="single"
                                     selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
-                                    onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                                    onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')} // Passa '' se desmarcar
                                     locale={ptBR}
                                     initialFocus
                                 />
                               </PopoverContent>
                             </Popover>
+                            <FormDescription>Data de início da atividade.</FormDescription>
                             <FormMessage />
                           </FormItem>
                       )}
                   />
-                  {/* Hora de Início */}
                   <FormField
                       control={form.control}
                       name="startTime"
                       render={({ field }) => (
-                          <FormItem> {/* Campo ocupa espaço no grid */}
+                          <FormItem>
                             <FormLabel>Hora de Início</FormLabel>
                             <FormControl>
-                              <Input
-                                  type="time"
-                                  className="w-32" // Largura reduzida
-                                  {...field}
-                                  value={field.value || ""}
-                              />
+                              <Input type="time" className="w-32" {...field} value={field.value || ""} />
                             </FormControl>
+                            <FormDescription>Hora (HH:MM).</FormDescription>
                             <FormMessage />
                           </FormItem>
                       )}
                   />
                 </div>
 
-                {/* Linha para Data e Hora de Término */}
+                {/* Data e Hora de Término (UI Modificada) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                  {/* Data de Término */}
                   <FormField
                       control={form.control}
                       name="endDate"
                       render={({ field }) => (
                           <FormItem>
+                            {/* MODIFICADO: Label indica obrigatoriedade sempre */}
                             <FormLabel>
-                              Data de Término
-                              {watchStatus === 'completed' ? <span className="text-destructive">*</span> : ' (Opcional)'}
+                              Data de Término <span className="text-destructive">*</span>
                             </FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
@@ -492,7 +566,7 @@ const EditActivityPage = () => {
                                       className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
                                   >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {field.value ? format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR }) : <span>Selecione</span>}
+                                    {field.value ? format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR }) : <span>Selecione a data</span>}
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
@@ -500,7 +574,7 @@ const EditActivityPage = () => {
                                 <Calendar
                                     mode="single"
                                     selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
-                                    onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                                    onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')} // Passa '' se desmarcar
                                     disabled={(date) => {
                                       const startDateValue = form.getValues("startDate");
                                       return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false;
@@ -510,11 +584,12 @@ const EditActivityPage = () => {
                                 />
                               </PopoverContent>
                             </Popover>
-                            <FormMessage />
+                            {/* MODIFICADO: Descrição simples */}
+                            <FormDescription>Data de término da atividade.</FormDescription>
+                            <FormMessage /> {/* Exibirá erro Zod se vazio */}
                           </FormItem>
                       )}
                   />
-                  {/* Hora de Término */}
                   <FormField
                       control={form.control}
                       name="endTime"
@@ -522,13 +597,9 @@ const EditActivityPage = () => {
                           <FormItem>
                             <FormLabel>Hora de Término (Opcional)</FormLabel>
                             <FormControl>
-                              <Input
-                                  type="time"
-                                  className="w-32" // Largura reduzida
-                                  {...field}
-                                  value={field.value || ""}
-                              />
+                              <Input type="time" className="w-32" {...field} value={field.value || ""} />
                             </FormControl>
+                            <FormDescription>Hora (HH:MM).</FormDescription>
                             <FormMessage />
                           </FormItem>
                       )}
@@ -536,10 +607,19 @@ const EditActivityPage = () => {
                 </div>
 
                 {/* Botão de Submissão */}
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-4">
+                  <Link to="/activities">
+                    <Button type="button" variant="outline">Cancelar</Button>
+                  </Link>
                   <Button type="submit" disabled={isSubmitting || isLoadingData}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Atualizar Atividade
+                    {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Atualizando...
+                        </>
+                    ) : (
+                        "Atualizar Atividade"
+                    )}
                   </Button>
                 </div>
               </form>

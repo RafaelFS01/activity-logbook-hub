@@ -55,7 +55,8 @@ import {
 import { getClients, Client } from "@/services/firebase/clients"; // Importa Client type
 import { useAuth } from "@/contexts/AuthContext";
 
-// Schema não precisa de alterações para o Combobox funcionar
+// --- CORREÇÃO NO SCHEMA ZOD ---
+// endDate agora deve ser uma string não vazia
 const formSchema = z.object({
     title: z.string().min(3, {
         message: "O título deve ter pelo menos 3 caracteres."
@@ -65,7 +66,7 @@ const formSchema = z.object({
     }),
     clientId: z.string({
         required_error: "Por favor, selecione um cliente."
-    }),
+    }).nonempty({ message: "Por favor, selecione um cliente." }), // Garante que não seja string vazia
     priority: z.string({
         required_error: "Por favor, selecione uma prioridade."
     }),
@@ -74,19 +75,24 @@ const formSchema = z.object({
     }),
     startDate: z.string({ // Mantém como string 'yyyy-MM-dd'
         required_error: "Por favor, selecione uma data de início."
-    }),
+    }).nonempty({ message: "Por favor, selecione uma data de início." }), // Garante não vazia
     startTime: z.string({
         required_error: "Por favor, informe a hora de início."
     }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { // Valida HH:MM (00:00 - 23:59)
         message: "Formato de hora inválido (use HH:MM)."
     }),
-    endDate: z.string().optional(), // Mantém como string 'yyyy-MM-dd', opcional
+    // CORRIGIDO: Usa .nonempty() para garantir que a string não seja vazia
+    endDate: z.string({
+        required_error: "Por favor, selecione uma data de término." // Mensagem se undefined/null
+    }).nonempty({
+        message: "Por favor, selecione uma data de término." // Mensagem se string vazia ""
+    }),
     endTime: z.string()
         .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { // Valida HH:MM se preenchido
             message: "Formato de hora inválido (use HH:MM)."
         })
         .optional()
-        .or(z.literal("")), // Permite vazio ou formato HH:MM
+        .or(z.literal("")), // Permite vazio ou formato HH:MM (mantido opcional)
     type: z.string().optional(),
 });
 
@@ -95,10 +101,8 @@ const NewActivityPage = () => {
     const { toast } = useToast();
     const { user } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [clients, setClients] = useState<Client[]>([]); // Tipar o estado de clientes
+    const [clients, setClients] = useState<Client[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
-    // Estado para controlar abertura/fechamento do Popover (opcional, geralmente gerenciado pelo Popover)
-    // const [openCombobox, setOpenCombobox] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -109,26 +113,14 @@ const NewActivityPage = () => {
             status: "pending",
             startDate: format(new Date(), "yyyy-MM-dd"),
             startTime: "",
-            endDate: "",
+            endDate: "", // Valor inicial vazio ainda é ok, Zod validará na submissão
             endTime: "",
             type: "",
-            clientId: "", // Valor inicial vazio para o Combobox
+            clientId: "",
         },
     });
 
-    const watchStatus = form.watch("status");
-    const watchEndDate = form.watch("endDate");
-
-    useEffect(() => {
-        if (watchStatus === "completed" && !watchEndDate) {
-            form.setError("endDate", {
-                type: "manual",
-                message: "Data de término é obrigatória para atividades concluídas."
-            });
-        } else {
-            form.clearErrors("endDate");
-        }
-    }, [watchStatus, watchEndDate, form]);
+    // Validação condicional via useEffect foi removida anteriormente (correto)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -152,6 +144,8 @@ const NewActivityPage = () => {
     }, [toast]);
 
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
+        // Zod agora garante que data.endDate é uma string não vazia antes de chamar onSubmit
+
         if (!user?.uid) {
             toast({
                 variant: "destructive",
@@ -161,26 +155,16 @@ const NewActivityPage = () => {
             return;
         }
 
-        if (data.status === 'completed' && !data.endDate) {
-            form.setError("endDate", {
-                type: "manual",
-                message: "Data de término é obrigatória para atividades concluídas."
-            });
-            toast({
-                variant: "destructive",
-                title: "Erro de validação",
-                description: "Atividades concluídas precisam ter uma data de término definida."
-            });
-            return;
-        }
+        // Verificação condicional baseada no status foi removida anteriormente (correto)
 
         setIsSubmitting(true);
 
         try {
+            // data.endDate é garantido como string não vazia pelo Zod
             const activityData: any = {
                 title: data.title,
                 description: data.description,
-                clientId: data.clientId, // O ID já está correto vindo do form.setValue
+                clientId: data.clientId,
                 assignedTo: [user.uid],
                 priority: data.priority as ActivityPriority,
                 status: data.status as ActivityStatus,
@@ -189,20 +173,22 @@ const NewActivityPage = () => {
                 startDate: new Date(`${data.startDate}T${data.startTime}:00`).toISOString(),
             };
 
-            if (data.endDate) {
-                const timePart = data.endTime ? `${data.endTime}:00` : '00:00:00';
-                try {
-                    activityData.endDate = new Date(`${data.endDate}T${timePart}`).toISOString();
-                } catch (dateError) {
-                    console.error("Erro ao converter data/hora de término:", dateError, "Valores:", data.endDate, data.endTime);
-                    toast({
-                        variant: "destructive",
-                        title: "Erro de Formato",
-                        description: "A data ou hora de término fornecida parece inválida."
-                    });
-                    setIsSubmitting(false);
-                    return;
-                }
+            // Constrói a data/hora de término
+            const timePart = data.endTime ? `${data.endTime}:00` : '00:00:00';
+            try {
+                // Esta linha agora é segura porque data.endDate não será ""
+                activityData.endDate = new Date(`${data.endDate}T${timePart}`).toISOString();
+            } catch (dateError) {
+                // Este catch ainda é útil para casos de formato de data/hora realmente inválidos
+                // que possam ter passado pelo picker (improvável mas possível)
+                console.error("Erro ao converter data/hora de término:", dateError, "Valores:", data.endDate, data.endTime);
+                toast({
+                    variant: "destructive",
+                    title: "Erro de Formato",
+                    description: "A data ou hora de término fornecida parece inválida."
+                });
+                setIsSubmitting(false);
+                return;
             }
 
             await createActivity(activityData, user.uid);
@@ -282,7 +268,7 @@ const NewActivityPage = () => {
                                 <FormControl>
                                     <Textarea
                                         placeholder="Detalhe o que precisa ser feito nesta atividade."
-                                        className="resize-none h-32" // Altura aumentada
+                                        className="resize-none h-32"
                                         {...field}
                                     />
                                 </FormControl>
@@ -294,12 +280,12 @@ const NewActivityPage = () => {
                         )}
                     />
 
-                    {/* --- CAMPO CLIENTE MODIFICADO PARA COMBOBOX --- */}
+                    {/* Cliente (Combobox) */}
                     <FormField
                         control={form.control}
                         name="clientId"
                         render={({ field }) => (
-                            <FormItem className="flex flex-col"> {/* Flex col para alinhar label */}
+                            <FormItem className="flex flex-col">
                                 <FormLabel>Cliente</FormLabel>
                                 <Popover>
                                     <PopoverTrigger asChild>
@@ -308,7 +294,7 @@ const NewActivityPage = () => {
                                                 variant="outline"
                                                 role="combobox"
                                                 className={cn(
-                                                    "w-full justify-between", // Ocupa largura total
+                                                    "w-full justify-between",
                                                     !field.value && "text-muted-foreground"
                                                 )}
                                             >
@@ -316,7 +302,9 @@ const NewActivityPage = () => {
                                                     ? (() => {
                                                         const client = clients.find(c => c.id === field.value);
                                                         if (!client) return "Selecione um cliente";
-                                                        return client.type === 'juridica' ? (client as any).companyName || client.name : client.name;
+                                                        // Adiciona verificação defensiva para companyName
+                                                        const companyName = (client as any).companyName;
+                                                        return client.type === 'juridica' && companyName ? companyName : client.name;
                                                     })()
                                                     : "Selecione um cliente"}
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -330,16 +318,15 @@ const NewActivityPage = () => {
                                             <CommandList>
                                                 <CommandGroup>
                                                     {clients.map((client) => {
-                                                        const displayValue = client.type === 'juridica'
-                                                            ? (client as any).companyName || client.name
-                                                            : client.name;
+                                                        // Adiciona verificação defensiva para companyName
+                                                        const companyName = (client as any).companyName;
+                                                        const displayValue = client.type === 'juridica' && companyName ? companyName : client.name;
                                                         return (
                                                             <CommandItem
-                                                                value={displayValue} // Valor usado para busca/filtragem
+                                                                value={displayValue} // Usar o valor que será exibido para busca
                                                                 key={client.id}
                                                                 onSelect={() => {
-                                                                    form.setValue("clientId", client.id); // Define o ID no form
-                                                                    // O Popover fecha automaticamente no onSelect do CommandItem
+                                                                    form.setValue("clientId", client.id, { shouldValidate: true }); // Adiciona validação ao setar
                                                                 }}
                                                             >
                                                                 <Check
@@ -370,9 +357,8 @@ const NewActivityPage = () => {
                             </FormItem>
                         )}
                     />
-                    {/* --- FIM DO CAMPO CLIENTE COMBOBOX --- */}
 
-                    {/* Linha Prioridade e Status (usando Select normal) */}
+                    {/* Prioridade e Status */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Prioridade */}
                         <FormField
@@ -400,7 +386,6 @@ const NewActivityPage = () => {
                                 </FormItem>
                             )}
                         />
-
                         {/* Status */}
                         <FormField
                             control={form.control}
@@ -430,7 +415,7 @@ const NewActivityPage = () => {
                         />
                     </div>
 
-                    {/* Linha Data e Hora de Início */}
+                    {/* Data e Hora de Início */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                         {/* Data de Início */}
                         <FormField
@@ -445,11 +430,11 @@ const NewActivityPage = () => {
                                                 <Button
                                                     variant={"outline"}
                                                     className={cn(
-                                                        "w-full justify-start text-left font-normal", // Alterado para justify-start
+                                                        "w-full justify-start text-left font-normal",
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                 >
-                                                    <CalendarIcon className="mr-2 h-4 w-4" /> {/* Ícone à esquerda */}
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
                                                     {field.value ? (
                                                         format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
                                                     ) : (
@@ -462,7 +447,7 @@ const NewActivityPage = () => {
                                             <Calendar
                                                 mode="single"
                                                 selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
-                                                onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                                                onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')} // Passa '' se desmarcado
                                                 locale={ptBR}
                                                 initialFocus
                                             />
@@ -485,9 +470,9 @@ const NewActivityPage = () => {
                                     <FormControl>
                                         <Input
                                             type="time"
-                                            className="w-32" // Largura menor para campo de hora
+                                            className="w-32"
                                             {...field}
-                                            value={field.value || ""} // Garante valor controlado
+                                            value={field.value || ""}
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -499,7 +484,7 @@ const NewActivityPage = () => {
                         />
                     </div>
 
-                    {/* Linha Data e Hora de Término */}
+                    {/* Data e Hora de Término */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                         {/* Data de Término */}
                         <FormField
@@ -508,8 +493,7 @@ const NewActivityPage = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>
-                                        Data de Término
-                                        {watchStatus === 'completed' ? <span className="text-destructive">*</span> : ' (Opcional)'}
+                                        Data de Término <span className="text-destructive">*</span>
                                     </FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
@@ -517,11 +501,11 @@ const NewActivityPage = () => {
                                                 <Button
                                                     variant={"outline"}
                                                     className={cn(
-                                                        "w-full justify-start text-left font-normal", // Alterado para justify-start
+                                                        "w-full justify-start text-left font-normal",
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                 >
-                                                    <CalendarIcon className="mr-2 h-4 w-4" /> {/* Ícone à esquerda */}
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
                                                     {field.value ? (
                                                         format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
                                                     ) : (
@@ -534,7 +518,7 @@ const NewActivityPage = () => {
                                             <Calendar
                                                 mode="single"
                                                 selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
-                                                onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+                                                onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')} // Passa '' se desmarcado
                                                 disabled={(date) => {
                                                     const startDateValue = form.getValues("startDate");
                                                     return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false;
@@ -545,10 +529,9 @@ const NewActivityPage = () => {
                                         </PopoverContent>
                                     </Popover>
                                     <FormDescription>
-                                        {watchStatus === 'completed'
-                                            ? 'Data de término é obrigatória para atividades concluídas.'
-                                            : 'Selecione a data de término (opcional).'}
+                                        Selecione a data de término desta atividade.
                                     </FormDescription>
+                                    {/* FormMessage exibirá o erro Zod (".nonempty") se o campo estiver vazio */}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -563,9 +546,9 @@ const NewActivityPage = () => {
                                     <FormControl>
                                         <Input
                                             type="time"
-                                            className="w-32" // Largura menor
+                                            className="w-32"
                                             {...field}
-                                            value={field.value || ""} // Garante valor controlado
+                                            value={field.value || ""}
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -577,11 +560,10 @@ const NewActivityPage = () => {
                         />
                     </div>
 
-
                     {/* Botões de Ação */}
                     <div className="flex justify-end gap-4">
                         <Link to="/activities">
-                            <Button type="button" variant="outline">Cancelar</Button> {/* type="button" para não submeter */}
+                            <Button type="button" variant="outline">Cancelar</Button>
                         </Link>
                         <Button type="submit" disabled={isLoadingData || isSubmitting}>
                             {isSubmitting ? (
