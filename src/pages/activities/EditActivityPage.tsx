@@ -336,7 +336,14 @@ const EditActivityPage = () => {
                     render={({ field }) => (
                         <FormItem>
                           <FormLabel>Descrição</FormLabel>
-                          <FormControl><Textarea placeholder="Detalhes da atividade" className="resize-none" {...field} /></FormControl>
+                          <FormControl>
+                            <Textarea
+                                placeholder="Detalhes da atividade"
+                                // Adicione a classe de altura aqui (ex: h-32)
+                                className="resize-none h-60"
+                                {...field}
+                            />
+                          </FormControl>
                           <FormDescription>Forneça detalhes sobre a atividade.</FormDescription>
                           <FormMessage />
                         </FormItem>

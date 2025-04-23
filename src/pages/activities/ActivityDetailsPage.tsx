@@ -343,7 +343,8 @@ const ActivityDetailsPage = () => {
               </div>
               <div>
                 <h4 className="text-sm font-medium mb-1">Descrição</h4>
-                <p className="text-sm text-muted-foreground">
+                {/* Adicione a classe whitespace-pre-wrap aqui */}
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {activity.description}
                 </p>
               </div>
