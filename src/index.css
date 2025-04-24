@@ -176,16 +176,16 @@
 }
 
 .sidebar-active {
-  @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
+  @apply bg-sidebar-primary text-sidebar-primary-foreground font-semibold;
 }
 .dark .sidebar-active {
-  @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
+  @apply bg-sidebar-primary text-sidebar-primary-foreground font-semibold;
 }
 .h12 .sidebar-active {
-  @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
+  @apply bg-sidebar-primary text-sidebar-primary-foreground font-semibold;
 }
 .h12-alt .sidebar-active {
-  @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
+  @apply bg-sidebar-primary text-sidebar-primary-foreground font-semibold;
 }
 
 .input, input, select, textarea {
