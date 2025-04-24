@@ -329,13 +329,13 @@ const CollaboratorsPage = () => {
                       </CardContent>
                       <CardFooter className="flex justify-end gap-2 pt-3 border-t">
                         {/* Botão Detalhes (se houver página de detalhes) */}
-                        {/* <Button
+                        { <Button
                     variant="outline"
                     size="sm"
                     onClick={() => navigate(`/collaborators/${collaborator.uid}`)}
                   >
                     Detalhes
-                  </Button> */}
+                  </Button> }
                         {/* Botão Editar (Apenas Admin ou o próprio Gerente/Colaborador?) */}
                         {(user?.role === 'admin' || user?.uid === collaborator.uid) && (
                             <Button
