@@ -5,7 +5,8 @@ import {
     CalendarIcon,
     Loader2,
     Check, // Ícone para o item selecionado no Combobox
-    ChevronsUpDown // Ícone para o botão do Combobox
+    ChevronsUpDown, // Ícone para o botão do Combobox
+    PlusCircle // Ícone para criar novo tipo
 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
@@ -50,49 +51,31 @@ import { useToast } from "@/components/ui/use-toast";
 import {
     createActivity,
     ActivityStatus,
-    ActivityPriority
+    ActivityPriority,
+    getActivityTypes // <<< Importa função para buscar tipos
 } from "@/services/firebase/activities";
 import { getClients, Client } from "@/services/firebase/clients"; // Importa Client type
 import { useAuth } from "@/contexts/AuthContext";
 
-// --- CORREÇÃO NO SCHEMA ZOD ---
-// endDate agora deve ser uma string não vazia
+// --- Schema Zod (sem alterações necessárias para 'type') ---
 const formSchema = z.object({
-    title: z.string().min(3, {
-        message: "O título deve ter pelo menos 3 caracteres."
-    }),
-    description: z.string().min(10, {
-        message: "A descrição deve ter pelo menos 10 caracteres."
-    }),
-    clientId: z.string({
-        required_error: "Por favor, selecione um cliente."
-    }).nonempty({ message: "Por favor, selecione um cliente." }), // Garante que não seja string vazia
-    priority: z.string({
-        required_error: "Por favor, selecione uma prioridade."
-    }),
-    status: z.string({
-        required_error: "Por favor, selecione um status."
-    }),
-    startDate: z.string({ // Mantém como string 'yyyy-MM-dd'
-        required_error: "Por favor, selecione uma data de início."
-    }).nonempty({ message: "Por favor, selecione uma data de início." }), // Garante não vazia
-    startTime: z.string({
-        required_error: "Por favor, informe a hora de início."
-    }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { // Valida HH:MM (00:00 - 23:59)
-        message: "Formato de hora inválido (use HH:MM)."
-    }),
-    // CORRIGIDO: Usa .nonempty() para garantir que a string não seja vazia
-    endDate: z.string({
-        required_error: "Por favor, selecione uma data de término." // Mensagem se undefined/null
-    }).nonempty({
-        message: "Por favor, selecione uma data de término." // Mensagem se string vazia ""
-    }),
+    title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }),
+    description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres." }),
+    clientId: z.string({ required_error: "Por favor, selecione um cliente." })
+        .nonempty({ message: "Por favor, selecione um cliente." }),
+    priority: z.string({ required_error: "Por favor, selecione uma prioridade." }),
+    status: z.string({ required_error: "Por favor, selecione um status." }),
+    startDate: z.string({ required_error: "Por favor, selecione uma data de início." })
+        .nonempty({ message: "Por favor, selecione uma data de início." }),
+    startTime: z.string({ required_error: "Por favor, informe a hora de início." })
+        .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Formato de hora inválido (use HH:MM)." }),
+    endDate: z.string({ required_error: "Por favor, selecione uma data de término." })
+        .nonempty({ message: "Por favor, selecione uma data de término." }),
     endTime: z.string()
-        .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { // Valida HH:MM se preenchido
-            message: "Formato de hora inválido (use HH:MM)."
-        })
+        .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Formato de hora inválido (use HH:MM)." })
         .optional()
-        .or(z.literal("")), // Permite vazio ou formato HH:MM (mantido opcional)
+        .or(z.literal("")),
+    // Tipo agora pode ser qualquer string (existente ou nova) ou vazio/undefined
     type: z.string().optional(),
 });
 
@@ -102,7 +85,13 @@ const NewActivityPage = () => {
     const { user } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [clients, setClients] = useState<Client[]>([]);
-    const [isLoadingData, setIsLoadingData] = useState(true);
+    const [isLoadingClients, setIsLoadingClients] = useState(true); // Estado para carregamento de clientes
+
+    // --- Estados para o Combobox de Tipo ---
+    const [activityTypes, setActivityTypes] = useState<string[]>([]);
+    const [isLoadingTypes, setIsLoadingTypes] = useState(true); // Estado para carregamento de tipos
+    const [typeSearchValue, setTypeSearchValue] = useState(""); // Valor da busca no input do tipo
+    const [isTypePopoverOpen, setIsTypePopoverOpen] = useState(false); // Controla o popover do tipo
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -115,37 +104,47 @@ const NewActivityPage = () => {
             startTime: "",
             endDate: "", // Valor inicial vazio ainda é ok, Zod validará na submissão
             endTime: "",
-            type: "",
+            type: "", // Valor inicial do tipo continua vazio
             clientId: "",
         },
     });
 
-    // Validação condicional via useEffect foi removida anteriormente (correto)
-
+    // --- Efeito para buscar Clientes e Tipos ---
     useEffect(() => {
         const fetchData = async () => {
+            setIsLoadingClients(true);
+            setIsLoadingTypes(true);
             try {
-                setIsLoadingData(true);
-                const fetchedClients = await getClients();
+                // Busca clientes e tipos em paralelo
+                const [fetchedClients, fetchedTypes] = await Promise.all([
+                    getClients(),
+                    getActivityTypes()
+                ]);
                 setClients(fetchedClients);
+                // Garante que os tipos sejam únicos e ordena alfabeticamente
+                setActivityTypes([...new Set(fetchedTypes)].sort((a, b) => a.localeCompare(b)));
             } catch (error) {
-                console.error("Erro ao carregar dados:", error);
+                console.error("Erro ao carregar dados iniciais:", error);
                 toast({
                     variant: "destructive",
-                    title: "Erro",
-                    description: "Não foi possível carregar os clientes."
+                    title: "Erro ao Carregar Dados",
+                    description: "Não foi possível carregar clientes ou tipos de atividade."
                 });
+                // Mesmo com erro em um, podemos ter carregado o outro, então finalizamos ambos loadings
+                setClients([]); // Limpa para evitar dados inconsistentes
+                setActivityTypes([]);
             } finally {
-                setIsLoadingData(false);
+                // Finaliza ambos os loadings independentemente do resultado
+                setIsLoadingClients(false);
+                setIsLoadingTypes(false);
             }
         };
 
         fetchData();
-    }, [toast]);
+    }, [toast]); // Dependência apenas do toast para exibição de erros
 
+    // --- onSubmit (sem alterações lógicas necessárias aqui, apenas usa data.type) ---
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
-        // Zod agora garante que data.endDate é uma string não vazia antes de chamar onSubmit
-
         if (!user?.uid) {
             toast({
                 variant: "destructive",
@@ -155,12 +154,9 @@ const NewActivityPage = () => {
             return;
         }
 
-        // Verificação condicional baseada no status foi removida anteriormente (correto)
-
         setIsSubmitting(true);
 
         try {
-            // data.endDate é garantido como string não vazia pelo Zod
             const activityData: any = {
                 title: data.title,
                 description: data.description,
@@ -168,7 +164,8 @@ const NewActivityPage = () => {
                 assignedTo: [user.uid],
                 priority: data.priority as ActivityPriority,
                 status: data.status as ActivityStatus,
-                type: data.type || "",
+                // Inclui o tipo (seja ele existente ou novo, removendo espaços extras)
+                type: data.type?.trim() || "", // <<< Garante que envie string vazia se não preenchido/só espaços
                 createdBy: user.uid,
                 startDate: new Date(`${data.startDate}T${data.startTime}:00`).toISOString(),
             };
@@ -176,11 +173,9 @@ const NewActivityPage = () => {
             // Constrói a data/hora de término
             const timePart = data.endTime ? `${data.endTime}:00` : '00:00:00';
             try {
-                // Esta linha agora é segura porque data.endDate não será ""
+                // Esta linha agora é segura porque data.endDate não será "" (garantido pelo Zod)
                 activityData.endDate = new Date(`${data.endDate}T${timePart}`).toISOString();
             } catch (dateError) {
-                // Este catch ainda é útil para casos de formato de data/hora realmente inválidos
-                // que possam ter passado pelo picker (improvável mas possível)
                 console.error("Erro ao converter data/hora de término:", dateError, "Valores:", data.endDate, data.endTime);
                 toast({
                     variant: "destructive",
@@ -211,6 +206,23 @@ const NewActivityPage = () => {
         }
     };
 
+    // --- Lógica para o Combobox de Tipo ---
+    const handleTypeSelect = (value: string) => {
+        form.setValue("type", value, { shouldValidate: true }); // Define o valor no formulário
+        setTypeSearchValue(""); // Limpa a busca após selecionar/criar
+        setIsTypePopoverOpen(false); // Fecha o Popover
+    };
+
+    // Filtra tipos existentes baseado na busca atual
+    const filteredTypes = activityTypes.filter(type =>
+        type.toLowerCase().includes(typeSearchValue.toLowerCase())
+    );
+
+    // Verifica se o valor buscado é válido para criação e não existe exatamente igual (ignorando case)
+    const canCreateNewType = typeSearchValue.trim().length > 0 &&
+        !activityTypes.some(t => t.toLowerCase() === typeSearchValue.trim().toLowerCase());
+
+    // --- Renderização ---
     return (
         <div className="container mx-auto py-6 px-4 md:px-6">
             <div className="mb-6">
@@ -240,18 +252,93 @@ const NewActivityPage = () => {
                         )}
                     />
 
-                    {/* Tipo */}
+                    {/* Tipo (Combobox com Criação) */}
                     <FormField
                         control={form.control}
                         name="type"
                         render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="flex flex-col">
                                 <FormLabel>Tipo</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Tipo da atividade (opcional)" {...field} />
-                                </FormControl>
+                                <Popover open={isTypePopoverOpen} onOpenChange={setIsTypePopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={isTypePopoverOpen}
+                                                className={cn(
+                                                    "w-full justify-between",
+                                                    !field.value && "text-muted-foreground"
+                                                )}
+                                                disabled={isLoadingTypes} // Desabilita enquanto carrega tipos
+                                            >
+                                                {isLoadingTypes
+                                                    ? "Carregando tipos..."
+                                                    : (field.value
+                                                        ? field.value // Mostra o tipo selecionado/digitado
+                                                        : "Selecione ou crie um tipo")}
+                                                {isLoadingTypes ? (
+                                                    <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin"/>
+                                                ) : (
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                )}
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command
+                                            // Descomente se quiser uma filtragem mais rigorosa no Command
+                                            // filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}
+                                        >
+                                            <CommandInput
+                                                placeholder="Buscar ou digitar novo tipo..."
+                                                value={typeSearchValue}
+                                                onValueChange={setTypeSearchValue} // Atualiza o estado de busca
+                                            />
+                                            <CommandList>
+                                                <CommandEmpty>
+                                                    {canCreateNewType
+                                                        ? "Nenhum tipo encontrado. Clique abaixo para criar." // Mensagem se pode criar
+                                                        : "Nenhum tipo encontrado."}
+                                                </CommandEmpty>
+                                                <CommandGroup>
+                                                    {/* Opção de Criar Novo Tipo */}
+                                                    {canCreateNewType && (
+                                                        <CommandItem
+                                                            // Usar o próprio texto como valor aqui funciona bem
+                                                            value={typeSearchValue.trim()}
+                                                            onSelect={() => handleTypeSelect(typeSearchValue.trim())}
+                                                            className="cursor-pointer"
+                                                        >
+                                                            <PlusCircle className="mr-2 h-4 w-4 text-green-600" />
+                                                            Criar novo tipo: "{typeSearchValue.trim()}"
+                                                        </CommandItem>
+                                                    )}
+                                                    {/* Lista de Tipos Existentes Filtrados */}
+                                                    {filteredTypes.map((type) => (
+                                                        <CommandItem
+                                                            key={type}
+                                                            value={type}
+                                                            onSelect={() => handleTypeSelect(type)}
+                                                            className="cursor-pointer"
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    // Compara o valor do campo com o tipo atual
+                                                                    field.value === type ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {type}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                                 <FormDescription>
-                                    Informe o tipo desta atividade (ex: Reunião, Desenvolvimento, Suporte).
+                                    Selecione um tipo existente ou digite para criar um novo.
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -280,7 +367,7 @@ const NewActivityPage = () => {
                         )}
                     />
 
-                    {/* Cliente (Combobox) */}
+                    {/* Cliente (Combobox - com estado de loading) */}
                     <FormField
                         control={form.control}
                         name="clientId"
@@ -297,17 +384,24 @@ const NewActivityPage = () => {
                                                     "w-full justify-between",
                                                     !field.value && "text-muted-foreground"
                                                 )}
+                                                disabled={isLoadingClients} // Desabilita enquanto carrega clientes
                                             >
-                                                {field.value
-                                                    ? (() => {
-                                                        const client = clients.find(c => c.id === field.value);
-                                                        if (!client) return "Selecione um cliente";
-                                                        // Adiciona verificação defensiva para companyName
-                                                        const companyName = (client as any).companyName;
-                                                        return client.type === 'juridica' && companyName ? companyName : client.name;
-                                                    })()
-                                                    : "Selecione um cliente"}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                {isLoadingClients
+                                                    ? "Carregando clientes..."
+                                                    : (field.value
+                                                        ? (() => {
+                                                            const client = clients.find(c => c.id === field.value);
+                                                            if (!client) return "Selecione um cliente";
+                                                            // Adiciona verificação defensiva para companyName
+                                                            const companyName = (client as any).companyName;
+                                                            return client.type === 'juridica' && companyName ? companyName : client.name;
+                                                        })()
+                                                        : "Selecione um cliente")}
+                                                {isLoadingClients ? (
+                                                    <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin"/>
+                                                ) : (
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                )}
                                             </Button>
                                         </FormControl>
                                     </PopoverTrigger>
@@ -323,7 +417,8 @@ const NewActivityPage = () => {
                                                         const displayValue = client.type === 'juridica' && companyName ? companyName : client.name;
                                                         return (
                                                             <CommandItem
-                                                                value={displayValue} // Usar o valor que será exibido para busca
+                                                                // Usar um valor único e consistente para busca/filtragem
+                                                                value={`${displayValue} ${client.id}`}
                                                                 key={client.id}
                                                                 onSelect={() => {
                                                                     form.setValue("clientId", client.id, { shouldValidate: true }); // Adiciona validação ao setar
@@ -350,6 +445,7 @@ const NewActivityPage = () => {
                                 <Link
                                     to="/clients/new"
                                     className="text-sm text-blue-600 hover:underline mt-1 inline-block"
+                                    tabIndex={-1} // Melhora a navegação por teclado, opcional
                                 >
                                     Gostaria de cadastrar um novo cliente?
                                 </Link>
@@ -436,7 +532,7 @@ const NewActivityPage = () => {
                                                 >
                                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                                     {field.value ? (
-                                                        format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
+                                                        format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR }) // Adicionado T12:00 para evitar problemas de timezone na formatação
                                                     ) : (
                                                         <span>Selecione a data</span>
                                                     )}
@@ -446,6 +542,7 @@ const NewActivityPage = () => {
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 mode="single"
+                                                // Adicionado T12:00 para consistência ao selecionar
                                                 selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
                                                 onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')} // Passa '' se desmarcado
                                                 locale={ptBR}
@@ -470,9 +567,9 @@ const NewActivityPage = () => {
                                     <FormControl>
                                         <Input
                                             type="time"
-                                            className="w-32"
+                                            className="w-32" // Largura fixa para consistência
                                             {...field}
-                                            value={field.value || ""}
+                                            value={field.value || ""} // Garante que value nunca seja null/undefined
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -507,7 +604,7 @@ const NewActivityPage = () => {
                                                 >
                                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                                     {field.value ? (
-                                                        format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR })
+                                                        format(new Date(`${field.value}T12:00:00`), "PPP", { locale: ptBR }) // Adicionado T12:00
                                                     ) : (
                                                         <span>Selecione a data</span>
                                                     )}
@@ -517,10 +614,12 @@ const NewActivityPage = () => {
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 mode="single"
+                                                // Adicionado T12:00
                                                 selected={field.value ? new Date(`${field.value}T12:00:00`) : undefined}
                                                 onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')} // Passa '' se desmarcado
                                                 disabled={(date) => {
                                                     const startDateValue = form.getValues("startDate");
+                                                    // Compara apenas a data, ignorando a hora
                                                     return startDateValue ? date < new Date(`${startDateValue}T00:00:00`) : false;
                                                 }}
                                                 locale={ptBR}
@@ -546,9 +645,9 @@ const NewActivityPage = () => {
                                     <FormControl>
                                         <Input
                                             type="time"
-                                            className="w-32"
+                                            className="w-32" // Largura fixa para consistência
                                             {...field}
-                                            value={field.value || ""}
+                                            value={field.value || ""} // Garante que value nunca seja null/undefined
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -565,7 +664,8 @@ const NewActivityPage = () => {
                         <Link to="/activities">
                             <Button type="button" variant="outline">Cancelar</Button>
                         </Link>
-                        <Button type="submit" disabled={isLoadingData || isSubmitting}>
+                        {/* Botão desabilitado se carregando dados OU submetendo */}
+                        <Button type="submit" disabled={isLoadingClients || isLoadingTypes || isSubmitting}>
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
