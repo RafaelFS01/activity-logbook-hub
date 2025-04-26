@@ -152,6 +152,7 @@ const Combobox = React.forwardRef<
                         <CommandInput
                             placeholder={searchPlaceholder}
                             disabled={disabled}
+                            className="pl-2" // <<< ADICIONE ESTA CLASSE >>>
                         />
                         <CommandList id={listboxId}> {/* ID para aria-controls */}
                             <CommandEmpty>{noResultsText}</CommandEmpty>
