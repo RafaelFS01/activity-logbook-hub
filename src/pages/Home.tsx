@@ -2,24 +2,27 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   format, addDays, subDays, startOfDay, isSameDay, isWithinInterval, parseISO, startOfMonth, addMonths, subMonths,
-  startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks // Added week functions
+  startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks
 } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { DayContentProps } from 'react-day-picker';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Filter, UserRound, Building } from 'lucide-react';
+import { ref, get } from "firebase/database"; // Firebase Realtime DB functions
 
 import { getActivities, Activity, ActivityStatus } from '@/services/firebase/activities';
 import { getClients, Client } from '@/services/firebase/clients';
-import { getCollaboratorById, CollaboratorData } from '@/services/firebase/collaborators';
+// Import UserData type (ensure it has uid and role)
+import { UserData } from '@/services/firebase/auth'; // Adjust path if needed
 import { useAuth } from '@/contexts/AuthContext';
+import { db } from "@/lib/firebase"; // Firebase DB instance
 
-// Import your UI components (assuming paths are correct based on your structure)
-import { Button, buttonVariants } from '@/components/ui/button'; // Corrected import
+// Import your UI components
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge'; // Corrected import
+import { Badge } from '@/components/ui/badge';
 import { Combobox } from '@/components/ui/combobox';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -30,24 +33,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
+// Optional: Import useToast if you want to add error notifications
+// import { useToast } from "@/components/ui/use-toast";
 
 const Home = () => {
-  const { user } = useAuth();
+  const { user } = useAuth(); // { uid, name, role, email } | null
   const navigate = useNavigate();
+  // const { toast } = useToast(); // Uncomment if using toasts
 
   // --- States ---
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [displayMonth, setDisplayMonth] = useState<Date>(startOfMonth(new Date()));
-  // Add 'week' to viewMode
   const [viewMode, setViewMode] = useState<'day' | 'month' | 'week'>('day');
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [activities, setActivities] = useState<Activity[]>([]); // Activities filtered by ROLE
+  const [loading, setLoading] = useState<boolean>(true); // Main loading state
   const [statusFilter, setStatusFilter] = useState<ActivityStatus[]>(['in-progress', 'completed']);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [collaborators, setCollaborators] = useState<CollaboratorData[]>([]);
+  const [clients, setClients] = useState<Client[]>([]); // Active clients
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
-  const [loadingCollaborators, setLoadingCollaborators] = useState<boolean>(false);
+  // State to store all user data (including roles) fetched initially
+  const [allUsersData, setAllUsersData] = useState<Record<string, UserData & { uid: string }>>({});
 
   const statusOptions: { label: string; value: ActivityStatus }[] = [
     { label: 'Pendente', value: 'pending' },
@@ -56,69 +61,134 @@ const Home = () => {
     { label: 'Cancelado', value: 'cancelled' },
   ];
 
-  // --- Data Fetching Effects ---
+  // --- Data Fetching Effect (Handles Users, Activities, Clients, and Role Filtering) ---
   useEffect(() => {
-    const fetchActivitiesAndClients = async () => {
+    const fetchInitialData = async () => {
+      // Ensure we have the logged-in user to apply role filters
+      if (!user) {
+        setLoading(false);
+        setActivities([]);
+        setClients([]);
+        setAllUsersData({});
+        console.log("User not logged in, clearing calendar data.");
+        return;
+      }
+
+      setLoading(true);
+      // Reset states before fetching
+      setActivities([]);
+      setClients([]);
+      setAllUsersData({});
+
       try {
-        setLoading(true);
-        const [allActivities, allClients] = await Promise.all([
+        // 1. Fetch ALL users/collaborators FIRST (to get roles)
+        const fetchedUsersMap: Record<string, UserData & { uid: string }> = {}; // <-- Mude para const
+        try {
+          const usersRef = ref(db, 'users');
+          const usersSnapshot = await get(usersRef);
+          if (usersSnapshot.exists()) {
+            const usersData = usersSnapshot.val();
+            Object.entries(usersData).forEach(([uid, userData]) => {
+              const typedUserData = userData as UserData;
+              // Ensure valid user data structure with role
+              if (uid && typedUserData && typeof typedUserData === 'object' && typedUserData.role) {
+                // Optionally filter inactive users here if 'active' property exists in UserData
+                // if (typedUserData.active !== false) {
+                fetchedUsersMap[uid] = { ...typedUserData, uid };
+                // }
+              } else {
+                console.warn(`User data for UID ${uid} is incomplete or missing role. Excluding.`);
+              }
+            });
+            setAllUsersData(fetchedUsersMap); // Store the complete map
+            console.log("User data loaded:", Object.keys(fetchedUsersMap).length);
+          } else {
+            console.warn("No user data found in Firebase path 'users'.");
+            // Consider if the app should proceed without user roles
+          }
+        } catch (userError) {
+          console.error('Critical error fetching users/roles:', userError);
+          // Display error toast to the user is recommended here
+          // toast({ variant: "destructive", title: "Erro Crítico", description: "Não foi possível carregar os dados de permissão dos usuários." });
+          setLoading(false);
+          return; // Stop execution if roles cannot be fetched (security measure)
+        }
+
+        // 2. Fetch Activities and Clients in parallel
+        const [fetchedActivities, fetchedClients] = await Promise.all([
           getActivities(),
           getClients()
         ]);
-        setActivities(allActivities);
-        setClients(allClients.filter(client => client.active));
+        console.log("Raw activities loaded:", fetchedActivities.length);
+        console.log("Raw clients loaded:", fetchedClients.length);
+
+        // 3. Apply Role-Based Filtering to Activities (using fetchedUsersMap)
+        const currentUserRole = user.role;
+        const currentUserId = user.uid;
+        let activitiesToShow: Activity[] = [];
+
+        if (!currentUserRole) {
+          console.error("Current user role is undefined. Cannot filter activities.");
+          // Handle this case appropriately - maybe show nothing or an error
+        } else if (currentUserRole === 'admin') {
+          activitiesToShow = fetchedActivities; // Admin sees all
+        } else if (currentUserRole === 'manager') {
+          // Manager: Sees own, other managers', collaborators'. NOT admin-only.
+          activitiesToShow = fetchedActivities.filter(activity => {
+            const assignedIds = activity.assignedTo;
+            // Rule: Don't show unassigned activities (adjust if needed)
+            if (!assignedIds || assignedIds.length === 0) return false;
+            // Always show activities assigned to the manager themselves
+            if (assignedIds.includes(currentUserId)) return true;
+
+            // Get data for assigned users from the map we fetched
+            const assignedUsersData = assignedIds
+                .map(id => fetchedUsersMap[id]) // Look up in the map
+                .filter((userData): userData is UserData & { uid: string } => !!userData); // Filter out undefined/invalid users
+
+            // If an activity is assigned to IDs but none match our valid users map, hide it for safety.
+            if (assignedUsersData.length === 0 && assignedIds.length > 0) {
+              console.warn(`Activity ${activity.id} assigned to users not found or invalid. Hiding from Manager view.`);
+              return false;
+            }
+
+            // Check if AT LEAST ONE assigned user is NOT an admin (i.e., is manager or collaborator)
+            const hasNonAdminAssignee = assignedUsersData.some(
+                assignee => assignee.role === 'manager' || assignee.role === 'collaborator'
+            );
+            return hasNonAdminAssignee; // Show if true
+          });
+        } else if (currentUserRole === 'collaborator') {
+          // Collaborator: Sees only their own assigned activities
+          activitiesToShow = fetchedActivities.filter(activity =>
+              activity.assignedTo?.includes(currentUserId)
+          );
+        } else {
+          // Unknown role or error case
+          activitiesToShow = [];
+          console.warn("Unknown user role for activity filtering:", currentUserRole);
+        }
+
+        console.log(`Activities after role filter ('${currentUserRole}'):`, activitiesToShow.length);
+        setActivities(activitiesToShow); // Set state with ROLE-FILTERED activities
+
+        // Set clients (filtering out inactive ones)
+        setClients(fetchedClients.filter(client => client.active !== false));
+        console.log("Active clients set:", clients.length);
+
       } catch (error) {
-        console.error('Erro ao buscar atividades ou clientes:', error);
-        // Consider adding an error toast here
+        console.error('Error during initial data fetch for calendar:', error);
+        // Display error toast to the user is recommended here
+        // toast({ variant: "destructive", title: "Erro ao Carregar Dados", description: "Não foi possível carregar os dados da agenda." });
       } finally {
         setLoading(false);
       }
     };
-    fetchActivitiesAndClients();
-  }, []); // Runs only once on mount
 
-  useEffect(() => {
-    const fetchCollaborators = async () => {
-      if (activities.length === 0 || collaborators.length > 0 || loading) {
-        if (collaborators.length > 0 && !loadingCollaborators) return; // Skip if already loaded and not loading
-        if (loading) return; // Wait for initial activities to load
-      }
-      try {
-        setLoadingCollaborators(true);
-        const collaboratorIds = [...new Set(activities.flatMap(activity => activity.assignedTo || []))];
-        if (collaboratorIds.length === 0) {
-          setLoadingCollaborators(false);
-          return;
-        }
-        // Avoid refetching collaborators we already have
-        const idsToFetch = collaboratorIds.filter(id => !collaborators.some(c => c.uid === id));
-        if (idsToFetch.length === 0) {
-          setLoadingCollaborators(false);
-          return;
-        }
+    fetchInitialData();
 
-        const collaboratorPromises = idsToFetch.map(id => getCollaboratorById(id));
-        const collaboratorResults = await Promise.all(collaboratorPromises);
-        const newCollaborators = collaboratorResults.filter((data): data is CollaboratorData => data !== null);
-
-        // Merge new collaborators with existing ones, preventing duplicates
-        setCollaborators(prev => {
-          const existingIds = new Set(prev.map(c => c.uid));
-          const uniqueNewCollaborators = newCollaborators.filter(nc => !existingIds.has(nc.uid));
-          return [...prev, ...uniqueNewCollaborators];
-        });
-
-      } catch (error) {
-        console.error('Erro ao buscar colaboradores:', error);
-      } finally {
-        setLoadingCollaborators(false);
-      }
-    };
-    if (!loading) { // Only fetch collaborators after initial activities load
-      fetchCollaborators();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activities, loading]); // Removed collaborators.length dependency to allow refetch if activities change
+    // Dependency: Re-run if the logged-in user changes
+  }, [user]); // Removed toast dependency unless used within this effect
 
   // Sync displayMonth with selectedDate if needed (primarily for month view and popover)
   useEffect(() => {
@@ -126,59 +196,62 @@ const Home = () => {
     if (!isSameDay(targetMonth, displayMonth)) {
       setDisplayMonth(targetMonth);
     }
-  }, [selectedDate, displayMonth]); // Keep displayMonth dependency here
+  }, [selectedDate, displayMonth]);
 
   // --- Date Logic and Filtering ---
-  // useCallback ensures the function identity is stable if dependencies don't change
   const isActivityActiveOnDate = useCallback((activity: Activity, date: Date): boolean => {
     const selectedDateStart = startOfDay(date);
     let startDate: Date;
     try {
+      // Ensure startDate is valid before proceeding
+      if (!activity.startDate) throw new Error('Missing start date');
       startDate = startOfDay(parseISO(activity.startDate));
-    } catch (e) {
-      console.warn("Invalid start date for activity:", activity.id, activity.startDate);
-      return false;
+      if (isNaN(startDate.getTime())) throw new Error('Invalid start date');
+    } catch (e: any) {
+      console.warn(`Invalid or missing start date for activity ${activity.id}: ${activity.startDate}`, e.message);
+      return false; // Cannot determine activity timing without a valid start date
     }
 
+    // Handle activities without an end date
     if (!activity.endDate) {
-      // If 'in-progress' without end date, show on start day and subsequent days UNTIL today/selected date? Let's stick to original: show if start is <= selected
-      if (activity.status === 'in-progress') {
-        return startDate <= selectedDateStart; // Show from start date onwards if in progress
-      }
-      // For other statuses without end date, show only on start day
+      // 'in-progress' without end date: shown on start day and potentially subsequent days
+      // Let's refine: show if start date is <= selected date (active from start onwards until changed/completed)
+      // However, for simplicity in calendar view, showing ONLY on start date might be less confusing unless it's explicitly a multi-day task
+      // Sticking to original logic: show only on start day for non-'in-progress'
+      // Consider a separate field like 'isRecurring' or 'isOngoing' if needed.
+      // Current logic: Show 'in-progress' from start date onwards, others only on start date.
+      // Let's adjust to: ONLY show on exact start date if no end date, regardless of status, for calendar clarity.
+      // If you need multi-day visibility for tasks without end dates, this needs rethinking.
+      // REVISED LOGIC: Show only on the start day if no end date.
       return isSameDay(startDate, selectedDateStart);
     }
 
+    // Handle activities with an end date
     let endDate: Date;
     try {
       endDate = startOfDay(parseISO(activity.endDate));
-    } catch (e) {
-      console.warn("Invalid end date for activity:", activity.id, activity.endDate);
-      // If end date is invalid, treat as if there's no end date
-      if (activity.status === 'in-progress') {
-        return startDate <= selectedDateStart;
-      }
+      if (isNaN(endDate.getTime())) throw new Error('Invalid end date');
+    } catch (e: any) {
+      console.warn(`Invalid end date for activity ${activity.id}: ${activity.endDate}. Treating as single-day.`, e.message);
+      // Fallback: Treat as a single-day activity on the start date if end date is invalid
       return isSameDay(startDate, selectedDateStart);
     }
 
-    // Check if the selected date is within the interval (inclusive)
+    // Ensure start date is not after end date
+    if (startDate > endDate) {
+      console.warn(`Activity ${activity.id} has start date after end date. Hiding.`);
+      return false;
+    }
+
+    // Check if the selected date is within the interval [start, end] (inclusive)
     return isWithinInterval(selectedDateStart, { start: startDate, end: endDate });
-  }, []); // Empty dependency array as it uses only its arguments
+  }, []); // Empty dependency array - relies only on arguments
 
   // --- Derived Data for Views ---
 
-  // Activities filtered by status/client/collab AND for the specific selectedDate (for Day View)
-  const activitiesForSelectedDate = useMemo(() => {
-    return activities.filter(activity =>
-        statusFilter.includes(activity.status) &&
-        (!selectedClient || activity.clientId === selectedClient) &&
-        (!selectedCollaborator || (activity.assignedTo || []).includes(selectedCollaborator)) &&
-        isActivityActiveOnDate(activity, selectedDate) // Apply date check here
-    );
-  }, [activities, selectedDate, statusFilter, selectedClient, selectedCollaborator, isActivityActiveOnDate]);
-
-  // Activities filtered by status/client/collab (used as base for Month and Week View rendering)
+  // Base filtered activities (Status, Client, Collaborator filters applied to ROLE-FILTERED list)
   const baseFilteredActivities = useMemo(() => {
+    // Start with the activities already filtered by role
     return activities.filter(activity => {
       const passesStatusFilter = statusFilter.length === 0 || statusFilter.includes(activity.status);
       const passesClientFilter = !selectedClient || activity.clientId === selectedClient;
@@ -186,6 +259,15 @@ const Home = () => {
       return passesStatusFilter && passesClientFilter && passesCollabFilter;
     });
   }, [activities, statusFilter, selectedClient, selectedCollaborator]);
+
+  // Activities specifically for the selected date (for Day View)
+  const activitiesForSelectedDate = useMemo(() => {
+    // Filter the already base-filtered activities by the selected date
+    return baseFilteredActivities.filter(activity =>
+        isActivityActiveOnDate(activity, selectedDate)
+    );
+  }, [baseFilteredActivities, selectedDate, isActivityActiveOnDate]);
+
 
   // --- Week View Specific Calculations ---
   const currentWeekStart = useMemo(() => {
@@ -202,15 +284,21 @@ const Home = () => {
 
   // Pre-filter activities that intersect with the current week's interval (for Week View performance)
   const activitiesForCurrentWeekView = useMemo(() => {
+    // Filter the baseFilteredActivities (which are already role and UI filtered)
     return baseFilteredActivities.filter(activity => {
-      // Check if the activity's date range overlaps with the current week's range
       try {
+        if (!activity.startDate) return false; // Cannot place without start date
         const activityStart = startOfDay(parseISO(activity.startDate));
+        if (isNaN(activityStart.getTime())) return false; // Invalid start date
+
         // Use activityStart if endDate is missing or invalid
         let activityEnd = activityStart;
         if (activity.endDate) {
           try {
-            activityEnd = startOfDay(parseISO(activity.endDate));
+            const parsedEnd = startOfDay(parseISO(activity.endDate));
+            if (!isNaN(parsedEnd.getTime()) && parsedEnd >= activityStart) {
+              activityEnd = parsedEnd;
+            }
           } catch { /* ignore invalid end date, use start date */}
         }
 
@@ -218,7 +306,7 @@ const Home = () => {
         return activityStart <= currentWeekEnd && activityEnd >= currentWeekStart;
 
       } catch (e) {
-        console.warn("Invalid date in activity filter for week view:", activity.id, e);
+        console.warn("Error parsing date in activity filter for week view:", activity.id, e);
         return false;
       }
     });
@@ -230,7 +318,8 @@ const Home = () => {
     if (viewMode === 'day') {
       setSelectedDate(prevDate => addDays(prevDate, 1));
     } else if (viewMode === 'week') {
-      setSelectedDate(prevDate => addWeeks(prevDate, 1)); // Navigate by week
+      // When navigating week, set selectedDate to the start of the next week for consistency
+      setSelectedDate(prevDate => startOfWeek(addWeeks(prevDate, 1), { weekStartsOn: 1 }));
     } else { // month
       setDisplayMonth(prevMonth => addMonths(prevMonth, 1));
     }
@@ -240,7 +329,8 @@ const Home = () => {
     if (viewMode === 'day') {
       setSelectedDate(prevDate => subDays(prevDate, 1));
     } else if (viewMode === 'week') {
-      setSelectedDate(prevDate => subWeeks(prevDate, 1)); // Navigate by week
+      // When navigating week, set selectedDate to the start of the previous week
+      setSelectedDate(prevDate => startOfWeek(subWeeks(prevDate, 1), { weekStartsOn: 1 }));
     } else { // month
       setDisplayMonth(prevMonth => subMonths(prevMonth, 1));
     }
@@ -256,7 +346,7 @@ const Home = () => {
   const handleDateSelectPopover = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
-      // Optional: switch to day view if selecting from popover while in month/week view
+      // Optional: switch view mode if needed, e.g., always switch to day view
       // setViewMode('day');
     }
   };
@@ -275,105 +365,122 @@ const Home = () => {
     setSelectedCollaborator(null);
   };
 
-  // --- Internal Month Navigation Handler (keep for month view calendar) ---
+  // Handler for internal calendar navigation (month view)
   const handleInternalMonthChange = (newMonth: Date) => {
-    setDisplayMonth(newMonth);
+    setDisplayMonth(startOfMonth(newMonth)); // Ensure it's always the start of the month
   };
 
-  // --- Combobox Options ---
+  // --- Combobox Options (using allUsersData now) ---
+  const collaboratorOptions = useMemo(() => {
+    // Use allUsersData fetched initially
+    if (!allUsersData || Object.keys(allUsersData).length === 0) return [];
+
+    // Map all valid users to options
+    // Optional: Filter further here if needed (e.g., only active users if 'active' exists)
+    return Object.values(allUsersData)
+        // .filter(collab => collab.active !== false) // Example: Filter for active users
+        .map(collab => ({
+          value: collab.uid,
+          label: collab.name || collab.email || `Usuário ${collab.uid.substring(0, 6)}...`, // Fallback label
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)); // Sort alphabetically
+  }, [allUsersData]); // Depends on the fetched user data
+
   const clientOptions = useMemo(() => clients.map(client => ({
     value: client.id,
-    label: client.name || (client as any).companyName || 'Cliente sem nome' // Handle potential name variations
-  })), [clients]);
+    // Handle client naming variations (pessoa fisica vs juridica)
+    label: client.name || (client as any).companyName || 'Cliente sem nome'
+  })).sort((a, b) => a.label.localeCompare(b.label)), [clients]); // Sort clients
 
-  const collaboratorOptions = useMemo(() => loadingCollaborators
-      ? [] // Show empty or a loading indicator if needed
-      : collaborators.map(collaborator => ({
-        value: collaborator.uid,
-        label: collaborator.name || collaborator.email || 'Colaborador sem nome'
-      })), [collaborators, loadingCollaborators]);
 
-  // --- Helper Functions for Names ---
-  const getClientName = useCallback((clientId: string): string | undefined => {
+  // --- Helper Functions for Names (using allUsersData and clients) ---
+  const getClientName = useCallback((clientId: string | undefined): string | undefined => {
+    if (!clientId) return undefined;
     const client = clients.find(c => c.id === clientId);
-    return client?.name || (client as any)?.companyName;
+    return client?.name || (client as any)?.companyName; // Prioritize specific name types if necessary
   }, [clients]);
 
   const getCollaboratorNames = useCallback((assignedToIds: string[] | undefined): string[] => {
     if (!assignedToIds || assignedToIds.length === 0) return [];
+    // Use allUsersData for lookup
+    if (!allUsersData || Object.keys(allUsersData).length === 0) return ['Carregando...']; // Or empty array
+
     return assignedToIds
         .map(id => {
-          const collaborator = collaborators.find(col => col.uid === id);
-          return collaborator?.name || collaborator?.email; // Fallback to email if name is missing
+          const collaborator = allUsersData[id]; // Direct lookup in the map
+          return collaborator?.name || collaborator?.email; // Use name, fallback to email
         })
-        .filter((name): name is string => !!name); // Filter out undefined/null results
-  }, [collaborators]);
+        .filter((name): name is string => !!name); // Filter out any null/undefined results
+  }, [allUsersData]); // Depends on the fetched user data
+
 
   // --- Internal Component for Month View Day Cell Content ---
   const CustomDayContent = useCallback((props: DayContentProps) => {
-    const { date, displayMonth: currentDisplayMonth } = props; // Renamed to avoid conflict
+    const { date, displayMonth: currentDisplayMonth } = props;
 
-    // Use baseFilteredActivities and check for *this specific day*
+    // Filter activities for this specific day using the already UI/Role filtered list
     const dayActivities = baseFilteredActivities.filter(activity =>
-        isActivityActiveOnDate(activity, date) // Reuse date check logic
+        isActivityActiveOnDate(activity, date)
     );
 
     const isOutside = date.getMonth() !== currentDisplayMonth.getMonth();
 
     return (
         <div className={cn(
-            "flex flex-col items-start h-full w-full relative p-1", // Add padding here
-            isOutside && "opacity-50 pointer-events-none"
+            "flex flex-col items-start h-full w-full relative p-1 min-h-[120px]", // Ensure min height and padding
+            isOutside ? "text-muted-foreground/50 pointer-events-none" : "" // Dim outside days
         )}>
           {/* Day Number */}
           <span className={cn(
-              "self-end text-xs font-medium mb-1", // Position top-right
-              isSameDay(date, new Date()) && "text-primary font-bold" // Highlight today's number
+              "self-end text-xs font-medium mb-1 px-1", // Position top-right corner
+              isSameDay(date, new Date()) && !isOutside ? "text-primary font-bold underline decoration-primary/50 underline-offset-2" : "", // Highlight today's number
+              isOutside && "text-inherit" // Inherit dimmed color if outside
           )}>
             {format(date, 'd')}
           </span>
 
           {/* Activity Badges Container */}
-          <div className="flex-grow space-y-1 overflow-hidden w-full">
-            {loading ? ( // Show skeleton based on the main loading state
+          <div className="flex-grow space-y-0.5 overflow-hidden w-full">
+            {loading && !isOutside ? ( // Show skeleton only for days in the current month during loading
                 <>
-                  <Skeleton className="h-4 w-full rounded-sm mt-1" />
-                  <Skeleton className="h-4 w-3/4 rounded-sm mt-1" />
+                  <Skeleton className="h-3 w-full rounded-sm mt-1" />
+                  <Skeleton className="h-3 w-3/4 rounded-sm mt-1" />
                 </>
             ) : (
-                <>
-                  {dayActivities.slice(0, 2).map(activity => ( // Limit visible badges
-                      <Badge
-                          key={activity.id}
-                          variant={ // Example variant logic based on your Badge component
-                            activity.priority === 'high' ? 'destructive' :
-                                activity.status === 'completed' ? 'outline' :
-                                    'secondary'
-                          }
-                          className="text-[10px] p-0.5 px-1 leading-tight truncate block w-full font-normal cursor-pointer hover:opacity-80"
-                          title={activity.title}
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent day click
-                            navigate(`/activities/${activity.id}`);
-                          }}
-                      >
-                        {activity.title}
-                      </Badge>
-                  ))}
-                  {dayActivities.length > 2 && ( // Indicator for more activities
-                      <Badge
-                          variant="outline"
-                          className="text-[10px] p-0.5 px-1 leading-tight block w-full font-normal text-muted-foreground"
-                      >
-                        +{dayActivities.length - 2} mais
-                      </Badge>
-                  )}
-                </>
+                !isOutside && dayActivities.slice(0, 3).map(activity => ( // Limit visible badges (e.g., to 3)
+                    <Badge
+                        key={activity.id}
+                        variant={ // Dynamic badge variant based on status/priority
+                          activity.status === 'cancelled' ? 'destructive' : // Cancelada = Destructive
+                              activity.priority === 'high' ? 'destructive' : // Alta Prioridade = Destructive (ou default se preferir)
+                                  activity.status === 'completed' ? 'outline' : // Concluída = Outline (sutil)
+                                      activity.status === 'in-progress' ? 'default' : // Em Progresso = Default (destaque primário)
+                                          'secondary' // Pendente/Outros = Secondary
+                        }
+                        className="text-[10px] p-0.5 px-1 leading-tight truncate block w-full font-normal cursor-pointer hover:opacity-80"
+                        title={activity.title}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent triggering day click
+                          navigate(`/activities/${activity.id}`);
+                        }}
+                    >
+                      {activity.title}
+                    </Badge>
+                ))
+            )}
+            {!loading && !isOutside && dayActivities.length > 3 && ( // Indicator for more activities
+                <Badge
+                    variant="ghost" // Use a subtle variant
+                    className="text-[10px] p-0 px-1 leading-tight block w-full font-normal text-muted-foreground mt-0.5 text-center"
+                >
+                  +{dayActivities.length - 3} mais
+                </Badge>
             )}
           </div>
         </div>
     );
-  }, [baseFilteredActivities, isActivityActiveOnDate, loading, navigate]); // Depend on baseFilteredActivities
+    // Depend on filtered activities, date check logic, loading state, and navigation
+  }, [baseFilteredActivities, isActivityActiveOnDate, loading, navigate]);
 
   // --- Component Rendering ---
   return (
@@ -382,7 +489,7 @@ const Home = () => {
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Agenda de Atividades</h1>
           <p className="text-muted-foreground">
-            Visualize e gerencie as atividades.
+            Visualize e gerencie as atividades por dia, semana ou mês.
           </p>
         </div>
 
@@ -391,16 +498,21 @@ const Home = () => {
 
           {/* Left Column: Date/View Controls */}
           <div className="flex flex-wrap items-center gap-4">
-            {/* Date Picker Popover - Always available, but content might adapt */}
+            {/* Date Picker Popover */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2 w-full sm:w-[280px] justify-start text-left font-normal">
+                <Button variant="outline" className={cn(
+                    "flex items-center gap-2 w-full sm:w-auto justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground" // Style if no date selected
+                )}
+                    // Conditionally set width based on view mode for better text fit
+                        style={{width: viewMode === 'week' ? 'auto' : '280px'}}
+                >
                   <CalendarIcon className="h-4 w-4" />
-                  {/* Show selected date or week range based on view */}
                   <span>
                     {viewMode === 'week'
                         ? `Semana: ${format(currentWeekStart, 'dd/MM')} - ${format(currentWeekEnd, 'dd/MM/yy', { locale: pt })}`
-                        : format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: pt })
+                        : selectedDate ? format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: pt }) : "Selecione uma data"
                     }
                   </span>
                 </Button>
@@ -410,78 +522,83 @@ const Home = () => {
                     mode="single"
                     selected={selectedDate}
                     onSelect={handleDateSelectPopover}
-                    className={cn("p-3 pointer-events-auto")}
+                    className="p-3" // Standard padding
                     locale={pt}
                     initialFocus
-                    month={displayMonth} // Controlled month for the popover
-                    onMonthChange={setDisplayMonth} // Allow navigation within popover
+                    month={displayMonth} // Control the displayed month
+                    onMonthChange={setDisplayMonth} // Allow navigation inside popover
+                    disabled={loading} // Disable during load
                 />
               </PopoverContent>
             </Popover>
 
 
-            {/* External Navigation Buttons (Adaptive Label) */}
+            {/* External Navigation Buttons */}
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={goToPrevious} aria-label={viewMode === 'day' ? "Dia anterior" : viewMode === 'week' ? "Semana anterior" : "Mês anterior"}>
+              <Button variant="outline" size="icon" onClick={goToPrevious} disabled={loading} aria-label={viewMode === 'day' ? "Dia anterior" : viewMode === 'week' ? "Semana anterior" : "Mês anterior"}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={goToNext} aria-label={viewMode === 'day' ? "Próximo dia" : viewMode === 'week' ? "Próxima semana" : "Próximo mês"}>
+              <Button variant="outline" size="icon" onClick={goToNext} disabled={loading} aria-label={viewMode === 'day' ? "Próximo dia" : viewMode === 'week' ? "Próxima semana" : "Próximo mês"}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Day/Week/Month Toggle Buttons */}
             <div className="flex items-center gap-1 rounded-md border bg-muted p-0.5">
-              <Button
-                  variant={viewMode === 'day' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="px-3 h-8"
-                  onClick={() => setViewMode('day')}
-              >
-                Dia
-              </Button>
-              {/* WEEK Button */}
-              <Button
-                  variant={viewMode === 'week' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="px-3 h-8"
-                  onClick={() => setViewMode('week')}
-              >
-                Semana
-              </Button>
-              <Button
-                  variant={viewMode === 'month' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="px-3 h-8"
-                  onClick={() => setViewMode('month')}
-              >
-                Mês
-              </Button>
+              <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" className="px-3 h-8" onClick={() => setViewMode('day')} disabled={loading}> Dia </Button>
+              <Button variant={viewMode === 'week' ? 'secondary' : 'ghost'} size="sm" className="px-3 h-8" onClick={() => setViewMode('week')} disabled={loading}> Semana </Button>
+              <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" className="px-3 h-8" onClick={() => setViewMode('month')} disabled={loading}> Mês </Button>
             </div>
           </div>
 
           {/* Right Column: Filters */}
-          <div className="flex flex-col items-end gap-2 w-full md:w-auto md:max-w-[600px]"> {/* Group filters */}
-            <div className="flex flex-wrap justify-end items-center gap-3 w-full">
-              {/* Collaborator Filter */}
-              <div className="flex items-center gap-2 w-full sm:w-[200px] md:w-auto flex-grow md:flex-grow-0">
+          {/* Right Column: Filters - MODIFICADO */}
+          <div className="flex flex-col items-stretch md:items-end gap-2 w-full md:w-auto"> {/* Container Principal da Direita */}
+            {/* Container INTERNO: AGORA sempre flex-col e items-end */}
+            <div className="flex flex-col items-end gap-3 w-full md:w-auto"> {/* Ajuste o gap vertical se necessário */}
+
+              {/* Collaborator Filter - Largura Fixa */}
+              <div className="flex items-center gap-2 w-80"> {/* <<<<<<< Mudado para w-64 */}
                 <UserRound className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <Combobox options={collaboratorOptions} selectedValue={selectedCollaborator} onSelect={setSelectedCollaborator} placeholder="Colaborador" searchPlaceholder="Buscar..." noResultsText={loadingCollaborators ? "Carregando..." : "Nenhum"} allowClear={true} disabled={loadingCollaborators} className="w-full md:w-[180px]" /> {/* Adjusted width slightly */}
+                <Combobox
+                    options={collaboratorOptions}
+                    selectedValue={selectedCollaborator}
+                    onSelect={setSelectedCollaborator}
+                    placeholder="Colaborador"
+                    searchPlaceholder="Buscar..."
+                    noResultsText={loading ? "Carregando..." : "Nenhum"}
+                    allowClear={true}
+                    disabled={loading || collaboratorOptions.length === 0}
+                    className="w-full" // Combobox preenche o container de largura fixa
+                />
               </div>
-              {/* Client Filter */}
-              <div className="flex items-center gap-2 w-full sm:w-[200px] md:w-auto flex-grow md:flex-grow-0">
+
+              {/* Client Filter - Largura Fixa */}
+              <div className="flex items-center gap-2 w-80"> {/* <-- Use a MESMA largura */}
                 <Building className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <Combobox options={clientOptions} selectedValue={selectedClient} onSelect={setSelectedClient} placeholder="Cliente" searchPlaceholder="Buscar..." noResultsText="Nenhum" allowClear={true} disabled={loading} className="w-full md:w-[180px]" /> {/* Adjusted width slightly */}
+                <Combobox
+                    options={clientOptions}
+                    selectedValue={selectedClient}
+                    onSelect={setSelectedClient}
+                    placeholder="Cliente"
+                    searchPlaceholder="Buscar..."
+                    noResultsText="Nenhum"
+                    allowClear={true}
+                    disabled={loading || clientOptions.length === 0}
+                    className="w-full" // Combobox preenche o container de largura fixa
+                />
               </div>
-              {/* Status Filter */}
+
+              {/* Status Filter - Botão com a mesma largura (opcional, para alinhamento) */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2 w-auto justify-center flex-shrink-0">
+                  {/* Botão agora também com largura fixa e conteúdo centralizado */}
+                  <Button variant="outline" className="flex items-center gap-2 w-56 justify-center" disabled={loading}>
                     <Filter className="h-4 w-4" />
                     <span>Status ({statusFilter.length})</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 bg-background" align="end">
+                <DropdownMenuContent className="w-56 bg-background" align="end"> {/* Ajuste a largura do popover se necessário */}
                   <DropdownMenuLabel>Status da atividade</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <div className="p-2 space-y-2">
@@ -505,12 +622,16 @@ const Home = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            {/* Reset Filters Button */}
-            <Button variant="link" onClick={resetFilters} className="whitespace-nowrap w-auto justify-end text-muted-foreground hover:text-foreground h-auto p-0 text-sm self-end mt-1">
-              Limpar filtros
-            </Button>
-          </div>
-        </div>
+
+            {/* Reset Filters Button (posição inalterada relativa ao container principal) */}
+            {(statusFilter.length !== 2 || !statusFilter.includes('in-progress') || !statusFilter.includes('completed') || selectedClient || selectedCollaborator) && (
+                <Button variant="link" onClick={resetFilters} disabled={loading} className="whitespace-nowrap w-auto justify-end text-muted-foreground hover:text-foreground h-auto p-0 text-sm self-end mt-1 md:mt-0"> {/* Ajuste a margem se necessário */}
+                  Limpar filtros
+                </Button>
+            )}
+          </div> {/* Fim da Coluna Direita */}
+
+        </div> {/* Fim da Controls Bar */}
 
         {/* --- Activity Display Area (Conditional) --- */}
         <div className="mt-6">
@@ -518,7 +639,7 @@ const Home = () => {
               // --- Daily View ---
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">
-                  Atividades para {format(selectedDate, "dd 'de' MMMM", { locale: pt })}
+                  Atividades para {selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: pt }) : 'Data não selecionada'}
                 </h2>
                 {/* Loading State */}
                 {loading ? (
@@ -533,57 +654,91 @@ const Home = () => {
                     </div>
                     // Data Loaded - With Activities
                 ) : activitiesForSelectedDate.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"> {/* Maybe more columns? */}
                       {activitiesForSelectedDate.map((activity) => {
                         const clientName = getClientName(activity.clientId);
                         const collaboratorNames = getCollaboratorNames(activity.assignedTo);
+                        const priorityLabel = { low: 'Baixa', medium: 'Média', high: 'Alta' }[activity.priority] || 'N/D';
+                        const statusLabel = statusOptions.find(opt => opt.value === activity.status)?.label || activity.status;
+                        let dateString = "Data inválida";
+                        try {
+                          if (activity.startDate) {
+                            const start = parseISO(activity.startDate);
+                            dateString = format(start, 'dd/MM/yy HH:mm', { locale: pt });
+                            if (activity.endDate) {
+                              const end = parseISO(activity.endDate);
+                              // Show end time only if different from start time OR on a different day
+                              if (!isSameDay(start, end)) {
+                                dateString += ` - ${format(end, 'dd/MM/yy HH:mm', { locale: pt })}`;
+                              } else if (format(start, 'HH:mm') !== format(end, 'HH:mm')) {
+                                dateString += ` - ${format(end, 'HH:mm', { locale: pt })}`;
+                              }
+                            }
+                          } else {
+                            dateString = "Data de início não definida";
+                          }
+                        } catch (e) {
+                          console.warn("Date formatting error in card:", activity.id, e);
+                        }
+
                         return (
                             <Card
                                 key={activity.id}
-                                className="cursor-pointer hover:shadow-lg transition-shadow duration-200 flex flex-col justify-between border-2 border-[#8AB4E1]" // Added explicit border color
+                                className="cursor-pointer hover:shadow-md transition-shadow duration-150 flex flex-col justify-between border"
                                 onClick={() => navigate(`/activities/${activity.id}`)}
-                                role="button" tabIndex={0} aria-label={`Ver detalhes da atividade ${activity.title}`}
+                                role="button" tabIndex={0} aria-label={`Ver detalhes da atividade ${activity.title || 'sem título'}`}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/activities/${activity.id}`); }}
                             >
-                              <div> {/* Wrapper for content except footer */}
-                                <CardHeader className="pb-2">
+                              {/* Content Wrapper */}
+                              <div>
+                                <CardHeader className="pb-2 space-y-1">
                                   <div className="flex justify-between items-start gap-2">
-                                    <CardTitle className="text-lg font-semibold">{activity.title}</CardTitle>
-                                    <Badge variant={activity.priority === 'high' ? 'destructive' : activity.priority === 'medium' ? 'default' : 'secondary'} className="flex-shrink-0 capitalize">
-                                      {activity.priority === 'high' ? 'Alta' : activity.priority === 'medium' ? 'Média' : 'Baixa'}
-                                    </Badge>
+                                    <CardTitle className="text-base font-semibold line-clamp-2">{activity.title || <span className="italic text-muted-foreground">Sem Título</span>}</CardTitle>
+                                    {activity.priority && (
+                                        <Badge variant={activity.priority === 'high' ? 'destructive' : activity.priority === 'medium' ? 'default' : 'outline'} className="flex-shrink-0 capitalize text-xs px-1.5 py-0.5">
+                                          {priorityLabel}
+                                        </Badge>
+                                    )}
                                   </div>
-                                  <CardDescription className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                  <CardDescription className="flex items-center gap-1 text-xs text-muted-foreground pt-0.5">
                                     <Clock className="h-3 w-3 flex-shrink-0" />
-                                    <span className="whitespace-nowrap">
-                                      {(() => { try { const start = parseISO(activity.startDate); const end = activity.endDate ? parseISO(activity.endDate) : null; let dateString = format(start, 'dd/MM/yy HH:mm', { locale: pt }); if (end) { if (isSameDay(start, end)) { dateString += ` - ${format(end, 'HH:mm', { locale: pt })}`; } else { dateString += ` - ${format(end, 'dd/MM/yy HH:mm', { locale: pt })}`; } } return dateString; } catch (e) { console.warn("Invalid date formatting:", activity.id, e); return "Data inválida"; } })()}
-                                    </span>
+                                    <span className="whitespace-nowrap">{dateString}</span>
                                   </CardDescription>
-                                  <Badge className="mt-2 w-fit" variant={ activity.status === 'completed' ? 'outline' : activity.status === 'pending' ? 'secondary' : activity.status === 'cancelled' ? 'destructive' : 'default' }>
-                                    {statusOptions.find(opt => opt.value === activity.status)?.label || activity.status}
+                                  <Badge
+                                      className="mt-1 w-fit text-xs px-1.5 py-0.5"
+                                      variant={ // Mapeamento Refinado:
+                                        activity.status === 'cancelled' ? 'destructive' : // Cancelada = Destructive
+                                            activity.status === 'completed' ? 'outline' : // Concluída = Outline
+                                                activity.status === 'in-progress' ? 'default' : // Em Progresso = Default
+                                                    'secondary' // Pendente = Secondary
+                                      }
+                                  >
+                                    {statusLabel}
                                   </Badge>
                                 </CardHeader>
-                                <CardContent className="pb-3 pt-1">
-                                  <p className="line-clamp-2 text-sm text-muted-foreground">
-                                    {activity.description || <span className="italic">Sem descrição</span>}
-                                  </p>
-                                </CardContent>
+                                {activity.description && (
+                                    <CardContent className="pb-3 pt-1 text-sm text-muted-foreground">
+                                      <p className="line-clamp-2">{activity.description}</p>
+                                    </CardContent>
+                                )}
                               </div>
-                              <CardFooter className="pt-2 pb-3 border-t mt-auto flex flex-wrap gap-2 items-center">
-                                {activity.type && <Badge variant="outline" className="text-xs">{activity.type}</Badge>}
+                              {/* Footer always visible but content conditional */}
+                              <CardFooter className="pt-2 pb-3 border-t mt-auto flex flex-wrap gap-1.5 items-center">
+                                {activity.type && <Badge variant="outline" className="text-xs px-1.5 py-0.5">{activity.type}</Badge>}
                                 {clientName && (
-                                    <Badge variant="outline" className="text-xs flex items-center gap-1 max-w-[150px] sm:max-w-[200px]">
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0.5 flex items-center gap-1 max-w-[150px] sm:max-w-[200px]">
                                       <Building className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                                       <span className="truncate" title={clientName}>{clientName}</span>
                                     </Badge>
                                 )}
-                                {collaboratorNames.length > 0 && (
-                                    <Badge variant="outline" className="text-xs flex items-center gap-1 max-w-[150px] sm:max-w-[200px]">
+                                {collaboratorNames.length > 0 && collaboratorNames[0] !== 'Carregando...' && (
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0.5 flex items-center gap-1 max-w-[150px] sm:max-w-[200px]">
                                       <UserRound className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                                       <span className="truncate" title={collaboratorNames.join(', ')}>{collaboratorNames.join(', ')}</span>
                                     </Badge>
                                 )}
-                                {loadingCollaborators && (activity.assignedTo?.length ?? 0) > 0 && collaboratorNames.length === 0 && (
+                                {/* Show skeleton only if assignees exist but names haven't loaded (shouldn't happen often with new logic) */}
+                                {loading && (activity.assignedTo?.length ?? 0) > 0 && collaboratorNames[0] === 'Carregando...' && (
                                     <Skeleton className="h-5 w-20 rounded-md" />
                                 )}
                               </CardFooter>
@@ -593,21 +748,25 @@ const Home = () => {
                     </div>
                     // Data Loaded - No Activities
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg bg-muted/30 text-center">
+                    <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg bg-card text-center">
                       <p className="text-lg font-medium text-muted-foreground mb-2">Nenhuma atividade encontrada.</p>
-                      <p className="text-sm text-muted-foreground mb-4">Não há atividades para {format(selectedDate, "dd 'de' MMMM", { locale: pt })} com os filtros selecionados.</p>
-                      <Button variant="default" size="sm" onClick={() => navigate('/activities/new')} className="mt-2">
-                        Criar nova atividade
-                      </Button>
-                      <Button variant="link" size="sm" onClick={resetFilters} className="mt-1 text-xs">
-                        Limpar filtros e tentar novamente
-                      </Button>
+                      <p className="text-sm text-muted-foreground mb-4">Não há atividades para {selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: pt }) : 'esta data'} com os filtros selecionados.</p>
+                      <div className="flex gap-2 mt-2">
+                        {(statusFilter.length !== 2 || !statusFilter.includes('in-progress') || !statusFilter.includes('completed') || selectedClient || selectedCollaborator) && (
+                            <Button variant="outline" size="sm" onClick={resetFilters}> Limpar filtros </Button>
+                        )}
+                        <Button variant="default" size="sm" onClick={() => navigate('/activities/new')}>
+                          Criar nova atividade
+                        </Button>
+                      </div>
                     </div>
                 )}
               </div>
           ) : viewMode === 'month' ? (
               // --- Monthly View ---
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden mx-auto">
+                {/* Show loading overlay or skeleton for the whole calendar? */}
+                {/* For now, individual cells handle loading state via CustomDayContent */}
                 <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -655,95 +814,101 @@ const Home = () => {
           ) : viewMode === 'week' ? (
               // --- Weekly View ---
               <div className="space-y-4">
-                {/* Week Header */}
                 <h2 className="text-xl font-semibold">
                   Semana de {format(currentWeekStart, 'dd/MMM', { locale: pt })} a {format(currentWeekEnd, 'dd/MMM yyyy', { locale: pt })}
                 </h2>
 
                 {/* Weekly Grid Wrapper */}
-                <div className="grid grid-cols-1 md:grid-cols-7 border rounded-lg overflow-hidden bg-card"> {/* Use bg-card for consistency */}
+                <div className="grid grid-cols-1 md:grid-cols-7 border border-b-0 rounded-lg overflow-hidden bg-card shadow-sm"> {/* Add shadow */}
                   {weekDays.map((day, index) => {
-                    // Filter pre-filtered week activities for THIS specific day
+                    // Filter activities for THIS specific day from the pre-filtered week list
                     const activitiesForDay = activitiesForCurrentWeekView.filter(activity =>
                         isActivityActiveOnDate(activity, day) // Reuse the check function
                     );
+                    const isToday = isSameDay(day, new Date());
+                    const isSelected = isSameDay(day, selectedDate);
 
                     return (
                         <div
                             key={day.toISOString()}
                             className={cn(
-                                "flex flex-col border-b md:border-b-0 md:border-r p-2 min-h-[200px] border-border/50", // Use theme border color
-                                index === 6 && "md:border-r-0", // Remove last border
-                                isSameDay(day, new Date()) && "bg-blue-50 dark:bg-blue-900/30", // Today highlight
-                                isSameDay(day, selectedDate) && !isSameDay(day, new Date()) && "bg-accent/50", // Selected day highlight (if not today)
+                                "flex flex-col border-b md:border-r p-2 min-h-[200px]", // Consistent padding and min-height
+                                index === 6 && "md:border-r-0", // Remove last vertical border on desktop
+                                index < 6 && "md:border-b-0", // Remove bottom border on desktop except for last row implicitly
+                                "border-border/60", // Use theme border color with slight transparency
+                                isToday && "bg-blue-50 dark:bg-blue-900/20", // Today highlight
+                                isSelected && !isToday && "bg-accent/40 dark:bg-accent/30", // Selected day highlight (if not today)
                             )}
                         >
                           {/* Day Header */}
-                          <div className="text-center font-medium text-sm mb-2 pb-1 border-b border-border/30">
-                            <span className="block capitalize text-muted-foreground">{format(day, 'EEE', { locale: pt })}</span> {/* Seg, Ter... */}
+                          <div className="text-center font-medium text-sm mb-2 pb-1 border-b border-border/40 cursor-pointer hover:bg-muted/50 rounded-t-sm" onClick={() => handleDayClickInMonthView(day)}>
+                            <span className="block capitalize text-xs font-semibold text-muted-foreground">{format(day, 'EEE', { locale: pt })}</span>
                             <span className={cn(
-                                "block text-lg font-semibold", // Larger day number
-                                isSameDay(day, new Date()) && "text-primary" // Highlight today's number color
+                                "block text-xl font-bold mt-0.5",
+                                isToday ? "text-primary" : isSelected ? "text-accent-foreground" : "text-foreground"
                             )}>
-                                            {format(day, 'd')} {/* 15, 16... */}
-                                        </span>
+                                {format(day, 'd')}
+                            </span>
                           </div>
 
                           {/* Activities List for the Day (Scrollable) */}
-                          <div className="space-y-1.5 flex-grow overflow-y-auto overflow-x-hidden py-1"> {/* ADDED overflow-x-hidden */}
+                          <div className="space-y-1.5 flex-grow overflow-y-auto py-1 -mx-1 px-1"> {/* Allow scroll, manage padding */}
                             {loading ? (
-                                // Skeletons matching Badge size
+                                // Skeletons matching Badge style
                                 <>
-                                  <Skeleton className="h-8 w-full rounded-md" />
-                                  <Skeleton className="h-8 w-3/4 rounded-md mt-1.5" />
+                                  <Skeleton className="h-10 w-full rounded" />
+                                  <Skeleton className="h-10 w-3/4 rounded mt-1.5" />
                                 </>
                             ) : activitiesForDay.length > 0 ? (
-                                activitiesForDay.map(activity => (
-                                    // Use Badge component for activities
-                                    <Badge
-                                        key={activity.id}
-                                        variant={ // Map status/priority to Badge variants
-                                          activity.priority === 'high' ? 'destructive' :
-                                              activity.status === 'completed' ? 'outline' :
-                                                  activity.status === 'in-progress' ? 'default' : // Example: Use default (primary) for in-progress
-                                                      'secondary' // Fallback for pending, cancelled, etc.
+                                activitiesForDay.map(activity => {
+                                  const statusLabel = statusOptions.find(opt => opt.value === activity.status)?.label || activity.status;
+                                  let timeString = 'Horário inválido';
+                                  try {
+                                    if(activity.startDate){
+                                      const start = parseISO(activity.startDate);
+                                      timeString = format(start, 'HH:mm', { locale: pt });
+                                      if (activity.endDate) {
+                                        const end = parseISO(activity.endDate);
+                                        // Show end time only if different from start time OR on a different day
+                                        if (!isSameDay(start, day) && isSameDay(end, day)) { // Starts before today, ends today
+                                          timeString = `(...) ${format(end, 'HH:mm', { locale: pt })}`;
+                                        } else if (isSameDay(start, day) && !isSameDay(end, day)) { // Starts today, ends after today
+                                          timeString = `${format(start, 'HH:mm', { locale: pt })} (...)`;
+                                        } else if (isSameDay(start, day) && isSameDay(end, day) && format(start, 'HH:mm') !== format(end, 'HH:mm')) { // Starts and ends today, different times
+                                          timeString += ` - ${format(end, 'HH:mm', { locale: pt })}`;
+                                        } else if (!isSameDay(start, day) && !isSameDay(end, day) && isWithinInterval(day, {start:start, end:end})) { // Spans multiple days including this one
+                                          timeString = '(o dia todo)'; // Or adjust as needed
                                         }
-                                        className={cn(
-                                            "text-[11px] p-1 px-1.5 leading-tight block w-full font-normal cursor-pointer hover:opacity-80 text-left h-auto whitespace-normal rounded-md", // Adjusted styles
-                                            "transition-all duration-150 ease-in-out hover:scale-[1.02]" // Subtle hover effect
-                                        )}
-                                        title={activity.title}
-                                        onClick={() => navigate(`/activities/${activity.id}`)}
-                                        role="button" // Accessibility
-                                        tabIndex={0}   // Accessibility
-                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/activities/${activity.id}`); }} // Accessibility
-                                    >
-                                      {/* Content inside the Badge */}
-                                      <span className="font-semibold block truncate">{activity.title}</span>
-                                      <span className="text-xs block opacity-80"> {/* Display time */}
-                                        {(() => {
-                                          try {
-                                            const start = parseISO(activity.startDate);
-                                            let timeString = format(start, 'HH:mm', { locale: pt });
-                                            if (activity.endDate) {
-                                              const end = parseISO(activity.endDate);
-                                              // Show end time only if different from start time on the same day
-                                              if (!isSameDay(start, end) || format(start, 'HH:mm') !== format(end, 'HH:mm')) {
-                                                timeString += ` - ${format(end, 'HH:mm', { locale: pt })}`;
-                                              }
-                                              // Indicate if it spans multiple days within the view (optional)
-                                              // if (!isSameDay(start, end)) timeString += ' (...)';
-                                            }
-                                            return timeString;
-                                          } catch { return 'Horário inválido' }
-                                        })()}
-                                                    </span>
-                                    </Badge>
-                                ))
+                                      }
+                                    } else { timeString = 'Sem hora'; }
+                                  } catch { /* Keep default invalid time */}
+
+                                  return (
+                                      <div
+                                          key={activity.id}
+                                          className={cn(
+                                              "text-[11px] p-1.5 leading-tight block w-full font-normal cursor-pointer rounded",
+                                              "border",
+                                              activity.status === 'completed' ? 'bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800/50 hover:border-green-400' :
+                                                  activity.status === 'cancelled' ? 'bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800/50 hover:border-red-400 opacity-70' :
+                                                      activity.status === 'in-progress' ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800/50 hover:border-blue-400' :
+                                                          'bg-gray-50 border-gray-200 dark:bg-gray-800/30 dark:border-gray-700/50 hover:border-gray-400', // Pending/Other
+                                              "transition-colors duration-150 ease-in-out"
+                                          )}
+                                          title={`${activity.title} (${statusLabel})`}
+                                          onClick={() => navigate(`/activities/${activity.id}`)}
+                                          role="button"
+                                          tabIndex={0}
+                                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/activities/${activity.id}`); }}
+                                      >
+                                        <span className={cn("font-semibold block truncate", activity.status === 'completed' ? 'text-green-800 dark:text-green-300' : activity.status === 'cancelled' ? 'text-red-800 dark:text-red-300 line-through' : activity.status === 'in-progress' ? 'text-blue-800 dark:text-blue-300' : 'text-gray-800 dark:text-gray-300')}>{activity.title || "Sem Título"}</span>
+                                        <span className={cn("text-xs block opacity-90", activity.status === 'completed' ? 'text-green-700 dark:text-green-400' : activity.status === 'cancelled' ? 'text-red-700 dark:text-red-400' : activity.status === 'in-progress' ? 'text-blue-700 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400')}>{timeString}</span>
+                                      </div>
+                                  );
+                                })
                             ) : (
-                                // Message for empty day
                                 <div className="flex-grow flex items-center justify-center h-full">
-                                  <p className="text-xs text-muted-foreground italic text-center">--</p>
+                                  <p className="text-xs text-muted-foreground italic text-center opacity-75">--</p>
                                 </div>
                             )}
                           </div>
@@ -752,17 +917,19 @@ const Home = () => {
                   })}
                 </div>
 
-                {/* Message if no activities found for the entire week with current filters */}
+                {/* Message if no activities found for the entire week */}
                 {!loading && activitiesForCurrentWeekView.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg bg-muted/30 text-center">
+                    <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg bg-card text-center">
                       <p className="text-lg font-medium text-muted-foreground mb-2">Nenhuma atividade encontrada.</p>
                       <p className="text-sm text-muted-foreground mb-4">Não há atividades para a semana de {format(currentWeekStart, "dd/MM", { locale: pt })} a {format(currentWeekEnd, "dd/MM", { locale: pt })} com os filtros selecionados.</p>
-                      <Button variant="default" size="sm" onClick={() => navigate('/activities/new')} className="mt-2">
-                        Criar nova atividade
-                      </Button>
-                      <Button variant="link" size="sm" onClick={resetFilters} className="mt-1 text-xs">
-                        Limpar filtros e tentar novamente
-                      </Button>
+                      <div className="flex gap-2 mt-2">
+                        {(statusFilter.length !== 2 || !statusFilter.includes('in-progress') || !statusFilter.includes('completed') || selectedClient || selectedCollaborator) && (
+                            <Button variant="outline" size="sm" onClick={resetFilters}> Limpar filtros </Button>
+                        )}
+                        <Button variant="default" size="sm" onClick={() => navigate('/activities/new')}>
+                          Criar nova atividade
+                        </Button>
+                      </div>
                     </div>
                 )}
               </div>
