@@ -5,7 +5,7 @@ import { Client, PessoaFisicaClient, PessoaJuridicaClient } from '@/services/fir
 import { UserData } from '@/services/firebase/auth';
 
 // Helper function to format date from ISO string to DD/MM/YYYY
-const formatDate = (dateString?: string): string => {
+export const formatDate = (dateString?: string): string => {
   if (!dateString) return '';
   try {
     const date = new Date(dateString);
@@ -266,7 +266,7 @@ export const exportCollaboratorsToExcel = (collaborators: (UserData & { uid: str
 };
 
 // Helper function to get human-readable status text
-const getActivityStatusText = (status: string): string => {
+export const getActivityStatusText = (status: string): string => {
   switch (status) {
     case 'pending': return 'Futura';
     case 'in-progress': return 'Em Progresso';
@@ -277,7 +277,7 @@ const getActivityStatusText = (status: string): string => {
 };
 
 // Helper function to get human-readable priority text
-const getActivityPriorityText = (priority: string): string => {
+export const getActivityPriorityText = (priority: string): string => {
   switch (priority) {
     case 'low': return 'Baixa';
     case 'medium': return 'Média';
@@ -287,7 +287,7 @@ const getActivityPriorityText = (priority: string): string => {
 };
 
 // Helper function to get human-readable role text
-const getRoleText = (role: string): string => {
+export const getRoleText = (role: string): string => {
   switch (role) {
     case 'admin': return 'Administrador';
     case 'manager': return 'Gerente';

@@ -1,0 +1,78 @@
+/* src/components/reports/PdfReportTemplate.css */
+.pdf-container {
+    font-family: Arial, sans-serif; /* Usar fontes comuns */
+    line-height: 1.4;
+    color: #000;
+    width: 194mm; /* Largura A4 - ajuste conforme necessário */
+    padding: 15mm; /* Margens internas (controladas também via jsPDF options) */
+    background-color: #fff; /* Necessário para html2canvas */
+}
+
+.pdf-issue-date {
+    font-size: 9pt;
+    color: #555;
+    text-align: right;
+    margin-bottom: 10mm;
+}
+
+.pdf-main-title {
+    font-size: 18pt;
+    text-align: center;
+    margin-bottom: 2mm;
+}
+
+.pdf-client-name {
+    font-size: 14pt;
+    text-align: center;
+    margin-bottom: 15mm;
+    font-weight: bold;
+}
+
+.pdf-activity {
+    margin-bottom: 8mm;
+    padding-bottom: 5mm;
+    border-bottom: 0.5pt solid #eee;
+    page-break-inside: avoid; /* Tentar evitar quebra dentro de uma atividade */
+}
+.pdf-activity:last-child {
+    border-bottom: none;
+}
+
+.pdf-activity-title {
+    font-size: 12pt;
+    font-weight: bold;
+    margin-bottom: 4mm;
+}
+
+.pdf-activity-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Duas colunas */
+    gap: 0 10mm; /* Espaço entre colunas */
+    margin-bottom: 3mm;
+    font-size: 10pt;
+}
+
+ .pdf-activity-grid p {
+    margin: 1mm 0;
+ }
+
+.pdf-activity-description {
+    text-align: justify;
+    margin-top: 3mm;
+    font-size: 10pt;
+    white-space: pre-wrap; /* Preservar quebras de linha da descrição */
+}
+
+.pdf-activity-description strong {
+   display: block; /* Coloca "Descrição:" em linha separada se desejar */
+   margin-bottom: 1mm;
+}
+
+.pdf-no-activities {
+    text-align: center;
+    font-style: italic;
+    margin-top: 20mm;
+    font-size: 10pt;
+}
+
+/* ... outros estilos necessários ... */

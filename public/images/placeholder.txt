@@ -1,0 +1,1 @@
+Este diretório é para imagens estáticas, como a marca d'água do PDF.
