@@ -10,6 +10,9 @@ import {
   ArrowLeft, List, CircleAlert, Search, Filter,
   Calendar as CalendarIcon, RotateCcw, FileSpreadsheet, ChevronLeft, ChevronRight, FileText
 } from "lucide-react";
+import PizZip from 'pizzip';
+import Docxtemplater from 'docxtemplater';
+import { saveAs } from 'file-saver';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +27,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { exportActivitiesToExcel } from "@/utils/exportUtils";
+import { getActivityStatusText, getActivityPriorityText } from "@/utils/exportUtils";
 import { UserData } from "@/services/firebase/auth";
 import { get, ref } from "firebase/database";
 import { db } from "@/lib/firebase";
@@ -55,11 +59,107 @@ const ClientDetailsPage = () => {
   const [activityTypes, setActivityTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
 
   const pdfReportRef = useRef<HTMLDivElement>(null);
 
+const handleGenerateDocx = async () => {
+    if (!client || filteredActivities.length === 0) {
+        toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Não há dados do cliente ou atividades filtradas para gerar o DOCX."
+        });
+        return;
+    }
+
+    setIsGeneratingDocx(true);
+    console.log("Iniciando geração do DOCX...");
+
+    try {
+        // 1. Carregar o template da pasta public
+        const templatePath = '/templates/template.docx'; // Caminho relativo à raiz do servidor
+        const response = await fetch(templatePath);
+        if (!response.ok) {
+            throw new Error(`Não foi possível carregar o template.docx. Status: ${response.status} ${response.statusText}`);
+        }
+        const templateBlob = await response.arrayBuffer(); // Obter como ArrayBuffer
+        console.log("Template DOCX carregado.");
+
+        // 2. Preparar os dados (adaptar aos seus placeholders)
+        const clientName = client.type === 'juridica' ? (client as PessoaJuridicaClient).companyName : client.name;
+        // Determinar o mês/ano de referência. Pode ser o mês/ano da atividade mais recente ou um período definido.
+        // Por enquanto, usaremos o mês/ano atual.
+        const mesAnoReferencia = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const dataExtensoEmissao = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+
+        const dataForTemplate = {
+            entidade_cliente: clientName,
+            mes_ano_referencia: mesAnoReferencia,
+            lista_servicos: filteredActivities.map(activity => ({
+                descricao_servico: `${activity.title} - ${activity.description}` // Adapte conforme necessário
+            })),
+            data_extenso_emissao: dataExtensoEmissao,
+            // Adicione quaisquer outros campos/placeholders que você definiu no template
+        };
+        console.log("Dados preparados para o template:", dataForTemplate);
+
+        // 3. Processar o template
+        const zip = new PizZip(templateBlob);
+        const doc = new Docxtemplater(zip, {
+            paragraphLoop: true,
+            linebreaks: true,
+            // Você pode adicionar um parser customizado se precisar de formatação complexa (HTML, etc.)
+            // delimiters: { start: '{', end: '}' } // Padrão
+        });
+
+        doc.render(dataForTemplate);
+        console.log("Template renderizado.");
+
+        // 4. Gerar o Blob do DOCX final
+        const outBlob = doc.getZip().generate({
+            type: "blob",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE"
+        });
+        console.log("Blob DOCX gerado.");
+
+        // 5. Iniciar o Download
+        const safeClientName = clientName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const fileName = `Relatorio_Atividades_${safeClientName}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.docx`;
+        saveAs(outBlob, fileName); // saveAs vem de file-saver
+
+        console.log(`Download DOCX iniciado: ${fileName}`);
+        toast({
+            title: "DOCX Gerado",
+            description: `O arquivo ${fileName} foi baixado com sucesso.`
+        });
+
+    } catch (error: any) { // Use 'any' ou um tipo de erro mais específico
+        console.error("Erro ao gerar DOCX:", error);
+        let description = "Ocorreu um problema ao gerar o arquivo DOCX.";
+         // Tenta extrair erros específicos do docxtemplater
+        if (error.properties && error.properties.errors instanceof Array) {
+            const templateErrors = error.properties.errors.map((err: any) => err.properties.explanation).join('; ');
+            description += ` Detalhes: ${templateErrors.substring(0, 150)}... (Ver console)`;
+            console.error("Erros do template:", error.properties.errors);
+        } else if (error instanceof Error) {
+           description = `Erro: ${error.message}`
+        }
+
+        toast({
+            variant: "destructive",
+            title: "Erro ao gerar DOCX",
+            description: description
+        });
+    } finally {
+        setIsGeneratingDocx(false);
+        console.log("Geração de DOCX finalizada.");
+    }
+};
 
   useEffect(() => {
     const fetchData = async () => {
@@ -381,6 +481,8 @@ const ClientDetailsPage = () => {
         setIsGeneratingPdf(false);
         console.log("Geração de PDF finalizada (sucesso ou falha).");
     }
+
+
   };
 
 
@@ -594,6 +696,25 @@ const ClientDetailsPage = () => {
                               <>
                                   <FileText className="mr-2 h-4 w-4" />
                                   Exportar PDF ({filteredActivities.length})
+                              </>
+                          )}
+                      </Button>
+<Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleGenerateDocx}
+                          disabled={filteredActivities.length === 0 || isGeneratingDocx}
+                          className="flex-1 md:flex-none" // Manter consistência de layout
+                      >
+                          {isGeneratingDocx ? (
+                              <>
+                                  <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
+                                  Gerando DOCX...
+                              </>
+                          ) : (
+                              <>
+                                  <FileText className="mr-2 h-4 w-4" /> {/* Ou FileWord se tiver */}
+                                  Exportar DOCX ({filteredActivities.length})
                               </>
                           )}
                       </Button>
