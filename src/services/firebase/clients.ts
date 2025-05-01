@@ -17,6 +17,7 @@ export interface BaseClient {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+  notes?: string;
 }
 
 export interface PessoaFisicaClient extends BaseClient {

@@ -36,9 +36,82 @@ import { Combobox } from "@/components/ui/combobox";
 import html2pdf from 'html2pdf.js';
 import PdfReportTemplate from '@/components/reports/PdfReportTemplate';
 import '@/components/reports/PdfReportTemplate.css';
+// Importar o serviço Gemini
+import geminiService from "@/services/gemini-service";
 
 
 const ITEMS_PER_PAGE = 10;
+
+// Função assíncrona para gerar descrições resumidas usando a IA
+const generateActivitySummaries = async (activities: Activity[], toast: any): Promise<(Activity & { summaryDescription?: string })[]> => {
+    const activitiesWithSummaries: (Activity & { summaryDescription?: string })[] = [];
+    const batchSize = 5; // Processar em lotes para evitar sobrecarregar a API ou o navegador
+    let processedCount = 0;
+
+    toast({
+        title: "Gerando Resumos com IA",
+        description: `Iniciando a geração de resumos para ${activities.length} atividades...`,
+    });
+
+    for (let i = 0; i < activities.length; i += batchSize) {
+        const batch = activities.slice(i, i + batchSize);
+        const promises = batch.map(async (activity) => {
+            try {
+                // Criar o prompt para a IA
+                const prompt = `Resuma a seguinte atividade de forma objetiva e em poucas palavras, combinando o título e a descrição. Responda APENAS com o texto do resumo, sem formatação adicional como JSON ou marcadores de lista.
+                Título: ${activity.title}
+                Descrição: ${activity.description || 'Sem descrição'}`;
+
+                // Chamar o serviço Gemini
+                // Usamos isConversation: false para obter uma resposta mais direta e menos conversacional
+                let summary = await geminiService.sendMessage(prompt, {}, { isConversation: false });
+
+                // Limpar a resposta: remover marcações de código e tentar extrair de JSON se necessário
+                summary = summary.replace(/```json\n|```/g, '').trim(); // Remove marcações de bloco de código JSON
+
+                try {
+                    const jsonResponse = JSON.parse(summary);
+                    if (jsonResponse.summary) {
+                        summary = jsonResponse.summary.trim();
+                    }
+                } catch (parseError) {
+                    // Se não for JSON, usa a string limpa
+                    console.warn("Resposta da IA não é JSON, usando texto puro:", summary);
+                }
+
+
+                processedCount++;
+                toast({
+                    title: "Gerando Resumos com IA",
+                    description: `Processando atividade ${processedCount} de ${activities.length}...`,
+                });
+
+                return {
+                    ...activity,
+                    summaryDescription: summary // Usar a resposta da IA como descrição resumida
+                };
+            } catch (error) {
+                console.error(`Erro ao gerar resumo para atividade ${activity.id}:`, error);
+                // Em caso de erro, usar a descrição original ou uma mensagem de fallback
+                return {
+                    ...activity,
+                    summaryDescription: activity.description || activity.title || 'Resumo não disponível'
+                };
+            }
+        });
+
+        const results = await Promise.all(promises);
+        activitiesWithSummaries.push(...results);
+    }
+
+    toast({
+        title: "Geração de Resumos Concluída",
+        description: `Resumos gerados para ${activities.length} atividades.`,
+    });
+
+    return activitiesWithSummaries;
+};
+
 
 const ClientDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,13 +132,13 @@ const ClientDetailsPage = () => {
   const [activityTypes, setActivityTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
+  const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
 
   const pdfReportRef = useRef<HTMLDivElement>(null);
 
-const handleGenerateDocx = async () => {
+  const handleGenerateDocx = async () => {
     if (!client || filteredActivities.length === 0) {
         toast({
             variant: "destructive",
@@ -88,7 +161,16 @@ const handleGenerateDocx = async () => {
         const templateBlob = await response.arrayBuffer(); // Obter como ArrayBuffer
         console.log("Template DOCX carregado.");
 
-        // 2. Preparar os dados (adaptar aos seus placeholders)
+        // 2. Gerar descrições resumidas com a IA
+        toast({
+            title: "Processando Atividades",
+            description: "Gerando resumos com IA para o relatório DOCX...",
+        });
+        const activitiesWithSummaries = await generateActivitySummaries(filteredActivities, toast);
+        console.log("Descrições resumidas geradas pela IA:", activitiesWithSummaries);
+
+
+        // 3. Preparar os dados (adaptar aos seus placeholders)
         const clientName = client.type === 'juridica' ? (client as PessoaJuridicaClient).companyName : client.name;
         // Determinar o mês/ano de referência. Pode ser o mês/ano da atividade mais recente ou um período definido.
         // Por enquanto, usaremos o mês/ano atual.
@@ -99,15 +181,16 @@ const handleGenerateDocx = async () => {
         const dataForTemplate = {
             entidade_cliente: clientName,
             mes_ano_referencia: mesAnoReferencia,
-            lista_servicos: filteredActivities.map(activity => ({
-                descricao_servico: `${activity.title} - ${activity.description}` // Adapte conforme necessário
+            lista_servicos: activitiesWithSummaries.map(activity => ({
+                // Usar a descrição resumida gerada pela IA
+                descricao_servico: activity.summaryDescription || `${activity.title} - ${activity.description}` // Fallback para descrição original
             })),
             data_extenso_emissao: dataExtensoEmissao,
             // Adicione quaisquer outros campos/placeholders que você definiu no template
         };
         console.log("Dados preparados para o template:", dataForTemplate);
 
-        // 3. Processar o template
+        // 4. Processar o template
         const zip = new PizZip(templateBlob);
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
@@ -119,7 +202,7 @@ const handleGenerateDocx = async () => {
         doc.render(dataForTemplate);
         console.log("Template renderizado.");
 
-        // 4. Gerar o Blob do DOCX final
+        // 5. Gerar o Blob do DOCX final
         const outBlob = doc.getZip().generate({
             type: "blob",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -127,7 +210,7 @@ const handleGenerateDocx = async () => {
         });
         console.log("Blob DOCX gerado.");
 
-        // 5. Iniciar o Download
+        // 6. Iniciar o Download
         const safeClientName = clientName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
         const fileName = `Relatorio_Atividades_${safeClientName}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.docx`;
         saveAs(outBlob, fileName); // saveAs vem de file-saver
@@ -694,12 +777,12 @@ const handleGenerateDocx = async () => {
                               </>
                           ) : (
                               <>
-                                  <FileText className="mr-2 h-4 w-4" />
+                                  <FileText className="mr-2 h-4 w-4" /> {/* Ou FilePdf se tiver */}
                                   Exportar PDF ({filteredActivities.length})
                               </>
                           )}
                       </Button>
-<Button
+                      <Button
                           size="sm"
                           variant="outline"
                           onClick={handleGenerateDocx}
@@ -905,7 +988,7 @@ const handleGenerateDocx = async () => {
                                       <span>Início: {formatDate(activity.startDate)}</span>
                                       {activity.endDate && (
                                           <>
-                                            <span className="mx-1.5">•</span>
+                                            <span className="mx-1.5">?</span>
                                             <span>Fim: {formatDate(activity.endDate)}</span>
                                           </>
                                       )}
@@ -1055,6 +1138,7 @@ const handleGenerateDocx = async () => {
                     activities={filteredActivities}
                     assignees={Object.entries(collaborators).reduce((acc, [id, user]) => { acc[id] = user.name || `Usuário ${id.substring(0, 5)}`; return acc; }, {} as Record<string, string>)}
                     emissionDate={new Date().toLocaleDateString('pt-BR')}
+                    collaborators={collaborators} // Adicionado a propriedade collaborators
                 />
             )}
         </div>
