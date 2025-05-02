@@ -174,9 +174,41 @@ const ClientDetailsPage = () => {
 
         // 3. Preparar os dados (adaptar aos seus placeholders)
         const clientName = client.type === 'juridica' ? (client as PessoaJuridicaClient).companyName : client.name;
-        // Determinar o mês/ano de referência. Pode ser o mês/ano da atividade mais recente ou um período definido.
-        // Por enquanto, usaremos o mês/ano atual.
-        const mesAnoReferencia = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+        // Determinar o mês/ano de referência predominante das atividades filtradas
+        const monthYearCounts: Record<string, number> = {};
+        let maxCount = 0;
+        let predominantMonthYear = '';
+
+        activitiesWithSummaries.forEach(activity => {
+            const dateString = activity.startDate || activity.endDate;
+            if (dateString) {
+                try {
+                    const date = new Date(dateString);
+                    if (!isNaN(date.getTime())) {
+                        const monthYearKey = `${date.getMonth() + 1}-${date.getFullYear()}`; // Month is 0-indexed
+                        monthYearCounts[monthYearKey] = (monthYearCounts[monthYearKey] || 0) + 1;
+
+                        if (monthYearCounts[monthYearKey] > maxCount) {
+                            maxCount = monthYearCounts[monthYearKey];
+                            predominantMonthYear = monthYearKey;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Erro ao processar data da atividade para contagem de mês/ano:", dateString, e);
+                }
+            }
+        });
+
+        let mesAnoReferencia = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); // Default to current month/year
+
+        if (predominantMonthYear) {
+            const [month, year] = predominantMonthYear.split('-').map(Number);
+            // Create a date object for the predominant month/year to format it
+            const predominantDate = new Date(year, month - 1, 1); // Month is 0-indexed for Date constructor
+            mesAnoReferencia = format(predominantDate, 'MMMM \'de\' yyyy', { locale: ptBR });
+        }
+
         const dataExtensoEmissao = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 
 
@@ -503,622 +535,535 @@ const ClientDetailsPage = () => {
   };
 
   const handleExportPdf = async () => {
-    if (!client || !pdfReportRef.current || filteredActivities.length === 0) {
-        toast({
-            variant: "destructive",
-            title: "Erro",
-            description: "Não há dados do cliente ou atividades filtradas para gerar o PDF."
-        });
-        return;
+    if (!client || filteredActivities.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não há dados do cliente ou atividades filtradas para gerar o PDF."
+      });
+      return;
     }
 
     setIsGeneratingPdf(true);
     console.log("Iniciando geração do PDF...");
 
     try {
-        const emissionDate = new Date().toLocaleDateString('pt-BR');
-        const clientNameForFile = (client.type === 'juridica'
-            ? (client as PessoaJuridicaClient).companyName
-            : client.name
-        ).replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        const fileName = `Relatorio_Atividades_${clientNameForFile}_${emissionDate.replace(/\//g, '-')}.pdf`;
+      // Gerar descrições resumidas com a IA para o PDF
+      toast({
+        title: "Processando Atividades",
+        description: "Gerando resumos com IA para o relatório PDF...",
+      });
+      const activitiesWithSummaries = await generateActivitySummaries(filteredActivities, toast);
+      console.log("Descrições resumidas geradas pela IA para PDF:", activitiesWithSummaries);
 
-        const options = {
-            margin: [0, 2, 15, 10],
-            filename: fileName,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-                scale: 2,
-                logging: true, // Habilitado para depuração
-                useCORS: true,
-                scrollX: 0,
-                scrollY: 0,
-                // windowWidth: pdfReportRef.current.scrollWidth, // Comentado para depuração
-                // windowHeight: pdfReportRef.current.scrollHeight, // Comentado para depuração
-            },
-            jsPDF: {
-                unit: 'mm',
-                format: 'a4',
-                orientation: 'portrait'
-            },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
+      // Usar o ref para acessar o conteúdo do componente PdfReportTemplate
+      const pdfContentElement = pdfReportRef.current;
 
-        console.log("Elemento para converter:", pdfReportRef.current);
-        console.log("Opções:", options);
+      if (!pdfContentElement) {
+        throw new Error("Elemento de referência do PDF não encontrado.");
+      }
 
-        await html2pdf().from(pdfReportRef.current).set(options).save();
+      const clientName = client.type === 'juridica' ? (client as PessoaJuridicaClient).companyName : client.name;
+      const safeClientName = clientName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const fileName = `Relatorio_Atividades_${safeClientName}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
 
-        console.log("PDF gerado com sucesso.");
-        toast({
-            title: "PDF Gerado",
-            description: `O arquivo ${fileName} foi baixado com sucesso.`
-        });
+      // Configurações para o html2pdf
+      const pdfOptions = {
+        margin: [10, 10, 10, 10], // Margens: top, left, bottom, right
+        filename: fileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, logging: true, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] } // Tenta quebrar páginas corretamente
+      };
 
-    } catch (error) {
-        console.error("Erro ao gerar PDF:", error);
-        toast({
-            variant: "destructive",
-            title: "Erro ao gerar PDF",
-            description: "Ocorreu um problema ao gerar o arquivo PDF. Verifique o console."
-        });
+      // Renderizar o componente com os dados e gerar o PDF
+      // Nota: O PdfReportTemplate precisa estar renderizado no DOM para que html2pdf funcione.
+      // A visibilidade pode ser controlada por um estado, mas ele deve estar presente.
+      // Certifique-se de que o componente PdfReportTemplate usa os dados de activitiesWithSummaries
+      // e que o ref `pdfReportRef` está anexado ao elemento raiz desse componente.
+
+      // Para garantir que o componente está renderizado antes de gerar o PDF,
+      // você pode precisar de uma lógica de estado ou renderização condicional
+      // que garanta que pdfReportRef.current não seja null quando handleExportPdf é chamado.
+      // No contexto atual, assumimos que PdfReportTemplate está sempre no DOM,
+      // talvez oculto via CSS se não estiver gerando PDF.
+
+      // html2pdf().from(pdfContentElement).set(pdfOptions).save();
+
+      // Alternativa: Renderizar o componente em um elemento temporário fora da tela
+      const tempElement = document.createElement('div');
+      // tempElement.style.position = 'absolute';
+      // tempElement.style.left = '-9999px';
+      document.body.appendChild(tempElement);
+
+      // Renderizar o componente React no elemento temporário
+      // Isso requer uma forma de renderizar um componente React fora do fluxo normal
+      // do JSX, o que geralmente é feito com ReactDOM.render ou createRoot em React 18+.
+      // Como estamos em um componente funcional, isso pode ser complexo.
+      // A abordagem mais simples é ter o PdfReportTemplate já no DOM e usar o ref.
+
+      // Se pdfReportRef.current é o elemento correto, a linha abaixo deve funcionar:
+      html2pdf().from(pdfContentElement).set(pdfOptions).save();
+
+
+      console.log(`Download PDF iniciado: ${fileName}`);
+      toast({
+        title: "PDF Gerado",
+        description: `O arquivo ${fileName} foi baixado com sucesso.`
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao gerar PDF:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar PDF",
+        description: `Ocorreu um problema ao gerar o arquivo PDF: ${error.message}`
+      });
     } finally {
-        setIsGeneratingPdf(false);
-        console.log("Geração de PDF finalizada (sucesso ou falha).");
+      setIsGeneratingPdf(false);
+      console.log("Geração de PDF finalizada.");
     }
-
-
   };
 
 
   const typeOptions = activityTypes.map(type => ({
     value: type,
-    label: type
+    label: type,
   }));
+
+  // Adicionar uma opção "Todos" ao combobox de tipos
+  const typeComboboxOptions = [{ value: '', label: 'Todos os Tipos' }, ...typeOptions];
+
 
   if (loading) {
     return (
-        <div className="container mx-auto py-6 px-4 md:px-6">
-          <div className="flex items-center mb-6">
-            <Skeleton className="h-9 w-9 rounded-full mr-2" />
-            <Skeleton className="h-8 w-1/2" />
-            <Skeleton className="h-9 w-24 ml-auto" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="col-span-2 space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-1/3 mb-2" />
-                  <Skeleton className="h-4 w-2/3" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {[...Array(6)].map((_, i) => (
-                      <div key={i} className="flex justify-between">
-                        <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                      </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-            <div>
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-1/2" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-16 w-full" />
-                  <Skeleton className="h-4 w-1/4" />
-                  <Skeleton className="h-6 w-1/2" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-10 w-full" />
-                </CardFooter>
-              </Card>
-            </div>
-          </div>
+      <div className="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="col-span-2 space-y-4">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-6 w-32" />
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-1/4" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
+        <div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-1/2" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-2/3" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
   if (!client) {
     return (
-        <div className="container mx-auto py-6 px-4 md:px-6 flex items-center justify-center min-h-[calc(100vh-200px)]">
-          <div className="text-center p-10 border rounded-lg bg-card shadow-sm max-w-md">
-            <CircleAlert className="mx-auto h-12 w-12 text-destructive mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Cliente não encontrado</h3>
-            <p className="text-muted-foreground mb-6">
-              Não foi possível encontrar o cliente com o ID fornecido ({id}). Ele pode ter sido removido ou o ID está incorreto.
-            </p>
-            <Button onClick={() => navigate("/clients")}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar para Lista de Clientes
-            </Button>
-          </div>
+      <div className="container mx-auto p-4">
+        <div className="text-center p-10 border rounded-lg bg-card shadow-sm max-w-md">
+          <CircleAlert className="mx-auto h-12 w-12 text-yellow-500" />
+          <h2 className="mt-4 text-xl font-semibold">Cliente não encontrado</h2>
+          <p className="mt-2 text-muted-foreground">O cliente com o ID especificado não pôde ser carregado.</p>
+          <Button onClick={() => navigate("/clients")} className="mt-6">
+            Voltar para Clientes
+          </Button>
         </div>
+      </div>
     );
   }
 
+  const clientDetails = client.type === 'juridica' ?
+    (client as PessoaJuridicaClient) :
+    (client as PessoaFisicaClient);
+
+    // Criar o mapa de assignees (ID -> Nome) para o PdfReportTemplate
+    const assigneesMap: Record<string, string> = {};
+    if (collaborators) {
+        Object.entries(collaborators).forEach(([id, user]) => {
+            assigneesMap[id] = user.name || `Usuário ${id.substring(0, 5)}`;
+        });
+    }
+
+    // Gerar a data de emissão formatada para o PdfReportTemplate
+    const emissionDateString = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+
   return (
-      <div className="container mx-auto py-6 px-4 md:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex items-center">
-            <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="mr-4 h-9 w-9">
-              <ArrowLeft className="h-5 w-5" />
-              <span className="sr-only">Voltar para Clientes</span>
-            </Button>
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-              {getClientTypeIcon()}
-              <span className="truncate max-w-[200px] sm:max-w-[400px] md:max-w-full">
-              {client.type === 'juridica'
-                  ? (client as PessoaJuridicaClient).companyName
-                  : client.name
-              }
-            </span>
-            </h1>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="default" onClick={() => navigate(`/clients/edit/${id}`)}>
-              <FileEdit className="h-4 w-4 mr-2" />
-              Editar Cliente
-            </Button>
-          </div>
-        </div>
+    <div className="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="flex items-center">
+        <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="mr-4 h-9 w-9">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-bold">{clientDetails.name}</h1>
+      </div>
+      <div className="flex gap-2">
+        {getStatusBadge('client')}
+        <Button variant="default" onClick={() => navigate(`/clients/edit/${id}`)}>
+          <FileEdit className="mr-2 h-4 w-4" /> Editar Cliente
+        </Button>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="info" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="info">Informações do Cliente</TabsTrigger>
-                <TabsTrigger value="activities">Atividades ({totalActivities})</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="info" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dados Cadastrais</CardTitle>
-                    <CardDescription>
-                      Detalhes do cliente {client.type === 'juridica' ? ' (Pessoa Jurídica)' : ' (Pessoa Física)'}.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium text-muted-foreground">Status:</span>
-                      <span className="text-right">{getStatusBadge('client')}</span>
+      <div className="lg:col-span-2">
+        <Tabs defaultValue="info" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="info">Informações</TabsTrigger>
+            <TabsTrigger value="activities">Atividades ({totalActivities})</TabsTrigger>
+          </TabsList>
+          <TabsContent value="info" className="mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  {getClientTypeIcon()}
+                  {client.type === 'juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}
+                </CardTitle>
+                {client.type === 'juridica' && (
+                  <CardDescription>{(client as PessoaJuridicaClient).companyName}</CardDescription>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {client.type === 'juridica' ? (
+                  <>
+                    <p><strong>Nome Fantasia:</strong> {(client as PessoaJuridicaClient).fantasyName || '-'}</p>
+                    <p><strong>CNPJ:</strong> {(client as PessoaJuridicaClient).cnpj || '-'}</p>
+                    <p><strong>Inscrição Estadual:</strong> {(client as PessoaJuridicaClient).stateRegistration || '-'}</p>
+                    <p><strong>Inscrição Municipal:</strong> {(client as PessoaJuridicaClient).municipalRegistration || '-'}</p>
+                    <p><strong>Responsável:</strong> {(client as PessoaJuridicaClient).responsibleName || '-'}</p>
+                    <p><strong>CPF do Responsável:</strong> {(client as PessoaJuridicaClient).responsibleCpf || '-'}</p>
+                  </>
+                ) : (
+                  <>
+                    <p><strong>CPF:</strong> {(client as PessoaFisicaClient).cpf || '-'}</p>
+                    <p><strong>RG:</strong> {(client as PessoaFisicaClient).rg || '-'}</p>
+                  </>
+                )}
+                <p><strong>Email:</strong> {client.email || '-'}</p>
+                <p><strong>Telefone:</strong> {client.phone || '-'}</p>
+                <p><strong>Endereço:</strong> {client.address || '-'}</p>
+                <p><strong>Criado em:</strong> {client.createdAt ? format(new Date(client.createdAt), 'dd/MM/yyyy HH:mm') : '-'}</p>
+                <p><strong>Última atualização:</strong> {client.updatedAt ? format(new Date(client.updatedAt), 'dd/MM/yyyy HH:mm') : '-'}</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="activities" className="mt-0">
+            <Card>
+              <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4">
+                <CardTitle className="flex items-center text-xl">
+                  <List className="mr-2 h-5 w-5" /> Lista de Atividades
+                </CardTitle>
+                <div className="flex flex-shrink-0 gap-2 w-full md:w-auto">
+                    <Button
+                        onClick={handleExport}
+                        variant="outline"
+                        size="sm"
+                        disabled={filteredActivities.length === 0}
+                    >
+                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar Excel
+                    </Button>
+                     <Button
+                        onClick={handleGenerateDocx}
+                        variant="outline"
+                        size="sm"
+                        disabled={filteredActivities.length === 0 || isGeneratingDocx}
+                    >
+                        {isGeneratingDocx ? 'Gerando DOCX...' : <><FileText className="mr-2 h-4 w-4" /> Gerar DOCX</>}
+                    </Button>
+                     <Button
+                        onClick={handleExportPdf}
+                        variant="outline"
+                        size="sm"
+                        disabled={filteredActivities.length === 0 || isGeneratingPdf}
+                    >
+                        {isGeneratingPdf ? 'Gerando PDF...' : <><FileText className="mr-2 h-4 w-4" /> Gerar PDF</>}
+                    </Button>
+                  <Button onClick={() => navigate(`/activities/new?clientId=${id}`)} size="sm">
+                    <FileEdit className="mr-2 h-4 w-4" /> Nova Atividade
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar atividades..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-8 w-full md:w-[250px]"
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium">Status:</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="status-pending"
+                        checked={statusFilters.includes('pending')}
+                        onCheckedChange={() => toggleStatusFilter('pending')}
+                      />
+                      <Label htmlFor="status-pending" className="text-sm font-normal">Pendente</Label>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium text-muted-foreground">E-mail:</span>
-                      <span className="text-right break-all">{client.email || '-'}</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="status-in-progress"
+                        checked={statusFilters.includes('in-progress')}
+                        onCheckedChange={() => toggleStatusFilter('in-progress')}
+                      />
+                      <Label htmlFor="status-in-progress" className="text-sm font-normal">Em andamento</Label>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium text-muted-foreground">Telefone:</span>
-                      <span className="text-right whitespace-nowrap">{client.phone || '-'}</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="status-completed"
+                        checked={statusFilters.includes('completed')}
+                        onCheckedChange={() => toggleStatusFilter('completed')}
+                      />
+                      <Label htmlFor="status-completed" className="text-sm font-normal">Concluída</Label>
                     </div>
-                    {client.type === 'fisica' ? (
-                        <>
-                          <div className="flex justify-between items-center py-2 border-b">
-                            <span className="font-medium text-muted-foreground">CPF:</span>
-                            <span className="text-right">{(client as PessoaFisicaClient).cpf || '-'}</span>
-                          </div>
-                          {(client as PessoaFisicaClient).rg && (
-                              <div className="flex justify-between items-center py-2 border-b">
-                                <span className="font-medium text-muted-foreground">RG:</span>
-                                <span className="text-right">{(client as PessoaFisicaClient).rg}</span>
-                              </div>
-                          )}
-                        </>
-                    ) : (
-                        <>
-                          <div className="flex justify-between items-center py-2 border-b">
-                            <span className="font-medium text-muted-foreground">CNPJ:</span>
-                            <span className="text-right">{(client as PessoaJuridicaClient).cnpj || '-'}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-2 border-b">
-                            <span className="font-medium text-muted-foreground">Razão Social:</span>
-                            <span className="text-right">{(client as PessoaJuridicaClient).companyName || '-'}</span>
-                          </div>
-                          {(client as PessoaJuridicaClient).responsibleName && (
-                              <div className="flex justify-between items-center py-2 border-b">
-                                <span className="font-medium text-muted-foreground">Responsável:</span>
-                                <span className="text-right">{(client as PessoaJuridicaClient).responsibleName}</span>
-                              </div>
-                          )}
-                        </>
-                    )}
-                    {client.address && (
-                        <div className="flex justify-between items-start py-2 border-b">
-                          <span className="font-medium text-muted-foreground flex-shrink-0 mr-4">Endereço:</span>
-                          <span className="text-right">{client.address}</span>
-                        </div>
-                    )}
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium text-muted-foreground">Criado em:</span>
-                      <span className="text-right">{formatDate(client.createdAt)}</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="status-cancelled"
+                        checked={statusFilters.includes('cancelled')}
+                        onCheckedChange={() => toggleStatusFilter('cancelled')}
+                      />
+                      <Label htmlFor="status-cancelled" className="text-sm font-normal">Cancelada</Label>
                     </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <span className="font-medium text-muted-foreground">Última atualização:</span>
-                      <span className="text-right">{formatDate(client.updatedAt)}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="activities" className="mt-0">
-                <Card>
-                  <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4">
+                  </div>
+                  <div>
+                    <Label htmlFor="activity-type-filter" className="text-sm font-medium">Tipo:</Label>
+                    <Combobox
+                      options={typeComboboxOptions}
+                      selectedValue={selectedType || ''}
+                      onSelect={(value) => setSelectedType(value === '' ? null : value)}
+                      placeholder="Selecione o tipo..."
+                      id="activity-type-filter"
+                      className="w-[200px]"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row gap-4 mb-4 items-center">
+                   <span className="text-sm font-medium">Período ({dateType === 'startDate' ? 'Início' : 'Fim'}):</span>
+                   <RadioGroup value={dateType} onValueChange={(value: "startDate" | "endDate") => setDateType(value)} className="flex items-center gap-4">
+                      <div className="flex items-center space-x-2">
+                         <RadioGroupItem value="startDate" id="date-type-start" />
+                         <Label htmlFor="date-type-start">Data de Início</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                         <RadioGroupItem value="endDate" id="date-type-end" />
+                         <Label htmlFor="date-type-end">Data de Fim</Label>
+                      </div>
+                   </RadioGroup>
+                   <div>
+                      <Popover>
+                         <PopoverTrigger asChild id="date-start-popover">
+                            <Button
+                               variant={"outline"}
+                               className={cn(
+                                   "w-[240px] justify-start text-left font-normal",
+                                   !startPeriod && "text-muted-foreground"
+                               )}
+                            >
+                               <CalendarIcon className="mr-2 h-4 w-4" />
+                               {startPeriod ? format(startPeriod, "dd/MM/yyyy") : <span>Data de Início</span>}
+                            </Button>
+                         </PopoverTrigger>
+                         <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                               mode="single"
+                               selected={startPeriod}
+                               onSelect={setStartPeriod}
+                               initialFocus
+                               locale={ptBR}
+                            />
+                         </PopoverContent>
+                      </Popover>
+                   </div>
                     <div>
-                      <CardTitle>Atividades do Cliente</CardTitle>
-                      <CardDescription>
-                        Visualize e gerencie as atividades associadas. {totalActivities} encontrada(s).
-                      </CardDescription>
-                    </div>
-                    <div className="flex flex-shrink-0 gap-2 w-full md:w-auto">
-                      <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleExport}
-                          disabled={filteredActivities.length === 0}
-                          className="flex-1 md:flex-none"
-                      >
-                          <FileSpreadsheet className="mr-2 h-4 w-4" />
-                          Exportar (Excel) ({filteredActivities.length})
-                      </Button>
-                      <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleExportPdf}
-                          disabled={filteredActivities.length === 0 || isGeneratingPdf}
-                          className="flex-1 md:flex-none"
-                      >
-                          {isGeneratingPdf ? (
-                              <>
-                                  <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
-                                  Gerando PDF...
-                              </>
-                          ) : (
-                              <>
-                                  <FileText className="mr-2 h-4 w-4" /> {/* Ou FilePdf se tiver */}
-                                  Exportar PDF ({filteredActivities.length})
-                              </>
-                          )}
-                      </Button>
-                      <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleGenerateDocx}
-                          disabled={filteredActivities.length === 0 || isGeneratingDocx}
-                          className="flex-1 md:flex-none" // Manter consistência de layout
-                      >
-                          {isGeneratingDocx ? (
-                              <>
-                                  <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
-                                  Gerando DOCX...
-                              </>
-                          ) : (
-                              <>
-                                  <FileText className="mr-2 h-4 w-4" /> {/* Ou FileWord se tiver */}
-                                  Exportar DOCX ({filteredActivities.length})
-                              </>
-                          )}
-                      </Button>
-                      <Button
-                          size="sm"
-                          onClick={() => navigate("/activities/new", { state: { clientId: id } })}
-                          className="flex-1 md:flex-none"
-                      >
-                        Nova Atividade
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4 mb-6 p-4 border rounded-md bg-muted/30">
-                      <h4 className="text-base font-semibold mb-3 flex items-center"><Filter className="h-4 w-4 mr-2"/>Filtros</h4>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            type="search"
-                            placeholder="Buscar por título ou descrição..."
-                            className="pl-9"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
-
-                      {typeOptions.length > 0 && (
-                          <div>
-                            <Label className="mb-1 block text-sm font-medium">Tipo de Atividade</Label>
-                            <Combobox
-                                options={typeOptions}
-                                selectedValue={selectedType}
-                                onSelect={(value) => setSelectedType(value)}
-                                placeholder="Todos os tipos"
-                                searchPlaceholder="Buscar tipo..."
-                                noResultsText="Nenhum tipo encontrado."
-                                allowClear={true}
-                                triggerClassName="w-full"
+                      <Popover>
+                         <PopoverTrigger asChild id="date-end-popover">
+                            <Button
+                               variant={"outline"}
+                               className={cn(
+                                   "w-[240px] justify-start text-left font-normal",
+                                   !endPeriod && "text-muted-foreground"
+                               )}
+                            >
+                               <CalendarIcon className="mr-2 h-4 w-4" />
+                               {endPeriod ? format(endPeriod, "dd/MM/yyyy") : <span>Data de Fim</span>}
+                            </Button>
+                         </PopoverTrigger>
+                         <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                               mode="single"
+                               selected={endPeriod}
+                               onSelect={setEndPeriod}
+                               initialFocus
+                               locale={ptBR}
                             />
-                          </div>
-                      )}
+                         </PopoverContent>
+                      </Popover>
+                   </div>
+                   <Button variant="outline" size="sm" onClick={resetFilters}>
+                       <RotateCcw className="mr-2 h-4 w-4" /> Limpar Filtros
+                   </Button>
+                </div>
 
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">Status</Label>
-                        <div className="flex flex-wrap gap-x-4 gap-y-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                                id="status-pending"
-                                checked={statusFilters.includes("pending")}
-                                onCheckedChange={() => toggleStatusFilter("pending")}
-                            />
-                            <Label htmlFor="status-pending" className="flex items-center cursor-pointer text-sm font-normal">
-                              <Clock className="h-3 w-3 mr-1.5 text-yellow-600" /> Pendentes
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                                id="status-in-progress"
-                                checked={statusFilters.includes("in-progress")}
-                                onCheckedChange={() => toggleStatusFilter("in-progress")}
-                            />
-                            <Label htmlFor="status-in-progress" className="flex items-center cursor-pointer text-sm font-normal">
-                              <RotateCcw className="h-3 w-3 mr-1.5 text-blue-600" /> Em Progresso
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                                id="status-completed"
-                                checked={statusFilters.includes("completed")}
-                                onCheckedChange={() => toggleStatusFilter("completed")}
-                            />
-                            <Label htmlFor="status-completed" className="flex items-center cursor-pointer text-sm font-normal">
-                              <CheckCircle2 className="h-3 w-3 mr-1.5 text-green-600" /> Concluídas
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                                id="status-cancelled"
-                                checked={statusFilters.includes("cancelled")}
-                                onCheckedChange={() => toggleStatusFilter("cancelled")}
-                            />
-                            <Label htmlFor="status-cancelled" className="flex items-center cursor-pointer text-sm font-normal">
-                              <XCircle className="h-3 w-3 mr-1.5 text-red-600" /> Canceladas
-                            </Label>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end pt-2">
-                        <div>
-                          <Label className="mb-1.5 block text-sm font-medium">Filtrar por Data</Label>
-                          <RadioGroup
-                              value={dateType}
-                              onValueChange={(value) => setDateType(value as "startDate" | "endDate")}
-                              className="flex space-x-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="startDate" id="start-date" />
-                              <Label htmlFor="start-date" className="font-normal cursor-pointer">Início</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="endDate" id="end-date" />
-                              <Label htmlFor="end-date" className="font-normal cursor-pointer">Término</Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-                        <div>
-                          <Label htmlFor="date-start-popover" className="mb-1.5 block text-sm font-medium">Período - De</Label>
-                          <Popover>
-                            <PopoverTrigger asChild id="date-start-popover">
-                              <Button
-                                  variant="outline"
-                                  className={cn(
-                                      "w-full justify-start text-left font-normal",
-                                      !startPeriod && "text-muted-foreground"
-                                  )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {startPeriod ? format(startPeriod, "dd/MM/yyyy") : <span>Selecione início</span>}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                  mode="single"
-                                  selected={startPeriod}
-                                  onSelect={setStartPeriod}
-                                  initialFocus
-                                  disabled={(date) => endPeriod ? date > endPeriod : false }
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        <div>
-                          <Label htmlFor="date-end-popover" className="mb-1.5 block text-sm font-medium">Período - Até</Label>
-                          <Popover>
-                            <PopoverTrigger asChild id="date-end-popover">
-                              <Button
-                                  variant="outline"
-                                  className={cn(
-                                      "w-full justify-start text-left font-normal",
-                                      !endPeriod && "text-muted-foreground"
-                                  )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {endPeriod ? format(endPeriod, "dd/MM/yyyy") : <span>Selecione fim</span>}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                  mode="single"
-                                  selected={endPeriod}
-                                  onSelect={setEndPeriod}
-                                  initialFocus
-                                  disabled={(date) => startPeriod ? date < startPeriod : false}
-                               />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end pt-2">
-                        <Button variant="ghost" size="sm" onClick={resetFilters} disabled={!searchTerm && statusFilters.length === 0 && !startPeriod && !endPeriod && !selectedType}>
-                          <RotateCcw className="h-4 w-4 mr-1.5"/> Limpar Todos os Filtros
-                        </Button>
-                      </div>
-                    </div>
-
+                <div id="activity-list-container" className="space-y-4">
                     {filteredActivities.length > 0 ? (
-                        <div className="space-y-4" id="activity-list-container">
-                          {currentActivities.map((activity) => (
-                              <Card key={activity.id} className="overflow-hidden transition-shadow hover:shadow-md">
+                        currentActivities.map((activity) => (
+                            <Card key={activity.id} className="overflow-hidden transition-shadow hover:shadow-md">
                                 <CardHeader className="p-4 flex flex-row items-start justify-between space-y-0">
-                                  <div className="space-y-1">
-                                    <CardTitle className="text-base font-semibold leading-none">{activity.title}</CardTitle>
-                                    {activity.type && <CardDescription className="text-xs">Tipo: {activity.type}</CardDescription>}
+                                  <div className="grid gap-1">
+                                    <CardTitle className="text-base">
+                                        {activity.title}
+                                    </CardTitle>
+                                    <CardDescription className="text-xs">
+                                        Criado em: {activity.createdAt ? formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true, locale: ptBR }) : '-'}
+                                    </CardDescription>
                                   </div>
-                                  <div className="flex-shrink-0 ml-4">
-                                    {getStatusBadge('activity', activity.status)}
+                                  <div className="flex flex-col items-end gap-2">
+                                      {getStatusBadge('activity', activity.status)}
+                                      <Badge variant="secondary" className="whitespace-nowrap">{activity.type || 'Geral'}</Badge>
                                   </div>
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0 text-sm">
-                                  <p className="text-muted-foreground mb-3 line-clamp-2">
-                                    {activity.description || <span className="italic">Sem descrição</span>}
+                                  <p className="text-muted-foreground mb-2">
+                                      <strong>Período:</strong> {formatDate(activity.startDate)} a {formatDate(activity.endDate)}
                                   </p>
-                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground space-y-1 sm:space-y-0">
-                                    <div className="flex items-center">
-                                      <CalendarIcon className="h-3 w-3 mr-1.5" />
-                                      <span>Início: {formatDate(activity.startDate)}</span>
-                                      {activity.endDate && (
-                                          <>
-                                            <span className="mx-1.5">?</span>
-                                            <span>Fim: {formatDate(activity.endDate)}</span>
-                                          </>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center">
-                                      <Clock className="h-3 w-3 mr-1.5" />
-                                      <span>
-                                    Atualizado {formatDistanceToNow(new Date(activity.updatedAt), {
-                                        addSuffix: true,
-                                        locale: ptBR
-                                      })}
-                                  </span>
-                                    </div>
-                                  </div>
+                                  <p className="text-muted-foreground mb-2">
+                                      <strong>Prioridade:</strong> {getActivityPriorityText(activity.priority)}
+                                  </p>
+                                  <p className="text-muted-foreground mb-2">
+                                      <strong>Responsável(is):</strong> {activity.assignedTo && activity.assignedTo.length > 0
+                                          ? activity.assignedTo.map(uid => collaborators[uid]?.name || `Usuário ${uid.substring(0, 5)}`).join(', ')
+                                          : 'Não atribuído'}
+                                  </p>
+                                  <p className="line-clamp-3">{activity.description || 'Sem descrição.'}</p>
                                 </CardContent>
                                 <CardFooter className="p-2 bg-muted/50 flex justify-end">
                                   <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => navigate(`/activities/${activity.id}`)}
-                                      className="text-primary hover:text-primary"
                                   >
-                                    Ver detalhes
+                                    Ver Detalhes
                                   </Button>
                                 </CardFooter>
-                              </Card>
-                          ))}
-                        </div>
+                            </Card>
+                        ))
                     ) : (
-                        <div className="text-center py-10 px-6 border border-dashed rounded-lg bg-muted/20">
-                          <List className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                          <h3 className="text-lg font-medium mb-2">Nenhuma atividade encontrada</h3>
-                          <p className="text-muted-foreground text-sm mb-4 max-w-xs mx-auto">
-                            {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod || selectedType ?
-                                "Não foram encontradas atividades com os filtros aplicados. Tente ajustar sua busca." :
-                                "Este cliente ainda não possui atividades registradas."}
-                          </p>
-                          {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod || selectedType ? (
-                              <Button variant="secondary" onClick={resetFilters}>Limpar Filtros</Button>
-                          ) : (
-                              <Button onClick={() => navigate("/activities/new", { state: { clientId: id } })}>
-                                Criar Nova Atividade
-                              </Button>
-                          )}
-                        </div>
+                        <p className="text-center text-muted-foreground">Nenhuma atividade encontrada com os filtros aplicados.</p>
                     )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle>Resumo Rápido</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-5">
-                  <div>
-                    <h4 className="text-sm font-medium mb-1.5 text-muted-foreground">Tipo de Cliente</h4>
-                    <div className="flex items-center">
-                      {client.type === 'juridica' ? (
-                          <Badge variant="secondary" className="flex items-center gap-1.5">
-                            <Building2 className="h-3.5 w-3.5" />
-                            Pessoa Jurídica
-                          </Badge>
-                      ) : (
-                          <Badge variant="secondary" className="flex items-center gap-1.5">
-                            <User className="h-3.5 w-3.5" />
-                            Pessoa Física
-                          </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-1.5 text-muted-foreground">Atividades Registradas</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-md bg-muted/50 p-3 text-center">
-                        <p className="text-xs font-medium text-muted-foreground mb-0.5">Total</p>
-                        <p className="text-2xl font-bold">{activities.length}</p>
-                      </div>
-                      <div className="rounded-md bg-muted/50 p-3 text-center">
-                        <p className="text-xs font-medium text-muted-foreground mb-0.5">Concluídas</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {activities.filter(a => a.status === 'completed').length}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                    onClick={() => navigate("/activities/new", { state: { clientId: id } })}
-                    className="w-full"
-                >
-                  <List className="h-4 w-4 mr-2" />
-                  Registrar Nova Atividade
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </div>
 
-        {/* Contêiner para renderizar o template do PDF fora da tela (temporariamente visível para depuração) */}
-        <div
-            ref={pdfReportRef}
-            style={{
-                border: '2px solid #61dafbaa', // Para ver a caixa
-                margin: '20px',         // Espaçamento
-                width: '210mm',         // Mantenha a largura se quiser testar o layout A4
-                height: 'auto',
-                backgroundColor: '#eee' // Fundo para destacar
-            }}
-            aria-hidden="true"
-        >
-            {client && filteredActivities && collaborators && (
-                <PdfReportTemplate
-                    client={client}
-                    activities={filteredActivities}
-                    assignees={Object.entries(collaborators).reduce((acc, [id, user]) => { acc[id] = user.name || `Usuário ${id.substring(0, 5)}`; return acc; }, {} as Record<string, string>)}
-                    emissionDate={new Date().toLocaleDateString('pt-BR')}
-                    collaborators={collaborators} // Adicionado a propriedade collaborators
-                />
-            )}
-        </div>
+                {/* Paginação */}
+                {filteredActivities.length > ITEMS_PER_PAGE && (
+                    <div className="flex justify-center items-center space-x-2 mt-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4" /> Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground">Página {currentPage} de {totalPages}</span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        >
+                            Próxima <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+
+                {/* Mensagem se não houver atividades após filtro */}
+                {filteredActivities.length === 0 && (searchTerm || statusFilters.length > 0 || startPeriod || endPeriod || selectedType) && (
+                    <p className="text-center text-muted-foreground mt-4">Nenhuma atividade corresponde aos filtros aplicados.</p>
+                )}
+
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Coluna da direita com informações do cliente */}
+      <div className="lg:col-span-1">
+        <Card className="sticky top-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              {getClientTypeIcon()}
+              Detalhes do Cliente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm">
+              <p><strong>Nome:</strong> {clientDetails.name}</p>
+              {client.type === 'juridica' ? (
+                  <>
+                      <p><strong>Nome Fantasia:</strong> {(client as PessoaJuridicaClient).fantasyName || '-'}</p>
+                      <p><strong>CNPJ:</strong> {(client as PessoaJuridicaClient).cnpj || '-'}</p>
+                  </>
+              ) : (
+                  <>
+                      <p><strong>CPF:</strong> {(client as PessoaFisicaClient).cpf || '-'}</p>
+                  </>
+              )}
+              <p><strong>Email:</strong> {client.email || '-'}</p>
+              <p><strong>Telefone:</strong> {client.phone || '-'}</p>
+              <p><strong>Endereço:</strong> {client.address || '-'}</p>
+              <p><strong>Status:</strong> {client.active ? 'Ativo' : 'Inativo'}</p>
+              {client.type === 'juridica' ? (
+                  <Badge variant="secondary" className="flex items-center gap-1.5">
+                      <Building2 className="h-3 w-3" /> Pessoa Jurídica
+                  </Badge>
+              ) : (
+                  <Badge variant="secondary" className="flex items-center gap-1.5">
+                      <User className="h-3 w-3" /> Pessoa Física
+                  </Badge>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button variant="outline" className="w-full" onClick={() => navigate(`/clients/edit/${id}`)}>
+              <FileEdit className="mr-2 h-4 w-4" /> Editar Cliente
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+
+      {/* Componente PdfReportTemplate (pode estar oculto, mas necessário no DOM para html2pdf) */}
+      {client && filteredActivities && collaborators && (
+          <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+              <PdfReportTemplate
+                  ref={pdfReportRef}
+                  client={client}
+                  activities={filteredActivities} // Passa as atividades filtradas (com resumos da IA)
+                  collaborators={collaborators}
+                  assignees={assigneesMap} // Passa o mapa de assignees
+                  emissionDate={emissionDateString} // Passa a data de emissão formatada
+              />
+          </div>
+      )}
+    </div>
   );
 };
 
