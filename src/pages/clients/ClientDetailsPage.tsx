@@ -42,74 +42,75 @@ import geminiService from "@/services/gemini-service";
 
 const ITEMS_PER_PAGE = 10;
 
-// Função assíncrona para gerar descrições resumidas usando a IA
+// Função assíncrona para gerar descrições resumidas usando a IA (agora em uma única requisição)
 const generateActivitySummaries = async (activities: Activity[], toast: any): Promise<(Activity & { summaryDescription?: string })[]> => {
-    const activitiesWithSummaries: (Activity & { summaryDescription?: string })[] = [];
-    const batchSize = 5; // Processar em lotes para evitar sobrecarregar a API ou o navegador
-    let processedCount = 0;
-
-    toast({
-        title: "Gerando Resumos com IA",
-        description: `Iniciando a geração de resumos para ${activities.length} atividades...`,
-    });
-
-    for (let i = 0; i < activities.length; i += batchSize) {
-        const batch = activities.slice(i, i + batchSize);
-        const promises = batch.map(async (activity) => {
-            try {
-                // Criar o prompt para a IA
-                const prompt = `Resuma a seguinte atividade de forma objetiva e em poucas palavras, combinando o título e a descrição. Responda APENAS com o texto do resumo, sem formatação adicional como JSON ou marcadores de lista.
-                Título: ${activity.title}
-                Descrição: ${activity.description || 'Sem descrição'}`;
-
-                // Chamar o serviço Gemini
-                // Usamos isConversation: false para obter uma resposta mais direta e menos conversacional
-                let summary = await geminiService.sendMessage(prompt, {}, { isConversation: false });
-
-                // Limpar a resposta: remover marcações de código e tentar extrair de JSON se necessário
-                summary = summary.replace(/```json\n|```/g, '').trim(); // Remove marcações de bloco de código JSON
-
-                try {
-                    const jsonResponse = JSON.parse(summary);
-                    if (jsonResponse.summary) {
-                        summary = jsonResponse.summary.trim();
-                    }
-                } catch (parseError) {
-                    // Se não for JSON, usa a string limpa
-                    console.warn("Resposta da IA não é JSON, usando texto puro:", summary);
-                }
-
-
-                processedCount++;
-                toast({
-                    title: "Gerando Resumos com IA",
-                    description: `Processando atividade ${processedCount} de ${activities.length}...`,
-                });
-
-                return {
-                    ...activity,
-                    summaryDescription: summary // Usar a resposta da IA como descrição resumida
-                };
-            } catch (error) {
-                console.error(`Erro ao gerar resumo para atividade ${activity.id}:`, error);
-                // Em caso de erro, usar a descrição original ou uma mensagem de fallback
-                return {
-                    ...activity,
-                    summaryDescription: activity.description || activity.title || 'Resumo não disponível'
-                };
-            }
+    if (activities.length === 0) {
+        toast({
+            title: "Geração de Resumos",
+            description: "Nenhuma atividade para resumir.",
         });
-
-        const results = await Promise.all(promises);
-        activitiesWithSummaries.push(...results);
+        return activities; // Retorna atividades originais se não houver o que resumir
     }
 
     toast({
-        title: "Geração de Resumos Concluída",
-        description: `Resumos gerados para ${activities.length} atividades.`,
+        title: "Gerando Resumos com IA",
+        description: `Iniciando a geração de resumos para ${activities.length} atividades em uma única requisição...`,
     });
 
-    return activitiesWithSummaries;
+    try {
+        // Chamar a nova função do serviço que envia todas as atividades em uma requisição
+        const summaryResponse = await geminiService.generateSummariesSingleRequest(activities);
+
+        // Verificar se a resposta tem a estrutura JSON esperada
+        if (!summaryResponse || !Array.isArray(summaryResponse.summaries)) {
+             console.error("Resposta da IA em formato inesperado:", summaryResponse);
+             toast({
+                 variant: "destructive",
+                 title: "Erro na Geração de Resumos",
+                 description: "A IA retornou um formato inesperado. Resumos não gerados."
+             });
+             // Retorna atividades sem resumos ou com fallback em caso de erro de formato
+             return activities.map(activity => ({
+                 ...activity,
+                 summaryDescription: activity.description || activity.title || 'Resumo não disponível (Erro na IA)'
+             }));
+        }
+
+        // Criar um mapa para facilitar a busca dos resumos pelo ID da atividade
+        const summariesMap = summaryResponse.summaries.reduce((acc: Record<string, string>, item: { id: string; summary: string }) => {
+            if (item.id && item.summary) {
+                acc[item.id] = item.summary;
+            }
+            return acc;
+        }, {} as Record<string, string>);
+
+        // Mapear os resumos de volta para as atividades originais
+        const activitiesWithSummaries = activities.map(activity => ({
+            ...activity,
+            // Usa o resumo gerado pela IA se existir, caso contrário, usa a descrição original ou fallback
+            summaryDescription: summariesMap[activity.id] || activity.description || activity.title || 'Resumo não disponível'
+        }));
+
+        toast({
+            title: "Geração de Resumos Concluída",
+            description: `Resumos gerados para ${activities.length} atividades.`,
+        });
+
+        return activitiesWithSummaries;
+
+    } catch (error: any) { // Usar 'any' ou um tipo de erro mais específico
+        console.error("Erro ao gerar resumos em lote:", error);
+        toast({
+            variant: "destructive",
+            title: "Erro na Geração de Resumos",
+            description: `Ocorreu um erro ao gerar os resumos com a IA: ${error.message}`
+        });
+        // Retorna atividades com uma descrição de fallback em caso de erro na requisição
+        return activities.map(activity => ({
+            ...activity,
+            summaryDescription: activity.description || activity.title || 'Resumo não disponível (Erro)'
+        }));
+    }
 };
 
 
@@ -162,6 +163,7 @@ const ClientDetailsPage = () => {
         console.log("Template DOCX carregado.");
 
         // 2. Gerar descrições resumidas com a IA
+        // A função generateActivitySummaries agora lida com o envio em lote único
         toast({
             title: "Processando Atividades",
             description: "Gerando resumos com IA para o relatório DOCX...",
@@ -1016,32 +1018,6 @@ const ClientDetailsPage = () => {
                                 </CardFooter>
                               </Card>
                           ))}
-
-                          {totalPages > 1 && (
-                              <div className="flex items-center justify-center space-x-2 pt-6 mt-6 border-t">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                >
-                                  <ChevronLeft className="h-4 w-4 mr-1"/>
-                                  Anterior
-                                </Button>
-                                <span className="text-sm text-muted-foreground">
-                            Página {currentPage} de {totalPages}
-                          </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage === totalPages}
-                                >
-                                  Próxima
-                                  <ChevronRight className="h-4 w-4 ml-1"/>
-                                </Button>
-                              </div>
-                          )}
                         </div>
                     ) : (
                         <div className="text-center py-10 px-6 border border-dashed rounded-lg bg-muted/20">

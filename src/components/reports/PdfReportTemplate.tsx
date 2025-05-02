@@ -9,14 +9,14 @@ import { ptBR } from 'date-fns/locale';
 interface PdfReportTemplateProps {
   client: Client;
   activities: Activity[];
-  // Mapa de ID de usu·rio para NOME (string) - CORRIGIDO
+  // Mapa de ID de usu√°rio para NOME (string) - CORRIGIDO
   assignees: Record<string, string>;
   // Mapa completo de colaboradores (mantido caso precise de outros dados no futuro)
   collaborators: Record<string, UserData & { uid: string }>;
-  emissionDate: string; // Data de emiss„o j· formatada
+  emissionDate: string; // Data de emiss√£o j√° formatada
 }
 
-// --- FunÁıes Auxiliares (podem ser movidas para utils se usadas em outros lugares) ---
+// --- Fun√ß√µes Auxiliares (podem ser movidas para utils se usadas em outros lugares) ---
 
 /**
  * Formata uma string de data (ISO ou similar) para dd/MM/yyyy.
@@ -24,10 +24,10 @@ interface PdfReportTemplateProps {
 const formatDate = (dateString: string | undefined): string => {
   if (!dateString) return '-';
   try {
-    // Tenta criar a data assumindo que pode ser ISO ou um formato reconhecÌvel
+    // Tenta criar a data assumindo que pode ser ISO ou um formato reconhec√≠vel
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      return 'Data Inv·lida';
+      return 'Data Inv√°lida';
     }
     return format(date, 'dd/MM/yyyy', { locale: ptBR });
   } catch (error) {
@@ -43,7 +43,7 @@ const getActivityStatusText = (status: ActivityStatus): string => {
   switch (status) {
     case 'pending': return 'Pendente';
     case 'in-progress': return 'Em Andamento';
-    case 'completed': return 'ConcluÌda';
+    case 'completed': return 'Conclu√≠da';
     case 'cancelled': return 'Cancelada';
     default: return 'Desconhecido';
   }
@@ -53,12 +53,12 @@ const getActivityStatusText = (status: ActivityStatus): string => {
  * Retorna o texto descritivo para a prioridade da atividade.
  */
 const getActivityPriorityText = (priority: ActivityPriority | undefined): string => {
-  if (!priority) return 'N„o definida';
+  if (!priority) return 'N√£o definida';
   switch (priority) {
     case 'low': return 'Baixa';
-    case 'medium': return 'MÈdia';
+    case 'medium': return 'M√©dia';
     case 'high': return 'Alta';
-    default: return 'N„o definida';
+    default: return 'N√£o definida';
   }
 };
 
@@ -74,30 +74,30 @@ const PdfReportTemplate = forwardRef<HTMLDivElement, PdfReportTemplateProps>(
 
     return (
       <div ref={ref} className="pdf-container">
-        {/* CabeÁalho do RelatÛrio */}
+        {/* Cabe√ßalho do Relat√≥rio */}
         <div className="pdf-header">
           <p className="pdf-issue-date">Emitido em: {emissionDate}</p>
-          <h1 className="pdf-main-title">RelatÛrio de Atividades</h1>
+          <h1 className="pdf-main-title">Relat√≥rio de Atividades</h1>
           <h2 className="pdf-client-name">{clientNameDisplay}</h2>
         </div>
 
-        {/* SeÁ„o de Atividades */}
+        {/* Se√ß√£o de Atividades */}
         <div className="pdf-activities-section">
           {activities && activities.length > 0 ? (
             activities.map((activity, index) => (
               <div key={activity.id || index} className="pdf-activity">
-                {/* TÌtulo da Atividade */}
+                {/* T√≠tulo da Atividade */}
                 <h3 className="pdf-activity-title">{activity.title}</h3>
 
                 {/* Grid de Detalhes da Atividade */}
                 <div className="pdf-activity-grid">
                   <p><strong>Status:</strong> {getActivityStatusText(activity.status)}</p>
                   <p><strong>Prioridade:</strong> {getActivityPriorityText(activity.priority)}</p>
-                  <p><strong>PerÌodo:</strong> {formatDate(activity.startDate)}{activity.endDate ? ` a ${formatDate(activity.endDate)}` : ''}</p>
+                  <p><strong>Per√≠odo:</strong> {formatDate(activity.startDate)}{activity.endDate ? ` a ${formatDate(activity.endDate)}` : ''}</p>
                   <p><strong>Tipo:</strong> {activity.type || '-'}</p>
-                  {/* Respons·veis */}
+                  {/* Respons√°veis */}
                   <div className="pdf-responsible-list">
-                    <strong>Respons·vel(is):</strong>{' '}
+                    <strong>Respons√°vel(is):</strong>{' '}
                     {activity.assignedTo && activity.assignedTo.length > 0
                       ? activity.assignedTo
                           .map(id => assignees[id] || `ID: ${id.substring(0,5)}...`) // Usa o mapa 'assignees'
@@ -106,22 +106,22 @@ const PdfReportTemplate = forwardRef<HTMLDivElement, PdfReportTemplateProps>(
                   </div>
                 </div>
 
-                {/* DescriÁ„o da Atividade */}
+                {/* Descri√ß√£o da Atividade */}
                 {activity.description && (
                   <div className="pdf-activity-description">
-                     <strong>DescriÁ„o:</strong>
+                     <strong>Descri√ß√£o:</strong>
                      <p>{activity.description}</p>
                   </div>
                 )}
               </div>
             ))
           ) : (
-            // Mensagem se n„o houver atividades
-            <p className="pdf-no-activities">Nenhuma atividade encontrada para este perÌodo ou filtros.</p>
+            // Mensagem se n√£o houver atividades
+            <p className="pdf-no-activities">Nenhuma atividade encontrada para este per√≠odo ou filtros.</p>
           )}
         </div>
 
-        {/* (Opcional) RodapÈ - Pode adicionar informaÁıes aqui se necess·rio */}
+        {/* (Opcional) Rodap√© - Pode adicionar informa√ß√µes aqui se necess√°rio */}
         {/*
         <div className="pdf-footer">
           <p>Nome da Empresa | Contato</p>
@@ -132,6 +132,6 @@ const PdfReportTemplate = forwardRef<HTMLDivElement, PdfReportTemplateProps>(
   }
 );
 
-PdfReportTemplate.displayName = 'PdfReportTemplate'; // Boa pr·tica para debugging com forwardRef
+PdfReportTemplate.displayName = 'PdfReportTemplate'; // Boa pr√°tica para debugging com forwardRef
 
 export default PdfReportTemplate;
