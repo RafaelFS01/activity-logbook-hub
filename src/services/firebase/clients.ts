@@ -1,3 +1,4 @@
+
 import { db } from '@/lib/firebase';
 import { ref, set, get, push, query, orderByChild, remove, update } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,11 +30,7 @@ export interface PessoaJuridicaClient extends BaseClient {
   type: 'juridica';
   cnpj: string;
   companyName: string;
-  fantasyName?: string; // Adicionado
-  stateRegistration?: string; // Adicionado
-  municipalRegistration?: string; // Adicionado
   responsibleName?: string;
-  responsibleCpf?: string; // Adicionado
 }
 
 export type Client = PessoaFisicaClient | PessoaJuridicaClient;
@@ -71,11 +68,6 @@ export const createClient = async (data: Omit<Client, 'id' | 'createdAt' | 'upda
         name: juridicaData.companyName || '', // Use companyName as name for juridica
         companyName: juridicaData.companyName || '',
         cnpj: juridicaData.cnpj || '',
-        fantasyName: juridicaData.fantasyName || '', // Adicionado
-        stateRegistration: juridicaData.stateRegistration || '', // Adicionado
-        municipalRegistration: juridicaData.municipalRegistration || '', // Adicionado
-        responsibleName: juridicaData.responsibleName || '',
-        responsibleCpf: juridicaData.responsibleCpf || '', // Adicionado
         email: juridicaData.email || '',
         phone: juridicaData.phone || '',
         type: 'juridica',
@@ -99,12 +91,12 @@ export const getClients = async (): Promise<Client[]> => {
   try {
     const clientsRef = ref(db, 'clients');
     const snapshot = await get(clientsRef);
-
+    
     if (snapshot.exists()) {
       const clientsData = snapshot.val();
       return Object.values(clientsData) as Client[];
     }
-
+    
     return [];
   } catch (error) {
     console.error('Erro ao buscar clientes:', error);
@@ -117,11 +109,11 @@ export const getClientById = async (clientId: string): Promise<Client | null> =>
   try {
     const clientRef = ref(db, `clients/${clientId}`);
     const snapshot = await get(clientRef);
-
+    
     if (snapshot.exists()) {
       return snapshot.val() as Client;
     }
-
+    
     return null;
   } catch (error) {
     console.error('Erro ao buscar cliente:', error);
@@ -133,18 +125,18 @@ export const getClientById = async (clientId: string): Promise<Client | null> =>
 export const updateClient = async (clientId: string, data: Partial<Omit<Client, 'id' | 'createdAt' | 'createdBy'>>) => {
   try {
     const clientRef = ref(db, `clients/${clientId}`);
-
+    
     // Get current client data
     const snapshot = await get(clientRef);
     if (!snapshot.exists()) {
-      throw new Error('Cliente não encontrado');
+      throw new Error('Cliente nÃ£o encontrado');
     }
-
+    
     const updatedData = {
       ...data,
       updatedAt: new Date().toISOString()
     };
-
+    
     await update(clientRef, updatedData);
     return true;
   } catch (error) {
@@ -158,7 +150,7 @@ export const deleteClient = async (clientId: string) => {
   try {
     // Instead of deleting, we set the client to inactive
     const clientRef = ref(db, `clients/${clientId}`);
-    await update(clientRef, {
+    await update(clientRef, { 
       active: false,
       updatedAt: new Date().toISOString()
     });

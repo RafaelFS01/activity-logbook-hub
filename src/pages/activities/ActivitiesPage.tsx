@@ -743,7 +743,9 @@ const ActivitiesPage = () => {
                         {/* Botões Detalhes e Editar */}
                         <div className="flex justify-end w-full gap-2">
                           <Button variant="outline" size="sm" className="h-7 px-2 py-1 text-xs" onClick={() => navigate(`/activities/${activity.id}`)}>Detalhes</Button>
-                          <Button variant="default" size="sm" className="h-7 px-2 py-1 text-xs" onClick={() => navigate(`/activities/edit/${activity.id}`)}>Editar</Button>
+                          {user?.uid && activity.assignedTo?.includes(user.uid) && (
+                            <Button variant="default" size="sm" className="h-7 px-2 py-1 text-xs" onClick={() => navigate(`/activities/edit/${activity.id}`)}>Editar</Button>
+                          )}
                         </div>
                         {/* Botões de Ação Rápida de Status (Condicional) */}
                         {activity.status !== 'completed' && activity.status !== 'cancelled' && (
@@ -754,16 +756,20 @@ const ActivitiesPage = () => {
                                     <XCircle className="h-3.5 w-3.5 mr-1" /> Cancelar
                                   </Button>
                               )}
-                              {/* Botão Iniciar / Concluir */}
-                              {activity.status === 'pending' ? (
-                                  <Button variant="outline" size="sm" className="h-7 px-2 py-1 text-xs border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-800 flex-1 justify-center" onClick={() => handleStatusChange(activity.id, 'in-progress')}>
-                                    <RotateCcw className="h-3.5 w-3.5 mr-1" /> Iniciar
-                                  </Button>
-                              ) : activity.status === 'in-progress' ? (
-                                  <Button variant="outline" size="sm" className="h-7 px-2 py-1 text-xs border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800 flex-1 justify-center" onClick={() => handleStatusChange(activity.id, 'completed')}>
-                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Concluir
-                                  </Button>
-                              ) : null}
+                              {/* Botão Iniciar / Concluir (Visível apenas para o responsável) */}
+                              {user?.uid && activity.assignedTo?.includes(user.uid) && (
+                                <>
+                                  {activity.status === 'pending' ? (
+                                      <Button variant="outline" size="sm" className="h-7 px-2 py-1 text-xs border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-800 flex-1 justify-center" onClick={() => handleStatusChange(activity.id, 'in-progress')}>
+                                        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Iniciar
+                                      </Button>
+                                  ) : activity.status === 'in-progress' ? (
+                                      <Button variant="outline" size="sm" className="h-7 px-2 py-1 text-xs border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800 flex-1 justify-center" onClick={() => handleStatusChange(activity.id, 'completed')}>
+                                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Concluir
+                                      </Button>
+                                  ) : null}
+                                </>
+                              )}
                             </div>
                         )}
                       </CardFooter>
