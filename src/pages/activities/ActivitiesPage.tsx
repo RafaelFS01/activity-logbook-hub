@@ -750,8 +750,8 @@ const ActivitiesPage = () => {
                         {/* Botões de Ação Rápida de Status (Condicional) */}
                         {activity.status !== 'completed' && activity.status !== 'cancelled' && (
                             <div className="flex justify-between w-full gap-2">
-                              {/* Botão Cancelar (Permitido para criador ou admin) */}
-                              {(user?.role === 'admin' || activity.createdBy === user?.uid) && (
+                              {/* Botão Cancelar (Permitido apenas para o responsável) */}
+                              {(user?.uid && activity.assignedTo?.includes(user.uid)) && (
                                   <Button variant="outline" size="sm" className="h-7 px-2 py-1 text-xs border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800 flex-1 justify-center" onClick={() => handleStatusChange(activity.id, 'cancelled')}>
                                     <XCircle className="h-3.5 w-3.5 mr-1" /> Cancelar
                                   </Button>
