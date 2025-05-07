@@ -1,18 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { Activity, ClipboardList, Clock, AlertCircle, AlertTriangle, CalendarRange, Loader2, CheckCircle2 } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, XAxis, YAxis, Bar, CartesianGrid } from "recharts";
+import { Activity as ActivityIcon, ClipboardList, Clock, AlertCircle, AlertTriangle, CalendarRange, Loader2, CheckCircle2 } from "lucide-react";
 import { useActivityStats } from "@/hooks/useActivityStats";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { useFutureAndOverdueActivities } from "@/hooks/useFutureAndOverdueActivities";
-import { ActivityStatus } from "@/services/firebase/activities";
+import { ActivityStatus, getActivities, Activity } from "@/services/firebase/activities";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from 'date-fns';
 
 const COLORS = ["#22c55e", "#3b82f6", "#eab308", "#ef4444", "#6b7280"];
+const STATUS_COLORS: Record<string, string> = {
+  "Concluída": "#22c55e",
+  "Em Andamento": "#3b82f6",
+  "Futura": "#eab308",
+  "Cancelada": "#ef4444",
+  "Atrasada": "#6b7280",
+};
 const STATUS_NAMES: Record<ActivityStatus, string> = {
   "completed": "Concluída",
   "in-progress": "Em Andamento",
@@ -22,6 +30,16 @@ const STATUS_NAMES: Record<ActivityStatus, string> = {
 
 type Period = 'today' | 'week' | 'month' | 'all'; // Definir tipo para períodos
 
+interface BarChartDataItem {
+  label: string;
+  'Concluída': number;
+  'Em Andamento': number;
+  'Futura': number;
+  'Cancelada': number;
+  'Atrasada': number;
+}
+
+
 const Dashboard = () => {
   const { stats, isLoading: loadingStats, error: statsError } = useActivityStats();
   const { recentActivities, isLoading: loadingRecentActivities, error: recentActivitiesError } = useRecentActivities(5);
@@ -29,6 +47,27 @@ const Dashboard = () => {
 
   const hasError = statsError || recentActivitiesError || futureOverdueError;
   const isLoading = loadingStats || loadingRecentActivities || loadingFutureOverdue;
+
+  const [allActivities, setAllActivities] = useState<Activity[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(true);
+  const [activitiesError, setActivitiesError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        setLoadingActivities(true);
+        const activities = await getActivities();
+        setAllActivities(activities);
+      } catch (error) {
+        console.error("Erro ao buscar todas as atividades:", error);
+        setActivitiesError(error as Error);
+      } finally {
+        setLoadingActivities(false);
+      }
+    };
+
+    fetchActivities();
+  }, []);
 
   const [activePeriod, setActivePeriod] = useState<Exclude<Period, 'all'>>('today'); // Estado para o período ativo, excluindo 'all'
 
@@ -49,15 +88,77 @@ const Dashboard = () => {
     return data;
   };
 
+  const getBarChartData = (activities: Activity[], period: Exclude<Period, 'all'>): BarChartDataItem[] => {
+    if (!activities || activities.length === 0) return [];
+
+    const dataMap: Record<string, BarChartDataItem> = {};
+    const sortedActivities = activities.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
+    sortedActivities.forEach(activity => {
+      const startDate = new Date(activity.startDate);
+      let key = ''; // Chave para agrupar (hora, dia da semana, dia do mês)
+      let label = ''; // Rótulo para o eixo X
+
+      if (period === 'today') {
+        key = startDate.getHours().toString();
+        label = `${startDate.getHours()}h`;
+      } else if (period === 'week') {
+        // getDay() retorna 0 para domingo, 1 para segunda, etc.
+        const dayOfWeek = startDate.getDay();
+        const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        key = dayOfWeek.toString();
+        label = days[dayOfWeek];
+      } else if (period === 'month') {
+        key = startDate.getDate().toString();
+        label = startDate.getDate().toString();
+      }
+
+      if (!dataMap[key]) {
+        dataMap[key] = { label, 'Concluída': 0, 'Em Andamento': 0, 'Futura': 0, 'Cancelada': 0, 'Atrasada': 0 };
+      }
+
+      const statusName = STATUS_NAMES[activity.status] || activity.status;
+
+      // Verificar se o statusName é uma chave válida em BarChartDataItem (excluindo 'label')
+      const validStatusKeys: (keyof Omit<BarChartDataItem, 'label'>)[] = ['Concluída', 'Em Andamento', 'Futura', 'Cancelada', 'Atrasada'];
+      if (validStatusKeys.includes(statusName as keyof Omit<BarChartDataItem, 'label'>)) {
+          dataMap[key][statusName as keyof Omit<BarChartDataItem, 'label'>] = (dataMap[key][statusName as keyof Omit<BarChartDataItem, 'label'>] || 0) + 1;
+      }
+    });
+
+    // Converter o objeto agrupado em um array para o Recharts
+    const chartData = Object.values(dataMap);
+
+    // Ordenar os dados por chave (hora, dia da semana, dia do mês)
+    if (period === 'today') {
+        chartData.sort((a, b) => parseInt(a.label) - parseInt(b.label));
+    } else if (period === 'week') {
+        const daysOrder = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        chartData.sort((a, b) => daysOrder.indexOf(a.label) - daysOrder.indexOf(b.label));
+    } else if (period === 'month') {
+        chartData.sort((a, b) => parseInt(a.label) - parseInt(b.label));
+    }
+
+    return chartData;
+  };
+
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
-      const total = payload.reduce((sum: number, entry: any) => sum + entry.value, 0);
-      const percentage = total > 0 ? ((data.value / total) * 100).toFixed(1) : 0;
+      // Encontrar o item de dados correspondente no payload para obter todos os valores de status
+      const dataItem = payload.reduce((acc: any, curr: any) => {
+          acc[curr.dataKey] = curr.value;
+          return acc;
+      }, { label: payload[0].payload.label });
+
+
       return (
         <div className="bg-white p-2 border rounded shadow-md text-sm">
-          <p className="font-medium">{`${data.name}: ${data.value}`}</p>
-          <p className="text-muted-foreground">{`(${percentage}%)`}</p>
+          <p className="font-medium">{`Tempo: ${dataItem.label}`}</p>
+          {Object.keys(dataItem).filter(key => key !== 'label').map(statusKey => (
+              <p key={statusKey} className="text-muted-foreground">{`${statusKey}: ${dataItem[statusKey]}`}</p>
+          ))}
         </div>
       );
     }
@@ -69,7 +170,7 @@ const Dashboard = () => {
     <div className="container mx-auto py-6 px-4 md:px-6">
       <h1 className="text-3xl font-bold mb-6">Painel de Controle</h1>
 
-      {hasError && (
+      {(hasError || activitiesError) && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erro ao carregar dados</AlertTitle>
@@ -78,6 +179,7 @@ const Dashboard = () => {
             {statsError && ` Erro estatísticas: ${statsError.message}`}
             {recentActivitiesError && ` Erro atividades recentes: ${recentActivitiesError.message}`}
             {futureOverdueError && ` Erro atividades futuras/atrasadas: ${futureOverdueError.message}`}
+            {activitiesError && ` Erro atividades: ${activitiesError.message}`}
           </AlertDescription>
         </Alert>
       )}
@@ -103,10 +205,10 @@ const Dashboard = () => {
                 <StatsCard
                   title="Total de Atividades"
                   value={stats.today.total}
-                  icon={<Activity />}
+                  icon={<ActivityIcon />}
                 />
                 <StatsCard
-                  title="Concluídas"
+                  title="Concluída"
                   value={stats.today.completed}
                   icon={<CheckCircle2 />}
                 />
@@ -139,10 +241,10 @@ const Dashboard = () => {
                 <StatsCard
                   title="Total de Atividades"
                   value={stats.week.total}
-                  icon={<Activity />}
+                  icon={<ActivityIcon />}
                 />
                  <StatsCard
-                  title="Concluídas"
+                  title="Concluída"
                   value={stats.week.completed}
                   icon={<CheckCircle2 />}
                 />
@@ -175,10 +277,10 @@ const Dashboard = () => {
                 <StatsCard
                   title="Total de Atividades"
                   value={stats.month.total}
-                  icon={<Activity />}
+                  icon={<ActivityIcon />}
                 />
                  <StatsCard
-                  title="Concluídas"
+                  title="Concluída"
                   value={stats.month.completed}
                   icon={<CheckCircle2 />}
                 />
@@ -197,6 +299,42 @@ const Dashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Novo Card para o Gráfico de Barras */}
+      <Card className="mt-6 mb-6">
+        <CardHeader>
+          <CardTitle>Atividades ao Longo do Tempo ({activePeriod === 'today' ? 'Hoje' : activePeriod === 'week' ? 'Esta Semana' : 'Este Mês'})</CardTitle>
+          <CardDescription>Distribuição de atividades por status ao longo do tempo no período selecionado</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            {loadingActivities ? (
+              <div className="flex items-center justify-center h-full">
+                 <Loader2 className="h-8 w-8 animate-spin mr-2" />
+                 <p>Carregando dados do gráfico...</p>
+              </div>
+            ) : allActivities.length === 0 ? (
+               <div className="flex flex-col items-center justify-center h-full text-center">
+                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-2" />
+                 <p className="text-muted-foreground">Sem dados de atividades para exibir o gráfico neste período.</p>
+               </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={getBarChartData(allActivities, activePeriod)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  {Object.keys(STATUS_COLORS).map(status => (
+                      <Bar key={status} dataKey={status} stackId="a" fill={STATUS_COLORS[status]} />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2 mb-6">
         <Card>
