@@ -48,7 +48,7 @@ A página `ClientDetailsPage.tsx` importa e utiliza funcionalidades de diversos 
     *   `db` (de `@/lib/firebase`): Instância inicializada do banco de dados Firebase.
 *   **Biblioteca de Exportação PDF**: `html2pdf` (do pacote `html2pdf.js`): Biblioteca para gerar arquivos PDF a partir de conteúdo HTML.
 *   **Componente de Relatório PDF**: `PdfReportTemplate` (de `@/components/reports/PdfReportTemplate`): Um componente React que formata os dados das atividades para a visualização e exportação em PDF.
-*   **Estilos do Relatório PDF**: `@/components/reports/PdfReportTemplate.css`: Arquivo CSS específico para estilizar o componente de relatório PDF.
+*   **Estilos do Relatório PDF**: `@/components/reports/PdfReportTemplate.css`: Arquivo CSS específico para estilizar o componente de relatório PDF com controles avançados de paginação.
 ## 4. Fluxo de Dados e Lógica
 
 O fluxo de dados e a lógica da página `ClientDetailsPage.tsx` seguem os seguintes passos:
@@ -137,4 +137,31 @@ A página `ClientDetailsPage.tsx` compõe sua interface utilizando uma variedade
 *   **`RadioGroup`**: Usado para selecionar o tipo de data a ser filtrada (Data de Início ou Data de Término). `RadioGroupItem` representa cada opção.
 *   **`Checkbox`**: Usado para selecionar múltiplos status de atividade para filtragem.
 *   **`Combobox`**: Usado para selecionar o tipo de atividade para filtragem a partir de uma lista de tipos únicos encontrados nas atividades do cliente.
-*   **`PdfReportTemplate`**: Um componente customizado (`@/components/reports/PdfReportTemplate`) que recebe os dados do cliente, atividades filtradas e informações dos colaboradores e renderiza o layout do relatório PDF. Este componente é referenciado por `pdfReportRef` para ser utilizado pela biblioteca `html2pdf.js`.
+*   **`PdfReportTemplate`**: Um componente customizado (`@/components/reports/PdfReportTemplate`) que recebe os dados do cliente, atividades filtradas e informações dos colaboradores e renderiza o layout do relatório PDF. Este componente é referenciado por `pdfReportRef` para ser utilizado pela biblioteca `html2pdf.js`. O componente possui controles avançados de paginação para garantir layout profissional nos PDFs gerados.
+
+## 7. Melhorias na Geração de PDF
+
+### 7.1 Controle de Paginação Aprimorado
+
+O sistema de geração de PDF foi significativamente melhorado para garantir um layout profissional e evitar problemas de paginação inadequada. As principais melhorias incluem:
+
+#### Configurações do html2pdf
+- **Margens otimizadas**: Ajustadas para `[10, 10, 15, 10]` (topo, direita, baixo, esquerda)
+- **Compressão ativada**: Reduz o tamanho dos arquivos gerados
+- **Priorização de CSS**: Configuração `['css', 'legacy', 'avoid-all']` para melhor controle via CSS
+- **Controles específicos**: Definições para evitar quebras em elementos críticos
+
+#### Estilos CSS Avançados
+- **Controle de quebras**: Implementação de `page-break-inside: avoid` em elementos que não devem ser divididos
+- **Espaçamentos inteligentes**: Margens e paddings otimizados para documentos PDF
+- **Classes auxiliares**: Conjunto de classes para controle fino da paginação
+- **Controle de órfãs e viúvas**: Implementação de `orphans: 3` e `widows: 3` para quebras mais inteligentes
+
+#### Benefícios Implementados
+- **Atividades íntegras**: Evita divisão inadequada de atividades entre páginas
+- **Títulos protegidos**: Impede separação de títulos do conteúdo relacionado
+- **Layout consistente**: Espaçamentos uniformes e profissionais
+- **Flexibilidade**: Sistema de classes permite ajustes futuros sem modificar código principal
+
+### 7.2 Documentação Técnica
+Para informações detalhadas sobre as implementações de paginação, consulte o documento específico: `docs/PDF_Pagination_Improvements.md`

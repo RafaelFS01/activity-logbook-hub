@@ -11,9 +11,25 @@ import { ActivityStatus, getActivities, Activity } from "@/services/firebase/act
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { format } from 'date-fns';
+import {
+  format,
+  startOfDay,
+  isAfter,
+  isBefore,
+  isEqual,
+  isWithinInterval,
+  startOfToday,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  isPast,
+  endOfDay,
+  isToday
+} from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-const COLORS = ["#22c55e", "#3b82f6", "#eab308", "#ef4444", "#6b7280"];
+const COLORS = ["#22c55e", "#3b82f6", "#eab308", "#ef4444", "#6b7280", "#A855F7"];
 const STATUS_COLORS: Record<string, string> = {
   "Concluída": "#22c55e",
   "Em Andamento": "#3b82f6",
@@ -27,8 +43,15 @@ const STATUS_NAMES: Record<ActivityStatus, string> = {
   "pending": "Futura",
   "cancelled": "Cancelada"
 };
+const STATUS_DISPLAY_NAMES: Record<ActivityStatus | 'overdue', string> = {
+  "completed": "Concluída",
+  "in-progress": "Em Andamento",
+  "pending": "Pendente",
+  "cancelled": "Cancelada",
+  "overdue": "Atrasada"
+};
 
-type Period = 'today' | 'week' | 'month' | 'all'; // Definir tipo para períodos
+type Period = 'today' | 'week' | 'month' | 'all';
 
 interface BarChartDataItem {
   label: string;
@@ -39,6 +62,66 @@ interface BarChartDataItem {
   'Atrasada': number;
 }
 
+const isActivityFuture = (activity: Activity): boolean => {
+  if (!activity.startDate) return false;
+  try {
+    const startDate = startOfDay(new Date(activity.startDate));
+    const today = startOfDay(new Date());
+    return isAfter(startDate, today);
+  } catch (e) {
+    console.error("Erro ao processar data de início para atividade futura:", activity.startDate, e);
+    return false;
+  }
+};
+
+const isActivityOverdue = (activity: Activity): boolean => {
+  if (!activity.endDate || activity.status === 'completed' || activity.status === 'cancelled') {
+    return false;
+  }
+  try {
+    const endDateDay = startOfDay(new Date(activity.endDate));
+    const today = startOfDay(new Date());
+    return isBefore(endDateDay, today) && (activity.status === 'pending' || activity.status === 'in-progress');
+  } catch (e) {
+    console.error("Erro ao processar data de fim para atividade atrasada:", activity.endDate, e);
+    return false;
+  }
+};
+
+const activityOverlapsPeriod = (activity: Activity, periodStart: Date, periodEnd: Date): boolean => {
+    if (!activity.startDate) return false;
+
+    try {
+        const activityStartDate = new Date(activity.startDate);
+        const activityEndDate = activity.endDate ? new Date(activity.endDate) : null;
+
+        if (isNaN(activityStartDate.getTime())) return false;
+        if (activityEndDate && isNaN(activityEndDate.getTime())) return false;
+
+        const periodStartOfDay = startOfDay(periodStart);
+        const periodEndOfDay = endOfDay(periodEnd);
+
+        const activityStartOfDay = startOfDay(activityStartDate);
+
+        if (!activityEndDate) {
+            return !isAfter(activityStartOfDay, periodEndOfDay);
+        }
+
+        const activityEndOfDay = startOfDay(activityEndDate);
+
+        const startsWithin = isWithinInterval(activityStartOfDay, { start: periodStartOfDay, end: periodEndOfDay });
+        const endsWithin = isWithinInterval(activityEndOfDay, { start: periodStartOfDay, end: periodEndOfDay });
+        const spansPeriod = isBefore(activityStartOfDay, periodStartOfDay) && isAfter(activityEndOfDay, periodEndOfDay);
+        const startsBeforeEndsWithin = isBefore(activityStartOfDay, periodStartOfDay) && (isEqual(activityEndOfDay, periodStartOfDay) || isAfter(activityEndOfDay, periodStartOfDay)) && (isEqual(activityEndOfDay, periodEndOfDay) || isBefore(activityEndOfDay, periodEndOfDay));
+        const startsWithinEndsAfter = (isEqual(activityStartOfDay, periodStartOfDay) || isAfter(activityStartOfDay, periodStartOfDay)) && (isEqual(activityStartOfDay, periodEndOfDay) || isBefore(activityStartOfDay, periodEndOfDay)) && isAfter(activityEndOfDay, periodEndOfDay);
+
+        return startsWithin || endsWithin || spansPeriod || startsBeforeEndsWithin || startsWithinEndsAfter;
+
+    } catch (e) {
+        console.error("Erro ao verificar sobreposição de atividade:", activity, e);
+        return false;
+    }
+};
 
 const Dashboard = () => {
   const { stats, isLoading: loadingStats, error: statsError } = useActivityStats();
@@ -69,67 +152,104 @@ const Dashboard = () => {
     fetchActivities();
   }, []);
 
-  const [activePeriod, setActivePeriod] = useState<Exclude<Period, 'all'>>('today'); // Estado para o período ativo, excluindo 'all'
+  const [activePeriod, setActivePeriod] = useState<Exclude<Period, 'all'>>('today');
 
-  const getPieData = (period: Period) => { // Permitir 'all' aqui para o gráfico total
+  const getPieData = (period: Period) => {
     if (!stats || !stats[period]) return [];
 
     const data = [
-      { name: STATUS_NAMES["completed"], value: stats[period].completed },
-      { name: STATUS_NAMES["in-progress"], value: stats[period].inProgress },
-      { name: STATUS_NAMES["pending"], value: stats[period].future },
-      { name: STATUS_NAMES["cancelled"], value: stats[period].cancelled },
-    ].filter(item => item.value > 0);
+      { name: STATUS_DISPLAY_NAMES["completed"], value: stats[period].completed },
+      { name: STATUS_DISPLAY_NAMES["in-progress"], value: stats[period].inProgress },
+      { name: "Futura", value: stats[period].future },
+      { name: STATUS_DISPLAY_NAMES["cancelled"], value: stats[period].cancelled },
+    ];
 
     if (period === 'all' && stats.all.overdue > 0) {
-       data.push({ name: "Atrasada", value: stats.all.overdue });
+       data.push({ name: STATUS_DISPLAY_NAMES["overdue"], value: stats.all.overdue });
+    } else if (period !== 'all' && stats[period].overdue > 0) {
+      data.push({ name: STATUS_DISPLAY_NAMES["overdue"], value: stats[period].overdue });
+    }
+    if (period !== 'all' && stats[period].pending > 0) {
+      data.push({ name: STATUS_DISPLAY_NAMES["pending"], value: stats[period].pending });
     }
 
-    return data;
+    return data.filter(item => item.value > 0);
   };
 
-  const getBarChartData = (activities: Activity[], period: Exclude<Period, 'all'>): BarChartDataItem[] => {
-    if (!activities || activities.length === 0) return [];
+  const getBarChartData = (allActivitiesForChart: Activity[], period: Exclude<Period, 'all'>): BarChartDataItem[] => {
+    if (!allActivitiesForChart || allActivitiesForChart.length === 0) return [];
+
+    const todayDate = new Date();
+    let currentPeriodStart: Date;
+    let currentPeriodEnd: Date;
+
+    if (period === 'today') {
+      currentPeriodStart = startOfToday();
+      currentPeriodEnd = startOfToday();
+    } else if (period === 'week') {
+      currentPeriodStart = startOfWeek(todayDate, { locale: ptBR });
+      currentPeriodEnd = endOfWeek(todayDate, { locale: ptBR });
+    } else {
+      currentPeriodStart = startOfMonth(todayDate);
+      currentPeriodEnd = endOfMonth(todayDate);
+    }
+
+    const relevantActivities = allActivitiesForChart.filter(activity =>
+      activityOverlapsPeriod(activity, currentPeriodStart, currentPeriodEnd)
+    );
+
+    if (relevantActivities.length === 0) return [];
 
     const dataMap: Record<string, BarChartDataItem> = {};
-    const sortedActivities = activities.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    const sortedRelevantActivities = relevantActivities.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
-    sortedActivities.forEach(activity => {
+    sortedRelevantActivities.forEach(activity => {
       const startDate = new Date(activity.startDate);
-      let key = ''; // Chave para agrupar (hora, dia da semana, dia do mês)
-      let label = ''; // Rótulo para o eixo X
+      let key = '';
+      let label = '';
 
       if (period === 'today') {
-        key = startDate.getHours().toString();
-        label = `${startDate.getHours()}h`;
+        if (isToday(startDate)) {
+            key = startDate.getHours().toString();
+            label = `${startDate.getHours()}h`;
+        } else {
+            key = "dia_todo";
+            label = "Hoje";
+        }
       } else if (period === 'week') {
-        // getDay() retorna 0 para domingo, 1 para segunda, etc.
         const dayOfWeek = startDate.getDay();
         const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         key = dayOfWeek.toString();
         label = days[dayOfWeek];
       } else if (period === 'month') {
-        key = startDate.getDate().toString();
-        label = startDate.getDate().toString();
+        const dayOfMonth = startDate.getDate();
+        key = dayOfMonth.toString();
+        label = dayOfMonth.toString();
       }
+
+      if (!key) return;
 
       if (!dataMap[key]) {
         dataMap[key] = { label, 'Concluída': 0, 'Em Andamento': 0, 'Futura': 0, 'Cancelada': 0, 'Atrasada': 0 };
       }
 
-      const statusName = STATUS_NAMES[activity.status] || activity.status;
-
-      // Verificar se o statusName é uma chave válida em BarChartDataItem (excluindo 'label')
+      let effectiveStatusName: string;
+      if (isActivityOverdue(activity)) {
+        effectiveStatusName = STATUS_DISPLAY_NAMES['overdue'];
+      } else if (isActivityFuture(activity) && activity.status === 'pending') {
+        effectiveStatusName = "Futura";
+      } else {
+        effectiveStatusName = STATUS_DISPLAY_NAMES[activity.status as ActivityStatus] || activity.status;
+      }
+      
       const validStatusKeys: (keyof Omit<BarChartDataItem, 'label'>)[] = ['Concluída', 'Em Andamento', 'Futura', 'Cancelada', 'Atrasada'];
-      if (validStatusKeys.includes(statusName as keyof Omit<BarChartDataItem, 'label'>)) {
-          dataMap[key][statusName as keyof Omit<BarChartDataItem, 'label'>] = (dataMap[key][statusName as keyof Omit<BarChartDataItem, 'label'>] || 0) + 1;
+      if (validStatusKeys.includes(effectiveStatusName as any)) {
+          dataMap[key][effectiveStatusName as keyof Omit<BarChartDataItem, 'label'>] = (dataMap[key][effectiveStatusName as keyof Omit<BarChartDataItem, 'label'>] || 0) + 1;
       }
     });
 
-    // Converter o objeto agrupado em um array para o Recharts
     const chartData = Object.values(dataMap);
 
-    // Ordenar os dados por chave (hora, dia da semana, dia do mês)
     if (period === 'today') {
         chartData.sort((a, b) => parseInt(a.label) - parseInt(b.label));
     } else if (period === 'week') {
@@ -142,16 +262,13 @@ const Dashboard = () => {
     return chartData;
   };
 
-
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
-      // Encontrar o item de dados correspondente no payload para obter todos os valores de status
       const dataItem = payload.reduce((acc: any, curr: any) => {
           acc[curr.dataKey] = curr.value;
           return acc;
       }, { label: payload[0].payload.label });
-
 
       return (
         <div className="bg-white p-2 border rounded shadow-md text-sm">
@@ -165,6 +282,17 @@ const Dashboard = () => {
     return null;
   };
 
+  const CustomTooltipPie = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      return (
+        <div className="bg-white p-2 border rounded shadow-md text-sm">
+          <p className="font-medium">{`${data.name}: ${data.value}`}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -184,7 +312,7 @@ const Dashboard = () => {
         </Alert>
       )}
 
-      <Tabs defaultValue="today" className="mb-8" onValueChange={(value) => setActivePeriod(value as Exclude<Period, 'all'>)}> {/* Adicionar onValueChange */}
+      <Tabs defaultValue="today" className="mb-8" onValueChange={(value) => setActivePeriod(value as Exclude<Period, 'all'>)}>
         <TabsList>
           <TabsTrigger value="today">Hoje</TabsTrigger>
           <TabsTrigger value="week">Esta Semana</TabsTrigger>
@@ -300,7 +428,6 @@ const Dashboard = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Novo Card para o Gráfico de Barras */}
       <Card className="mt-6 mb-6">
         <CardHeader>
           <CardTitle>Atividades ao Longo do Tempo ({activePeriod === 'today' ? 'Hoje' : activePeriod === 'week' ? 'Esta Semana' : 'Este Mês'})</CardTitle>
@@ -339,9 +466,8 @@ const Dashboard = () => {
       <div className="grid gap-6 md:grid-cols-2 mb-6">
         <Card>
           <CardHeader>
-            {/* Título do gráfico agora reflete o período ativo */}
             <CardTitle>Atividades por Status ({activePeriod === 'today' ? 'Hoje' : activePeriod === 'week' ? 'Esta Semana' : 'Este Mês'})</CardTitle>
-            <CardDescription>Distribuição de atividades por status no período selecionado</CardDescription> {/* Descrição ajustada */}
+            <CardDescription>Distribuição de atividades por status no período selecionado</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -350,28 +476,29 @@ const Dashboard = () => {
                    <Loader2 className="h-8 w-8 animate-spin mr-2" />
                    <p>Carregando gráfico...</p>
                 </div>
-              ) : getPieData(activePeriod).length === 0 ? ( // Usar activePeriod aqui
+              ) : getPieData(activePeriod).length === 0 ? (
                  <div className="flex flex-col items-center justify-center h-full text-center">
                    <AlertCircle className="h-12 w-12 text-muted-foreground mb-2" />
-                   <p className="text-muted-foreground">Sem dados de atividades para exibir o gráfico neste período.</p> {/* Mensagem ajustada */}
+                   <p className="text-muted-foreground">Sem dados de atividades para exibir o gráfico neste período.</p>
                  </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={getPieData(activePeriod)} // Usar activePeriod aqui
+                      data={getPieData(activePeriod)}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
+                      nameKey="name"
                     >
-                      {getPieData(activePeriod).map((entry, index) => ( // Usar activePeriod aqui
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      {getPieData(activePeriod).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS] || COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltipPie />} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -403,7 +530,8 @@ const Dashboard = () => {
                     <ActivityItem
                       client={item.client?.name || (item.client as any)?.companyName || "Cliente não encontrado"}
                       description={item.activity.title}
-                      status={STATUS_NAMES[item.activity.status] || item.activity.status}
+                      status={STATUS_DISPLAY_NAMES[item.activity.status as ActivityStatus] || item.activity.status}
+                      isOverdue={isActivityOverdue(item.activity)}
                     />
                   </Link>
                 ))}
@@ -440,9 +568,10 @@ const Dashboard = () => {
                      <ActivityItemWithDate
                        client={item.client?.name || (item.client as any)?.companyName || "Cliente não encontrado"}
                        description={item.activity.title}
-                       status={STATUS_NAMES[item.activity.status] || item.activity.status}
+                       status={STATUS_DISPLAY_NAMES[item.activity.status as ActivityStatus] || item.activity.status}
                        date={item.activity.startDate}
                        dateLabel="Início:"
+                       isOverdue={isActivityOverdue(item.activity)}
                      />
                    </Link>
                 ))}
@@ -477,9 +606,10 @@ const Dashboard = () => {
                      <ActivityItemWithDate
                        client={item.client?.name || (item.client as any)?.companyName || "Cliente não encontrado"}
                        description={item.activity.title}
-                       status={STATUS_NAMES[item.activity.status] || item.activity.status}
+                       status={STATUS_DISPLAY_NAMES[item.activity.status as ActivityStatus] || item.activity.status}
                        date={item.activity.endDate || item.activity.startDate}
                        dateLabel="Prazo:"
+                       isOverdue={true}
                      />
                    </Link>
                 ))}
@@ -508,17 +638,20 @@ const StatsCard = ({ title, value, icon }: { title: string; value: number | stri
   );
 };
 
-const ActivityItem = ({ client, description, status }: { client: string; description: string; status: string }) => {
-  const getStatusColor = (status: string) => {
+const ActivityItem = ({ client, description, status, isOverdue }: { client: string; description: string; status: string; isOverdue?: boolean }) => {
+  const getStatusColor = (status: string, overdue?: boolean) => {
+    if (overdue) return "text-orange-600 bg-orange-100";
     switch (status) {
-      case "Concluída": return "text-green-600 bg-green-100";
-      case "Em Andamento": return "text-blue-600 bg-blue-100";
+      case STATUS_DISPLAY_NAMES["completed"]: return "text-green-600 bg-green-100";
+      case STATUS_DISPLAY_NAMES["in-progress"]: return "text-blue-600 bg-blue-100";
       case "Futura": return "text-yellow-600 bg-yellow-100";
-      case "Cancelada": return "text-red-600 bg-red-100";
-      case "Atrasada": return "text-orange-600 bg-orange-100";
+      case STATUS_DISPLAY_NAMES["pending"]: return "text-purple-600 bg-purple-100";
+      case STATUS_DISPLAY_NAMES["cancelled"]: return "text-red-600 bg-red-100";
       default: return "text-gray-600 bg-gray-100";
     }
   };
+
+  const displayStatus = isOverdue ? STATUS_DISPLAY_NAMES['overdue'] : status;
 
   return (
     <div className="flex justify-between items-center p-3 border rounded-md hover:bg-muted/50 transition-colors cursor-pointer">
@@ -526,24 +659,27 @@ const ActivityItem = ({ client, description, status }: { client: string; descrip
         <h4 className="font-medium">{client}</h4>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
-      <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getStatusColor(status)}`}>
-        {status}
+      <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getStatusColor(status, isOverdue)}`}>
+        {displayStatus}
       </span>
     </div>
   );
 };
 
-const ActivityItemWithDate = ({ client, description, status, date, dateLabel }: { client: string; description: string; status: string; date?: string; dateLabel: string }) => {
-  const getStatusColor = (status: string) => {
+const ActivityItemWithDate = ({ client, description, status, date, dateLabel, isOverdue }: { client: string; description: string; status: string; date?: string; dateLabel: string; isOverdue?: boolean }) => {
+  const getStatusColor = (status: string, overdue?: boolean) => {
+    if (overdue) return "text-orange-600 bg-orange-100";
     switch (status) {
-      case "Concluída": return "text-green-600 bg-green-100";
-      case "Em Andamento": return "text-blue-600 bg-blue-100";
+      case STATUS_DISPLAY_NAMES["completed"]: return "text-green-600 bg-green-100";
+      case STATUS_DISPLAY_NAMES["in-progress"]: return "text-blue-600 bg-blue-100";
       case "Futura": return "text-yellow-600 bg-yellow-100";
-      case "Cancelada": return "text-red-600 bg-red-100";
-      case "Atrasada": return "text-orange-600 bg-orange-100";
+      case STATUS_DISPLAY_NAMES["pending"]: return "text-purple-600 bg-purple-100";
+      case STATUS_DISPLAY_NAMES["cancelled"]: return "text-red-600 bg-red-100";
       default: return "text-gray-600 bg-gray-100";
     }
   };
+
+  const displayStatus = isOverdue ? STATUS_DISPLAY_NAMES['overdue'] : status;
 
   const formattedDate = date ? format(new Date(date), 'dd/MM/yyyy') : 'N/D';
 
@@ -554,12 +690,11 @@ const ActivityItemWithDate = ({ client, description, status, date, dateLabel }: 
         <p className="text-sm text-muted-foreground truncate">{description}</p>
         <p className="text-xs text-muted-foreground mt-1"><span className="font-medium">{dateLabel}</span> {formattedDate}</p>
       </div>
-      <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getStatusColor(status)}`}>
-        {status}
+      <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getStatusColor(status, isOverdue)}`}>
+        {displayStatus}
       </span>
     </div>
   );
 };
-
 
 export default Dashboard;
