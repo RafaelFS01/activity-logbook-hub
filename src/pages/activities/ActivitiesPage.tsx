@@ -39,7 +39,7 @@ import {
 import { getClients, Client } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
-import { exportActivitiesToExcel } from "@/utils/exportUtils";
+import { exportActivitiesToExcelStyled } from "@/utils/exportUtils";
 import { Combobox } from "@/components/ui/combobox"; // Assumindo que Combobox está em ui
 import html2pdf from 'html2pdf.js';
 import GeneralActivitiesPdfTemplate from '@/components/reports/GeneralActivitiesPdfTemplate';
@@ -490,18 +490,12 @@ const ActivitiesPage = () => {
     if (filteredActivities.length === 0) { /* ... erro sem dados ... */ return; }
     try {
       const activitiesToExport = filteredActivities.map(activity => ({
-// ... (propriedades originais + formatadas)
         ...activity,
         clientName: getClientName(activity.clientId),
-        assigneeNames: getAssigneeNames(activity.assignedTo),
-        startDateFormatted: activity.startDate ? format(new Date(activity.startDate), 'dd/MM/yyyy HH:mm') : '', // Incluir hora se relevante
-        endDateFormatted: activity.endDate ? format(new Date(activity.endDate), 'dd/MM/yyyy HH:mm') : '',
-        statusText: { pending: 'Futura', 'in-progress': 'Em Progresso', completed: 'Concluída', cancelled: 'Cancelada' }[activity.status] || activity.status,
-        priorityText: { low: 'Baixa', medium: 'Média', high: 'Alta' }[activity.priority] || activity.priority || 'N/D',
       }));
       const assigneeMap: Record<string, string> = {};
       if (collaborators) { Object.entries(collaborators).forEach(([id, collab]) => { assigneeMap[id] = collab.name || `Usuário ${id.substring(0,6)}`; }); }
-      exportActivitiesToExcel(activitiesToExport, 'atividades_exportadas.xlsx', assigneeMap);
+      exportActivitiesToExcelStyled(activitiesToExport, 'atividades_exportadas.xlsx', assigneeMap);
       toast({ title: "Exportação Iniciada", description: `${filteredActivities.length} atividades estão sendo exportadas.` });
     } catch (error) { /* ... tratamento erro exportação ... */
       console.error('Erro ao exportar atividades:', error);
