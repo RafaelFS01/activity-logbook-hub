@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  format, addDays, subDays, startOfDay, isSameDay, isWithinInterval, parseISO, startOfMonth, addMonths, subMonths,
+  format, addDays, subDays, startOfDay, isSameDay, isWithinInterval, parseISO, startOfMonth, endOfMonth, addMonths, subMonths,
   startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks
 } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { DayContentProps } from 'react-day-picker';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Filter, UserRound, Building } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Filter, UserRound, Building, FileText } from 'lucide-react';
 import { ref, get } from "firebase/database"; // Firebase Realtime DB functions
 
 import { getActivities, Activity, ActivityStatus } from '@/services/firebase/activities';
@@ -33,13 +33,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
+// Importações para PDF
+import html2pdf from 'html2pdf.js';
+import AgendaPdfTemplate from '@/components/reports/AgendaPdfTemplate';
+import '@/components/reports/PdfReportTemplate.css';
 // Optional: Import useToast if you want to add error notifications
-// import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 const Home = () => {
   const { user } = useAuth(); // { uid, name, role, email } | null
   const navigate = useNavigate();
-  // const { toast } = useToast(); // Uncomment if using toasts
+  const { toast } = useToast();
 
   // --- States ---
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -53,6 +57,9 @@ const Home = () => {
   const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
   // State to store all user data (including roles) fetched initially
   const [allUsersData, setAllUsersData] = useState<Record<string, UserData & { uid: string }>>({});
+  // Estados para PDF
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const pdfReportRef = useRef<HTMLDivElement>(null);
 
   const statusOptions: { label: string; value: ActivityStatus }[] = [
     { label: 'Pendente', value: 'pending' },
@@ -365,6 +372,118 @@ const Home = () => {
     setSelectedCollaborator(null);
   };
 
+  // Função para obter atividades específicas do período selecionado
+  const getActivitiesForSelectedPeriod = useCallback(() => {
+    switch (viewMode) {
+      case 'day':
+        // Para o modo diário, usar as atividades já calculadas para o dia selecionado
+        return activitiesForSelectedDate;
+      
+      case 'week':
+        // Para o modo semanal, usar as atividades já calculadas para a semana atual
+        return activitiesForCurrentWeekView;
+      
+      case 'month':
+        // Para o modo mensal, filtrar atividades que estão no mês selecionado
+        const monthStart = startOfMonth(selectedDate);
+        const monthEnd = endOfMonth(selectedDate);
+        
+        return baseFilteredActivities.filter(activity => {
+          try {
+            if (!activity.startDate) return false;
+            const activityStart = startOfDay(parseISO(activity.startDate));
+            if (isNaN(activityStart.getTime())) return false;
+
+            // Use activityStart if endDate is missing or invalid
+            let activityEnd = activityStart;
+            if (activity.endDate) {
+              try {
+                const parsedEnd = startOfDay(parseISO(activity.endDate));
+                if (!isNaN(parsedEnd.getTime()) && parsedEnd >= activityStart) {
+                  activityEnd = parsedEnd;
+                }
+              } catch { /* ignore invalid end date, use start date */ }
+            }
+
+            // Check if activity overlaps with the selected month
+            return activityStart <= monthEnd && activityEnd >= monthStart;
+          } catch (e) {
+            console.warn("Error parsing date in month filter:", activity.id, e);
+            return false;
+          }
+        });
+      
+      default:
+        return baseFilteredActivities;
+    }
+  }, [viewMode, activitiesForSelectedDate, activitiesForCurrentWeekView, baseFilteredActivities, selectedDate]);
+
+  // Função para exportar agenda para PDF
+  const handleExportPdf = async () => {
+    const activitiesForPeriod = getActivitiesForSelectedPeriod();
+    
+    if (!pdfReportRef.current || activitiesForPeriod.length === 0) {
+      const periodText = viewMode === 'day' ? 'dia' : viewMode === 'week' ? 'semana' : 'mês';
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: `Não há atividades para gerar o PDF da agenda para este ${periodText}.`
+      });
+      return;
+    }
+
+    setIsGeneratingPdf(true);
+    
+    try {
+      const emissionDate = new Date().toLocaleDateString('pt-BR');
+      const viewModeText = viewMode === 'day' ? 'Diario' : viewMode === 'week' ? 'Semanal' : 'Mensal';
+      const dateText = format(selectedDate, 'dd-MM-yyyy');
+      const fileName = `Agenda_${viewModeText}_${dateText}.pdf`;
+
+      const options = {
+        margin: [10, 0, 5, 5],
+        filename: fileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          scrollX: 0,
+          scrollY: 0,
+          allowTaint: true,
+          backgroundColor: '#ffffff'
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait',
+          compress: true
+        },
+        pagebreak: { 
+          mode: ['css', 'legacy'],
+          avoid: ['.pdf-activity-title']
+        }
+      };
+
+      await html2pdf().from(pdfReportRef.current).set(options).save();
+
+      toast({
+        title: "PDF da Agenda Gerado",
+        description: `O arquivo ${fileName} foi baixado com sucesso.`
+      });
+
+    } catch (error) {
+      console.error("Erro ao gerar PDF da agenda:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar PDF",
+        description: "Ocorreu um problema ao gerar o arquivo PDF da agenda."
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   // Handler for internal calendar navigation (month view)
   const handleInternalMonthChange = (newMonth: Date) => {
     setDisplayMonth(startOfMonth(newMonth)); // Ensure it's always the start of the month
@@ -486,11 +605,26 @@ const Home = () => {
   return (
       <div className="flex flex-col gap-6 p-4 md:p-6">
         {/* Page Header */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Agenda de Atividades</h1>
-          <p className="text-muted-foreground">
-            Visualize e gerencie as atividades por dia, semana ou mês.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">Agenda de Atividades</h1>
+            <p className="text-muted-foreground">
+              Visualize e gerencie as atividades por dia, semana ou mês.
+            </p>
+          </div>
+          
+          {/* Botão de Exportação PDF */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleExportPdf}
+              disabled={loading || getActivitiesForSelectedPeriod().length === 0 || isGeneratingPdf}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              {isGeneratingPdf ? 'Gerando PDF...' : `Exportar PDF (${getActivitiesForSelectedPeriod().length})`}
+            </Button>
+          </div>
         </div>
 
         {/* Controls Bar */}
@@ -934,6 +1068,25 @@ const Home = () => {
                 )}
               </div>
           ) : null} {/* End of viewMode conditional rendering */}
+        </div>
+
+        {/* Template PDF oculto */}
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div ref={pdfReportRef}>
+            <AgendaPdfTemplate
+              activities={getActivitiesForSelectedPeriod()}
+              clients={clients}
+              allUsersData={allUsersData}
+              selectedDate={selectedDate}
+              viewMode={viewMode}
+              emissionDate={new Date().toLocaleDateString('pt-BR')}
+              filterInfo={{
+                statusFilter,
+                selectedClient,
+                selectedCollaborator,
+              }}
+            />
+          </div>
         </div>
       </div>
   );

@@ -164,6 +164,25 @@
     page-break-inside: avoid;
 }
 
+/* --- Estilos específicos para o relatório geral --- */
+.pdf-summary {
+    margin-bottom: 8mm;
+    font-size: 9.5pt;
+    line-height: 1.4;
+}
+
+.pdf-summary p {
+    margin: 2mm 0;
+}
+
+.pdf-filters {
+    font-style: italic;
+    color: #555;
+    margin-top: 3mm !important;
+    padding-top: 2mm;
+    border-top: 1px solid #eee;
+}
+
 /* --- (Opcional) Rodapé --- */
 /*
 .pdf-footer {
