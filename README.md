@@ -1,69 +1,285 @@
-# Welcome to your Lovable project
+# Activity Logbook Hub
 
-## Project info
+## 📋 Visão Geral
 
-**URL**: https://lovable.dev/projects/a6b8f4a6-f45d-4afc-b274-870d6d1015b5
+O **Activity Logbook Hub** é um sistema web completo desenvolvido para auxiliar no registro, acompanhamento e gerenciamento de atividades, clientes e colaboradores. Ele oferece uma interface centralizada e intuitiva para visualizar agendas, cadastrar novas atividades e gerenciar informações de clientes e da equipe.
 
-## How can I edit this code?
+### ✨ Características Principais
 
-There are several ways of editing your application.
+- 🏢 **Gestão Completa**: Controle de atividades, clientes e colaboradores em uma única plataforma
+- 📅 **Agenda Dinâmica**: Visualização de atividades em formato de calendário (dia, semana, mês)
+- 📊 **Dashboard Analítico**: Estatísticas e gráficos em tempo real sobre as atividades
+- 👥 **Sistema de Permissões**: Controle de acesso baseado em roles (Admin, Manager, Collaborator)
+- 📄 **Exportação de Dados**: Relatórios em Excel e PDF
+- 🎨 **Múltiplos Temas**: Interface personalizável com 4 temas diferentes
+- 🔄 **Sincronização em Tempo Real**: Dados atualizados instantaneamente via Firebase
 
-**Use Lovable**
+## 🚀 Tecnologias Utilizadas
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a6b8f4a6-f45d-4afc-b274-870d6d1015b5) and start prompting.
+### Frontend
+- **React 18** - Biblioteca para construção da interface
+- **TypeScript** - Linguagem de programação tipada
+- **Vite** - Build tool moderna e rápida
+- **Tailwind CSS** - Framework CSS utilitário
+- **Shadcn/ui** - Componentes UI baseados em Radix UI
+- **React Router DOM** - Roteamento da aplicação
+- **React Hook Form + Zod** - Validação de formulários
+- **Recharts** - Biblioteca de gráficos
+- **date-fns** - Manipulação de datas
 
-Changes made via Lovable will be committed automatically to this repo.
+### Backend & Banco de Dados
+- **Firebase Authentication** - Autenticação de usuários
+- **Firebase Realtime Database** - Banco de dados em tempo real
+- **Firebase Hosting** - Hospedagem da aplicação
 
-**Use your preferred IDE**
+### Bibliotecas Auxiliares
+- **xlsx** - Exportação para Excel
+- **html2pdf.js** - Geração de PDFs
+- **lucide-react** - Ícones
+- **uuid** - Geração de IDs únicos
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🏗️ Estrutura do Projeto
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+activity-logbook-hub/
+├── src/
+│   ├── components/          # Componentes reutilizáveis
+│   │   ├── auth/           # Componentes de autenticação
+│   │   ├── layout/         # Componentes de layout
+│   │   ├── reports/        # Templates de relatórios
+│   │   └── ui/             # Componentes UI (Shadcn)
+│   ├── contexts/           # Contextos React (Auth, Theme)
+│   ├── hooks/              # Hooks customizados
+│   ├── lib/                # Utilitários e configurações
+│   ├── pages/              # Páginas da aplicação
+│   │   ├── activities/     # Gestão de atividades
+│   │   ├── clients/        # Gestão de clientes
+│   │   └── collaborators/  # Gestão de colaboradores
+│   ├── services/           # Serviços (Firebase, Gemini)
+│   └── utils/              # Funções utilitárias
+├── docs/                   # Documentação do projeto
+├── public/                 # Arquivos estáticos
+└── dist/                   # Build de produção
 ```
 
-**Edit a file directly in GitHub**
+## 🔐 Sistema de Autenticação e Permissões
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Roles de Usuário
+- **Admin**: Acesso completo ao sistema
+- **Manager**: Gerenciamento de atividades e visualização de relatórios
+- **Collaborator**: Acesso limitado às próprias atividades
 
-**Use GitHub Codespaces**
+### Funcionalidades por Role
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Funcionalidade | Admin | Manager | Collaborator |
+|----------------|-------|---------|--------------|
+| Dashboard Completo | ✅ | ✅ | ❌ |
+| Gestão de Atividades | ✅ | ✅ | ✅* |
+| Gestão de Clientes | ✅ | ✅ | ✅ |
+| Gestão de Colaboradores | ✅ | ✅ | ❌ |
+| Relatórios e Exportação | ✅ | ✅ | ❌ |
 
-## What technologies are used for this project?
+*Colaboradores podem ver apenas atividades atribuídas a eles
 
-This project is built with .
+## 📊 Banco de Dados (Firebase Realtime Database)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Estrutura Principal
 
-## How can I deploy this project?
+```json
+{
+  "users": {
+    "[UID]": {
+      "name": "string",
+      "email": "string",
+      "role": "admin|manager|collaborator",
+      "active": "boolean",
+      "cpf": "string",
+      "phone": "string",
+      "birthDate": "string",
+      "admissionDate": "string",
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  },
+  "clients": {
+    "[ID]": {
+      "name": "string",
+      "type": "fisica|juridica",
+      "email": "string",
+      "phone": "string",
+      "address": "string",
+      "active": "boolean",
+      "cpf": "string", // Para PF
+      "cnpj": "string", // Para PJ
+      "companyName": "string", // Para PJ
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  },
+  "activities": {
+    "[ID]": {
+      "title": "string",
+      "description": "string",
+      "clientId": "string",
+      "assignedTo": "string[]",
+      "status": "pending|in-progress|completed|cancelled",
+      "priority": "low|medium|high",
+      "startDate": "string",
+      "endDate": "string",
+      "completedDate": "string",
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  }
+}
+```
 
-Simply open [Lovable](https://lovable.dev/projects/a6b8f4a6-f45d-4afc-b274-870d6d1015b5) and click on Share -> Publish.
+## 🛠️ Instalação e Configuração
 
-## I want to use a custom domain - is that possible?
+### Pré-requisitos
+- Node.js 18+ ou Bun
+- Conta no Firebase
+- Git
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+### 1. Clone o Repositório
+```bash
+git clone https://github.com/seu-usuario/activity-logbook-hub.git
+cd activity-logbook-hub
+```
+
+### 2. Instale as Dependências
+```bash
+# Com npm
+npm install
+
+# Com bun (recomendado)
+bun install
+```
+
+### 3. Configure o Firebase
+1. Crie um projeto no [Firebase Console](https://console.firebase.google.com)
+2. Ative Authentication (Email/Password) e Realtime Database
+3. Crie o arquivo `src/lib/firebase.ts` com suas credenciais:
+
+```typescript
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
+
+const firebaseConfig = {
+  apiKey: "sua-api-key",
+  authDomain: "seu-projeto.firebaseapp.com",
+  databaseURL: "https://seu-projeto-default-rtdb.firebaseio.com/",
+  projectId: "seu-projeto",
+  storageBucket: "seu-projeto.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "sua-app-id"
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getDatabase(app);
+```
+
+### 4. Execute o Projeto
+```bash
+# Desenvolvimento
+npm run dev
+# ou
+bun run dev
+
+# Build para produção
+npm run build
+# ou
+bun run build
+```
+
+## 🎯 Como Usar
+
+### 1. Primeiro Acesso
+- Acesse `/admin-setup` para criar o primeiro usuário administrador
+- Faça login com as credenciais criadas
+
+### 2. Navegação Principal
+- **Dashboard**: Visão geral com estatísticas e gráficos
+- **Agenda**: Visualização de atividades em calendário
+- **Atividades**: Gestão completa de atividades
+- **Clientes**: Cadastro e gestão de clientes
+- **Colaboradores**: Gestão de usuários do sistema (Admin/Manager)
+
+### 3. Funcionalidades Principais
+
+#### Gestão de Atividades
+- Criar, editar e excluir atividades
+- Atribuir responsáveis e definir prioridades
+- Acompanhar status e prazos
+- Filtrar por período, status, cliente ou responsável
+
+#### Gestão de Clientes
+- Cadastro de Pessoa Física ou Jurídica
+- Histórico de atividades por cliente
+- Exportação de dados
+
+#### Dashboard e Relatórios
+- Gráficos de status e prioridades
+- Atividades recentes e em atraso
+- Exportação para Excel e PDF
+
+## 📱 Temas Disponíveis
+
+O sistema oferece 4 temas personalizáveis:
+- **Light**: Tema claro padrão
+- **Dark**: Tema escuro
+- **H12**: Tema corporativo azul
+- **H12 Alt**: Variação do tema corporativo
+
+## 🔧 Scripts Disponíveis
+
+```json
+{
+  "dev": "vite",                    // Servidor de desenvolvimento
+  "build": "vite build",            // Build de produção
+  "build:dev": "vite build --mode development", // Build de desenvolvimento
+  "lint": "eslint .",               // Verificação de código
+  "preview": "vite preview"         // Preview do build
+}
+```
+
+## 📄 Exportação de Dados
+
+### Formatos Suportados
+- **Excel (.xlsx)**: Listas de atividades, clientes e colaboradores
+- **PDF**: Relatórios de agenda e atividades
+
+### Funcionalidades de Exportação
+- Formatação automática com cores e estilos
+- Filtros e ordenação preservados
+- Cabeçalhos e títulos personalizados
+- Larguras de coluna otimizadas
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 👨‍💻 Autor
+
+**Rafael Figueiredo de Souza**
+
+## 🆘 Suporte
+
+Para suporte e dúvidas:
+1. Consulte a documentação em `/docs`
+2. Abra uma issue no GitHub
+3. Entre em contato com o administrador do sistema
+
+---
+
+**Activity Logbook Hub** - Centralize, organize e controle suas atividades de forma eficiente! 🚀
