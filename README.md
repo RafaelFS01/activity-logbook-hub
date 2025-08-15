@@ -139,6 +139,7 @@ activity-logbook-hub/
 ### Pré-requisitos
 - Node.js 18+ ou Bun
 - Conta no Firebase
+- Firebase CLI (para desenvolvimento e deploy)
 - Git
 
 ### 1. Clone o Repositório
@@ -147,7 +148,19 @@ git clone https://github.com/seu-usuario/activity-logbook-hub.git
 cd activity-logbook-hub
 ```
 
-### 2. Instale as Dependências
+### 2. Instale o Firebase CLI
+```bash
+# Instalar Firebase CLI globalmente
+npm install -g firebase-tools
+
+# Fazer login no Firebase
+firebase login
+
+# Verificar se está logado
+firebase projects:list
+```
+
+### 3. Instale as Dependências
 ```bash
 # Com npm
 npm install
@@ -156,7 +169,7 @@ npm install
 bun install
 ```
 
-### 3. Configure o Firebase
+### 4. Configure o Firebase
 1. Crie um projeto no [Firebase Console](https://console.firebase.google.com)
 2. Ative Authentication (Email/Password) e Realtime Database
 3. Crie o arquivo `src/lib/firebase.ts` com suas credenciais:
@@ -181,7 +194,34 @@ export const auth = getAuth(app);
 export const db = getDatabase(app);
 ```
 
-### 4. Execute o Projeto
+### 3. Configure o .env (2° Alternativa para o Firebase)
+1. Crie o arquivo `.env.local` com suas credenciais:
+
+```
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_DATABASE_URL=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_GEMINI_API_KEY=
+```
+
+### 5. Inicialize o Firebase no Projeto (Opcional)
+```bash
+# Inicializar Firebase no projeto (se necessário)
+firebase init
+
+# Selecionar:
+# - Hosting: Configure files for Firebase Hosting
+# - Realtime Database: Configure a security rules file
+
+# Conectar ao projeto Firebase
+firebase use --add
+```
+
+### 6. Execute o Projeto
 ```bash
 # Desenvolvimento
 npm run dev
@@ -192,6 +232,9 @@ bun run dev
 npm run build
 # ou
 bun run build
+
+# Deploy para Firebase Hosting (opcional)
+firebase deploy
 ```
 
 ## 🎯 Como Usar
@@ -235,6 +278,7 @@ O sistema oferece 4 temas personalizáveis:
 
 ## 🔧 Scripts Disponíveis
 
+### Scripts do Projeto
 ```json
 {
   "dev": "vite",                    // Servidor de desenvolvimento
@@ -243,6 +287,24 @@ O sistema oferece 4 temas personalizáveis:
   "lint": "eslint .",               // Verificação de código
   "preview": "vite preview"         // Preview do build
 }
+```
+
+### Comandos Firebase CLI
+```bash
+# Deploy completo
+firebase deploy
+
+# Deploy apenas hosting
+firebase deploy --only hosting
+
+# Deploy apenas database rules
+firebase deploy --only database
+
+# Servir localmente
+firebase serve
+
+# Ver logs do projeto
+firebase functions:log
 ```
 
 ## 📄 Exportação de Dados
