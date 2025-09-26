@@ -281,9 +281,27 @@ const ActivitiesPage = () => {
 
     // Filtro por Colaborador Selecionado (Apenas para Admin/Manager)
     if (selectedCollaboratorId && user && (user.role === 'admin' || user.role === 'manager')) {
-      filtered = filtered.filter(activity =>
-          Array.isArray(activity.assignedTo) && activity.assignedTo.includes(selectedCollaboratorId)
-      );
+      console.log('Filtrando por colaborador:', selectedCollaboratorId);
+      console.log('Colaborador selecionado:', collaborators[selectedCollaboratorId]);
+      
+      filtered = filtered.filter(activity => {
+        // Verifica se assignedTo existe e é um array
+        if (!activity.assignedTo || !Array.isArray(activity.assignedTo)) {
+          return false;
+        }
+        // Busca por UID do colaborador selecionado
+        const hasCollaborator = activity.assignedTo.some(assigneeId => 
+          String(assigneeId) === String(selectedCollaboratorId)
+        );
+        
+        if (hasCollaborator) {
+          console.log('Atividade encontrada:', activity.title, 'com responsáveis:', activity.assignedTo);
+        }
+        
+        return hasCollaborator;
+      });
+      
+      console.log('Atividades após filtro por colaborador:', filtered.length);
     }
 
     // Filtro por Tipo de Atividade Selecionado
@@ -526,13 +544,13 @@ const ActivitiesPage = () => {
         {/* Seção de Filtros */}
         <div className="flex flex-col gap-4 mb-6 p-4 border rounded-lg bg-card shadow-sm">
           {/* Linha 1: Busca, Colaborador, Tipo, Data */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-8 gap-6 items-end">
             {/* Input de Busca */}
-            <div className="relative w-full">
+            <div className="relative w-full md:col-span-3">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                   type="search"
-                  placeholder="Buscar título, cliente, responsável..."
+                  placeholder="Buscar atividades..."
                   className="pl-8 w-full"
                   value={inputValue} // Controla o valor visual
                   onChange={(e) => setInputValue(e.target.value)} // Atualiza o estado imediato
@@ -541,96 +559,101 @@ const ActivitiesPage = () => {
             </div>
             {/* Combobox Colaborador (Condicional) */}
             {(user?.role === 'admin' || user?.role === 'manager') && (
-                <Combobox
-                    id="collaborator-filter"
-                    options={collaboratorOptions}
-                    selectedValue={selectedCollaboratorId}
-                    onSelect={(value) => setSelectedCollaboratorId(value as string | null)}
-                    placeholder="Filtrar por colaborador"
-                    searchPlaceholder="Buscar colaborador..."
-                    noResultsText="Nenhum colaborador encontrado."
-                    triggerClassName="w-full"
-                    contentClassName="w-[var(--radix-popover-trigger-width)]" // Garante que o popover tenha a mesma largura
-                    allowClear={true}
-                    onClear={() => setSelectedCollaboratorId(null)}
-                    disabled={isLoading || collaboratorOptions.length === 0}
-                />
+                <div className="md:col-span-2">
+                    <Combobox
+                        id="collaborator-filter"
+                        options={collaboratorOptions}
+                        selectedValue={selectedCollaboratorId}
+                        onSelect={(value) => setSelectedCollaboratorId(value as string | null)}
+                        placeholder="Colaborador"
+                        searchPlaceholder="Buscar colaborador..."
+                        noResultsText="Nenhum colaborador encontrado."
+                        triggerClassName="w-full"
+                        contentClassName="w-[var(--radix-popover-trigger-width)]" // Garante que o popover tenha a mesma largura
+                        allowClear={true}
+                        onClear={() => setSelectedCollaboratorId(null)}
+                        disabled={isLoading || collaboratorOptions.length === 0}
+                    />
+                </div>
             )}
             {/* Combobox Tipo de Atividade */}
-            <Combobox
-                id="activity-type-filter"
-                options={activityTypeOptions}
-                selectedValue={selectedActivityType}
-                onSelect={(value) => setSelectedActivityType(value as string | null)}
-                placeholder="Filtrar por tipo"
-                searchPlaceholder="Buscar tipo..."
-                noResultsText="Nenhum tipo encontrado."
-                triggerClassName="w-full"
-                contentClassName="w-[var(--radix-popover-trigger-width)]"
-                allowClear={true}
-                onClear={() => setSelectedActivityType(null)}
-                disabled={isLoading || activityTypeOptions.length === 0}
-            />
+            <div className="md:col-span-2">
+                <Combobox
+                    id="activity-type-filter"
+                    options={activityTypeOptions}
+                    selectedValue={selectedActivityType}
+                    onSelect={(value) => setSelectedActivityType(value as string | null)}
+                    placeholder="Tipo"
+                    searchPlaceholder="Buscar tipo..."
+                    noResultsText="Nenhum tipo encontrado."
+                    triggerClassName="w-full"
+                    contentClassName="w-[var(--radix-popover-trigger-width)]"
+                    allowClear={true}
+                    onClear={() => setSelectedActivityType(null)}
+                    disabled={isLoading || activityTypeOptions.length === 0}
+                />
+            </div>
             {/* Botão Filtro de Data (Popover) */}
-            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-center sm:w-auto flex gap-2 items-center" disabled={isLoading}>
-                  <Filter className="h-4 w-4" />
-                  <span>Filtrar Data</span>
-                  {/* Indicador visual se filtro de data está ativo */}
-                  {(startPeriod || endPeriod) && <span className="ml-1 h-2 w-2 rounded-full bg-primary" />}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-4" align="end">
-                <div className="space-y-4">
-                  <h3 className="font-medium text-center text-sm">Filtrar por Período</h3>
-                  {/* Seleção de Data (Início ou Fim) */}
-                  <div>
-                    <Label className="mb-2 block text-xs font-medium text-center text-muted-foreground">Aplicar filtro sobre:</Label>
-                    <RadioGroup
-                        value={dateType}
-                        onValueChange={(value) => setDateType(value as "startDate" | "endDate")}
-                        className="flex justify-center gap-4"
-                    >
-                      <div className="flex items-center space-x-2"><RadioGroupItem value="startDate" id="period-start-date" /><Label htmlFor="period-start-date" className="font-normal cursor-pointer text-sm">Data Início</Label></div>
-                      <div className="flex items-center space-x-2"><RadioGroupItem value="endDate" id="period-end-date" /><Label htmlFor="period-end-date" className="font-normal cursor-pointer text-sm">Data Fim</Label></div>
-                    </RadioGroup>
+            <div className="flex justify-start w-10 md:col-span-1">
+              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-10 h-10 p-0 justify-center items-center" disabled={isLoading} title="Filtrar por período">
+                    <Filter className="h-4 w-4" />
+                    {/* Indicador visual se filtro de data está ativo */}
+                    {(startPeriod || endPeriod) && <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary" />}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4" align="end">
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-center text-sm">Filtrar por Período</h3>
+                    {/* Seleção de Data (Início ou Fim) */}
+                    <div>
+                      <Label className="mb-2 block text-xs font-medium text-center text-muted-foreground">Aplicar filtro sobre:</Label>
+                      <RadioGroup
+                          value={dateType}
+                          onValueChange={(value) => setDateType(value as "startDate" | "endDate")}
+                          className="flex justify-center gap-4"
+                      >
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="startDate" id="period-start-date" /><Label htmlFor="period-start-date" className="font-normal cursor-pointer text-sm">Data Início</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="endDate" id="period-end-date" /><Label htmlFor="period-end-date" className="font-normal cursor-pointer text-sm">Data Fim</Label></div>
+                      </RadioGroup>
+                    </div>
+                    <hr className="my-3"/>
+                    {/* Seleção Data Inicial */}
+                    <div>
+                      <Label htmlFor="start-date-picker-btn" className="mb-1 block text-sm">De:</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button id="start-date-picker-btn" variant="outline" className={cn("w-full justify-start text-left font-normal", !startPeriod && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {startPeriod ? format(startPeriod, "dd/MM/yyyy") : <span>Selecione a data inicial</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={startPeriod} onSelect={setStartPeriod} initialFocus /></PopoverContent>
+                      </Popover>
+                    </div>
+                    {/* Seleção Data Final */}
+                    <div>
+                      <Label htmlFor="end-date-picker-btn" className="mb-1 block text-sm">Até:</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button id="end-date-picker-btn" variant="outline" className={cn("w-full justify-start text-left font-normal", !endPeriod && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {endPeriod ? format(endPeriod, "dd/MM/yyyy") : <span>Selecione a data final</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={endPeriod} onSelect={setEndPeriod} initialFocus disabled={startPeriod ? { before: startPeriod } : undefined} /></PopoverContent>
+                      </Popover>
+                    </div>
+                    {/* Ações do Popover */}
+                    <div className="flex justify-between pt-3">
+                      <Button variant="ghost" size="sm" onClick={() => { setStartPeriod(undefined); setEndPeriod(undefined); }}>Limpar Datas</Button>
+                      <Button size="sm" onClick={() => setIsFilterOpen(false)}>Aplicar</Button>
+                    </div>
                   </div>
-                  <hr className="my-3"/>
-                  {/* Seleção Data Inicial */}
-                  <div>
-                    <Label htmlFor="start-date-picker-btn" className="mb-1 block text-sm">De:</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button id="start-date-picker-btn" variant="outline" className={cn("w-full justify-start text-left font-normal", !startPeriod && "text-muted-foreground")}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startPeriod ? format(startPeriod, "dd/MM/yyyy") : <span>Selecione a data inicial</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={startPeriod} onSelect={setStartPeriod} initialFocus /></PopoverContent>
-                    </Popover>
-                  </div>
-                  {/* Seleção Data Final */}
-                  <div>
-                    <Label htmlFor="end-date-picker-btn" className="mb-1 block text-sm">Até:</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button id="end-date-picker-btn" variant="outline" className={cn("w-full justify-start text-left font-normal", !endPeriod && "text-muted-foreground")}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {endPeriod ? format(endPeriod, "dd/MM/yyyy") : <span>Selecione a data final</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={endPeriod} onSelect={setEndPeriod} initialFocus disabled={startPeriod ? { before: startPeriod } : undefined} /></PopoverContent>
-                    </Popover>
-                  </div>
-                  {/* Ações do Popover */}
-                  <div className="flex justify-between pt-3">
-                    <Button variant="ghost" size="sm" onClick={() => { setStartPeriod(undefined); setEndPeriod(undefined); }}>Limpar Datas</Button>
-                    <Button size="sm" onClick={() => setIsFilterOpen(false)}>Aplicar</Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           {/* Linha 2: Filtros Rápidos de Status */}

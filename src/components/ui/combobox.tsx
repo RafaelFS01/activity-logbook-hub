@@ -162,8 +162,8 @@ const Combobox = React.forwardRef<
                                     {options.map((option) => (
                                         <CommandItem
                                             key={option.value}
-                                            value={option.value} // Usa o valor real para o Command identificar
-                                            onSelect={handleSelect} // Chama nosso handler ao selecionar
+                                            value={option.label} // Usa o label para busca, mas mantém o value para seleção
+                                            onSelect={() => handleSelect(option.value)} // Passa o value correto
                                             disabled={disabled}
                                             className="cursor-pointer" // Feedback visual
                                         >
