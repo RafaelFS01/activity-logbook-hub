@@ -679,17 +679,56 @@ const Home = () => {
 
             {/* Day/Week/Month Toggle Buttons */}
             <div className="flex items-center gap-1 rounded-md border bg-muted p-0.5">
-              <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" className="px-3 h-8" onClick={() => setViewMode('day')} disabled={loading}> Dia </Button>
-              <Button variant={viewMode === 'week' ? 'secondary' : 'ghost'} size="sm" className="px-3 h-8" onClick={() => setViewMode('week')} disabled={loading}> Semana </Button>
-              <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" className="px-3 h-8" onClick={() => setViewMode('month')} disabled={loading}> Mês </Button>
+              <Button
+                variant={viewMode === 'day' ? 'secondary' : 'ghost'}
+                size="sm"
+                className={cn(
+                  "px-3 h-8 transition-all duration-200",
+                  viewMode === 'day'
+                    ? "bg-primary text-primary-foreground shadow-md border-2 border-primary/20 hover:bg-primary/90 hover:shadow-lg"
+                    : "hover:bg-accent/80 hover:text-accent-foreground hover:border-accent/50"
+                )}
+                onClick={() => setViewMode('day')}
+                disabled={loading}
+              >
+                Dia
+              </Button>
+              <Button
+                variant={viewMode === 'week' ? 'secondary' : 'ghost'}
+                size="sm"
+                className={cn(
+                  "px-3 h-8 transition-all duration-200",
+                  viewMode === 'week'
+                    ? "bg-primary text-primary-foreground shadow-md border-2 border-primary/20 hover:bg-primary/90 hover:shadow-lg"
+                    : "hover:bg-accent/80 hover:text-accent-foreground hover:border-accent/50"
+                )}
+                onClick={() => setViewMode('week')}
+                disabled={loading}
+              >
+                Semana
+              </Button>
+              <Button
+                variant={viewMode === 'month' ? 'secondary' : 'ghost'}
+                size="sm"
+                className={cn(
+                  "px-3 h-8 transition-all duration-200",
+                  viewMode === 'month'
+                    ? "bg-primary text-primary-foreground shadow-md border-2 border-primary/20 hover:bg-primary/90 hover:shadow-lg"
+                    : "hover:bg-accent/80 hover:text-accent-foreground hover:border-accent/50"
+                )}
+                onClick={() => setViewMode('month')}
+                disabled={loading}
+              >
+                Mês
+              </Button>
             </div>
           </div>
 
           {/* Right Column: Filters */}
           {/* Right Column: Filters - MODIFICADO */}
           <div className="flex flex-col items-stretch md:items-end gap-2 w-full md:w-auto"> {/* Container Principal da Direita */}
-            {/* Container INTERNO: AGORA sempre flex-col e items-end */}
-            <div className="flex flex-col items-end gap-3 w-full md:w-auto"> {/* Ajuste o gap vertical se necessário */}
+            {/* Container INTERNO: Layout horizontal para filtros */}
+            <div className="flex flex-col md:flex-row items-end gap-3 w-full md:w-auto"> {/* Layout horizontal em desktop */}
 
               {/* Collaborator Filter - Largura Fixa */}
               <div className="flex items-center gap-2 w-80"> {/* <<<<<<< Mudado para w-64 */}
