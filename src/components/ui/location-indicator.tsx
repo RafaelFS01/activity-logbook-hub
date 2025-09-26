@@ -180,5 +180,17 @@ export const SidebarLocationIndicator: React.FC<SidebarLocationIndicatorProps> =
     return null;
   }
 
-  return null;
+  // Retorna um indicador visual simples para a sidebar
+  return (
+    <div
+      className={cn(
+        "sidebar-location-indicator",
+        "absolute right-4 top-4 -translate-y-1/2 translate-x-1",
+        "h-3 w-3 rounded-full bg-sidebar-primary shadow-lg",
+        "z-50",
+        className
+      )}
+      title="Você está aqui"
+    />
+  );
 };
