@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   PlusCircle,
@@ -12,7 +12,8 @@ import {
   Calendar as CalendarIcon, // Renomeado para evitar conflito com o componente Calendar
   FileSpreadsheet,
   ListFilter,
-  Users
+  Users,
+  FileText
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -38,8 +39,11 @@ import {
 import { getClients, Client } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
-import { exportActivitiesToExcel } from "@/utils/exportUtils";
+import { exportActivitiesToExcelStyled } from "@/utils/exportUtils";
 import { Combobox } from "@/components/ui/combobox"; // Assumindo que Combobox está em ui
+import html2pdf from 'html2pdf.js';
+import GeneralActivitiesPdfTemplate from '@/components/reports/GeneralActivitiesPdfTemplate';
+import '@/components/reports/PdfReportTemplate.css';
 
 // --- Constantes ---
 const ITEMS_PER_PAGE = 15;
@@ -71,6 +75,10 @@ const ActivitiesPage = () => {
   const [isLoading, setIsLoading] = useState(true); // Flag de carregamento
   const [isFilterOpen, setIsFilterOpen] = useState(false); // Popover de filtro de data
   const [currentPage, setCurrentPage] = useState(1); // Página atual da paginação
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false); // Flag de geração de PDF
+
+  // Ref para o template PDF
+  const pdfReportRef = useRef<HTMLDivElement>(null);
 
   // --- UseEffects ---
 
@@ -500,22 +508,77 @@ const ActivitiesPage = () => {
     if (filteredActivities.length === 0) { /* ... erro sem dados ... */ return; }
     try {
       const activitiesToExport = filteredActivities.map(activity => ({
-// ... (propriedades originais + formatadas)
         ...activity,
         clientName: getClientName(activity.clientId),
-        assigneeNames: getAssigneeNames(activity.assignedTo),
-        startDateFormatted: activity.startDate ? format(new Date(activity.startDate), 'dd/MM/yyyy HH:mm') : '', // Incluir hora se relevante
-        endDateFormatted: activity.endDate ? format(new Date(activity.endDate), 'dd/MM/yyyy HH:mm') : '',
-        statusText: { pending: 'Futura', 'in-progress': 'Em Progresso', completed: 'Concluída', cancelled: 'Cancelada' }[activity.status] || activity.status,
-        priorityText: { low: 'Baixa', medium: 'Média', high: 'Alta' }[activity.priority] || activity.priority || 'N/D',
       }));
       const assigneeMap: Record<string, string> = {};
       if (collaborators) { Object.entries(collaborators).forEach(([id, collab]) => { assigneeMap[id] = collab.name || `Usuário ${id.substring(0,6)}`; }); }
-      exportActivitiesToExcel(activitiesToExport, 'atividades_exportadas.xlsx', assigneeMap);
+      exportActivitiesToExcelStyled(activitiesToExport, 'atividades_exportadas.xlsx', assigneeMap);
       toast({ title: "Exportação Iniciada", description: `${filteredActivities.length} atividades estão sendo exportadas.` });
     } catch (error) { /* ... tratamento erro exportação ... */
       console.error('Erro ao exportar atividades:', error);
       toast({ variant: "destructive", title: "Erro na exportação", description: `Não foi possível exportar as atividades. ${error instanceof Error ? error.message : String(error)}` });
+    }
+  };
+
+  // Função para exportar atividades para PDF
+  const handleExportPdf = async () => {
+    if (!pdfReportRef.current || filteredActivities.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não há atividades filtradas para gerar o PDF."
+      });
+      return;
+    }
+
+    setIsGeneratingPdf(true);
+    
+    try {
+      const emissionDate = new Date().toLocaleDateString('pt-BR');
+      const fileName = `Relatorio_Geral_Atividades_${emissionDate.replace(/\//g, '-')}.pdf`;
+
+      const options = {
+        margin: [10, 0, 5, 5],
+        filename: fileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          scrollX: 0,
+          scrollY: 0,
+          allowTaint: true,
+          backgroundColor: '#ffffff'
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait',
+          compress: true
+        },
+        pagebreak: { 
+          mode: ['css', 'legacy'],
+          avoid: ['.pdf-activity-title']
+        }
+      };
+
+      await html2pdf().from(pdfReportRef.current).set(options).save();
+
+      toast({
+        title: "PDF Gerado",
+        description: `O arquivo ${fileName} foi baixado com sucesso.`
+      });
+
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar PDF",
+        description: "Ocorreu um problema ao gerar o arquivo PDF."
+      });
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -526,13 +589,22 @@ const ActivitiesPage = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Atividades</h1>
           <div className="flex flex-wrap gap-2">
-            {/* Botão Exportar */}
+            {/* Botão Exportar Excel */}
             <Button
                 variant="outline"
                 onClick={handleExport}
                 disabled={isLoading || filteredActivities.length === 0}
             >
-              <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar Visíveis ({filteredActivities.length})
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar Excel ({filteredActivities.length})
+            </Button>
+            {/* Botão Exportar PDF */}
+            <Button
+                variant="outline"
+                onClick={handleExportPdf}
+                disabled={isLoading || filteredActivities.length === 0 || isGeneratingPdf}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {isGeneratingPdf ? 'Gerando PDF...' : `Exportar PDF (${filteredActivities.length})`}
             </Button>
             {/* Botão Nova Atividade */}
             <Button onClick={() => navigate("/activities/new")} disabled={isLoading}>
@@ -847,6 +919,31 @@ const ActivitiesPage = () => {
               </Button>
             </div>
         )}
+
+        {/* Template PDF oculto */}
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div ref={pdfReportRef}>
+            <GeneralActivitiesPdfTemplate
+              activities={filteredActivities}
+              clients={clients}
+              assignees={Object.entries(collaborators).reduce((acc, [id, user]) => { 
+                acc[id] = user.name || `Usuário ${id.substring(0, 5)}`; 
+                return acc; 
+              }, {} as Record<string, string>)}
+              emissionDate={new Date().toLocaleDateString('pt-BR')}
+              totalActivities={activities.length}
+              filterInfo={{
+                searchTerm: searchTerm || undefined,
+                statusFilters: statusFilters.length > 0 ? statusFilters : undefined,
+                dateType,
+                startPeriod,
+                endPeriod,
+                selectedCollaborator: selectedCollaboratorId || undefined,
+                selectedType: selectedActivityType || undefined,
+              }}
+            />
+          </div>
+        </div>
       </div>
   );
 };

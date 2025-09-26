@@ -524,24 +524,28 @@ const ClientDetailsPage = () => {
         const fileName = `Relatorio_Atividades_${clientNameForFile}_${emissionDate.replace(/\//g, '-')}.pdf`;
 
         const options = {
-            margin: [0, 2, 15, 10],
+            margin: [10, 0, 5, 5], // Margens: topo, direita, baixo, esquerda
             filename: fileName,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
                 scale: 2,
-                logging: true, // Habilitado para depuração
+                logging: false,
                 useCORS: true,
                 scrollX: 0,
                 scrollY: 0,
-                // windowWidth: pdfReportRef.current.scrollWidth, // Comentado para depuração
-                // windowHeight: pdfReportRef.current.scrollHeight, // Comentado para depuração
+                allowTaint: true,
+                backgroundColor: '#ffffff'
             },
             jsPDF: {
                 unit: 'mm',
                 format: 'a4',
-                orientation: 'portrait'
+                orientation: 'portrait',
+                compress: true
             },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak: { 
+                mode: ['css', 'legacy'], // Modo mais simples
+                avoid: ['.pdf-activity-title'] // Evita quebras apenas nos títulos
+            }
         };
 
         console.log("Elemento para converter:", pdfReportRef.current);
@@ -1096,28 +1100,6 @@ const ClientDetailsPage = () => {
           </div>
         </div>
 
-        {/* Contêiner para renderizar o template do PDF fora da tela (temporariamente visível para depuração) */}
-        <div
-            ref={pdfReportRef}
-            style={{
-                border: '2px solid #61dafbaa', // Para ver a caixa
-                margin: '20px',         // Espaçamento
-                width: '210mm',         // Mantenha a largura se quiser testar o layout A4
-                height: 'auto',
-                backgroundColor: '#eee' // Fundo para destacar
-            }}
-            aria-hidden="true"
-        >
-            {client && filteredActivities && collaborators && (
-                <PdfReportTemplate
-                    client={client}
-                    activities={filteredActivities}
-                    assignees={Object.entries(collaborators).reduce((acc, [id, user]) => { acc[id] = user.name || `Usuário ${id.substring(0, 5)}`; return acc; }, {} as Record<string, string>)}
-                    emissionDate={new Date().toLocaleDateString('pt-BR')}
-                    collaborators={collaborators} // Adicionado a propriedade collaborators
-                />
-            )}
-        </div>
       </div>
   );
 };

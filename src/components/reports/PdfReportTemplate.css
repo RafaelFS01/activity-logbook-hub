@@ -4,27 +4,29 @@
 .pdf-container {
     /* Fontes comuns e seguras para PDF */
     font-family: Arial, Helvetica, sans-serif;
-    line-height: 1.4; /* EspaÁamento entre linhas */
+    line-height: 1.3; /* Espa√ßamento entre linhas otimizado */
     color: #333; /* Cor de texto principal (preto suave) */
     background-color: #ffffff; /* Fundo branco essencial para html2pdf */
-    width: 190mm; /* Largura A4 menos margens laterais (aprox.) */
-    padding: 5mm; /* Padding interno mÌnimo, margens controladas por html2pdf */
+    width: 100%; /* Usa largura total dispon√≠vel */
+    max-width: 199mm; /* Largura m√°xima A4 */
+    padding: 10mm; /* Remove padding para aproveitar melhor o espa√ßo */
     font-size: 10pt; /* Tamanho de fonte base */
-    box-sizing: border-box; /* Garante que padding n„o aumente a largura total */
+    box-sizing: border-box; /* Garante que padding n√£o aumente a largura total */
 }
 
-/* --- CabeÁalho --- */
+/* --- Cabe√ßalho --- */
 .pdf-header {
-    margin-bottom: 15mm; /* EspaÁo apÛs o cabeÁalho */
+    margin-bottom: 10mm; /* Espa√ßo ap√≥s o cabe√ßalho reduzido */
     border-bottom: 1px solid #eee; /* Linha separadora sutil */
-    padding-bottom: 10mm;
+    padding-bottom: 5mm; /* Padding reduzido */
+    page-break-after: avoid; /* Evita quebra de p√°gina logo ap√≥s o cabe√ßalho */
 }
 
 .pdf-issue-date {
     font-size: 9pt;
     color: #666; /* Cinza */
     text-align: right;
-    margin-bottom: 10mm;
+    margin-bottom: 5mm;
 }
 
 .pdf-main-title {
@@ -43,17 +45,23 @@
     color: #111;
 }
 
-/* --- SeÁ„o de Atividades --- */
-
+/* --- Se√ß√£o de Atividades --- */
+.pdf-activities-section {
+    page-break-before: avoid; /* Evita quebra desnecess√°ria antes da se√ß√£o */
+}
 
 /* --- Cada Atividade --- */
 .pdf-activity {
-    margin-bottom: 10mm; /* EspaÁo entre atividades */
-    padding-bottom: 8mm; /* EspaÁo interno inferior */
+    margin-bottom: 8mm; /* Espa√ßo entre atividades */
+    padding-bottom: 5mm; /* Espa√ßo interno inferior */
     border-bottom: 0.5pt solid #eaeaea; /* Linha separadora mais leve */
-    page-break-inside: avoid; /* Tenta evitar que a atividade seja dividida entre p·ginas */
+    page-break-inside: avoid; /* Evita que a atividade seja dividida entre p√°ginas apenas quando necess√°rio */
+    
+    /* Remove controles muito restritivos */
+    /* min-height removido para permitir atividades menores */
+    /* orphans e widows removidos para permitir mais flexibilidade */
 }
-/* Remove a borda da ˙ltima atividade */
+/* Remove a borda da √∫ltima atividade */
 .pdf-activity:last-child {
     border-bottom: none;
     margin-bottom: 0; /* Remove margem extra no final */
@@ -63,56 +71,59 @@
 .pdf-activity-title {
     font-size: 12pt;
     font-weight: bold;
-    margin-bottom: 5mm;
+    margin-bottom: 3mm;
     color: #222;
+    page-break-after: avoid; /* Evita quebra de p√°gina logo ap√≥s o t√≠tulo */
 }
 
 /* --- Grid de Detalhes da Atividade --- */
 .pdf-activity-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr); /* Duas colunas de largura igual */
-    gap: 2mm 8mm; /* EspaÁamento vertical e horizontal */
-    margin-bottom: 5mm;
+    gap: 1.5mm 6mm; /* Espa√ßamento vertical e horizontal reduzido */
+    margin-bottom: 3mm;
     font-size: 9.5pt; /* Tamanho de fonte um pouco menor para detalhes */
+    /* page-break-inside removido para permitir mais flexibilidade */
 }
 
 .pdf-activity-grid p,
-.pdf-activity-grid div { /* Inclui o div dos respons·veis */
-    margin: 0; /* Remove margens padr„o de par·grafos */
-    padding: 1mm 0; /* Pequeno padding vertical */
+.pdf-activity-grid div { /* Inclui o div dos respons√°veis */
+    margin: 0; /* Remove margens padr√£o de par√°grafos */
+    padding: 0.5mm 0; /* Padding vertical reduzido */
 }
 
 .pdf-activity-grid strong {
-    color: #444; /* Destaca os rÛtulos */
+    color: #444; /* Destaca os r√≥tulos */
 }
 
-/* Estilo especÌfico para a lista de respons·veis se precisar ocupar mais espaÁo */
+/* Estilo espec√≠fico para a lista de respons√°veis se precisar ocupar mais espa√ßo */
 .pdf-responsible-list {
-    grid-column: span 2; /* Faz ocupar as duas colunas se necess·rio */
+    grid-column: span 2; /* Faz ocupar as duas colunas se necess√°rio */
     /* border-top: 1px dashed #eee; /* Opcional: separador visual */
     /* margin-top: 2mm; */
     /* padding-top: 2mm; */
 }
 
-/* --- DescriÁ„o da Atividade --- */
+/* --- Descri√ß√£o da Atividade --- */
 .pdf-activity-description {
-    text-align: justify; /* Justifica o texto da descriÁ„o */
-    margin-top: 4mm;
+    text-align: justify; /* Justifica o texto da descri√ß√£o */
+    margin-top: 2mm;
     font-size: 9.5pt;
-    white-space: pre-wrap; /* Preserva quebras de linha e espaÁos da descriÁ„o original */
+    white-space: pre-wrap; /* Preserva quebras de linha e espa√ßos da descri√ß√£o original */
     background-color: #f9f9f9; /* Fundo sutil para destacar (opcional) */
-    padding: 3mm; /* Padding interno */
+    padding: 2mm; /* Padding interno reduzido */
     border-left: 3px solid #eee; /* Borda lateral (opcional) */
+    /* page-break-inside removido para permitir quebras quando necess√°rio */
 }
 
 .pdf-activity-description strong {
-   display: block; /* Coloca "DescriÁ„o:" em linha separada */
+   display: block; /* Coloca "Descri√ß√£o:" em linha separada */
    margin-bottom: 1.5mm;
    font-weight: bold;
    color: #444;
 }
 .pdf-activity-description p {
-    margin: 0; /* Remove margem do par·grafo dentro da descriÁ„o */
+    margin: 0; /* Remove margem do par√°grafo dentro da descri√ß√£o */
 }
 
 
@@ -125,7 +136,54 @@
     color: #777;
 }
 
-/* --- (Opcional) RodapÈ --- */
+/* --- Classes auxiliares para controle de pagina√ß√£o --- */
+
+/* For√ßa uma nova p√°gina antes do elemento */
+.page-break-before {
+    page-break-before: always;
+}
+
+/* For√ßa uma nova p√°gina ap√≥s o elemento */
+.page-break-after {
+    page-break-after: always;
+}
+
+/* Evita quebra de p√°gina dentro do elemento */
+.no-page-break {
+    page-break-inside: avoid;
+}
+
+/* Permite quebra de p√°gina dentro do elemento */
+.allow-page-break {
+    page-break-inside: auto;
+}
+
+/* Espa√ßamento de seguran√ßa para evitar elementos muito pr√≥ximos ao final da p√°gina */
+.pdf-page-buffer {
+    min-height: 20mm;
+    page-break-inside: avoid;
+}
+
+/* --- Estilos espec√≠ficos para o relat√≥rio geral --- */
+.pdf-summary {
+    margin-bottom: 8mm;
+    font-size: 9.5pt;
+    line-height: 1.4;
+}
+
+.pdf-summary p {
+    margin: 2mm 0;
+}
+
+.pdf-filters {
+    font-style: italic;
+    color: #555;
+    margin-top: 3mm !important;
+    padding-top: 2mm;
+    border-top: 1px solid #eee;
+}
+
+/* --- (Opcional) Rodap√© --- */
 /*
 .pdf-footer {
     margin-top: 15mm;
