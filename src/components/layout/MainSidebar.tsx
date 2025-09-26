@@ -19,6 +19,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button"; // Assumindo que Button use as variáveis corretas
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Importe Tooltip
+import { SidebarActivityIndicator } from "@/components/ui/activity-indicator"; // Importe o indicador de atividade
+import { SidebarLocationIndicator, useCurrentPageName } from "@/components/ui/location-indicator"; // Importe o indicador de localização
 import { useEffect } from "react";
 
 const MainSidebar = () => {
@@ -26,6 +28,7 @@ const MainSidebar = () => {
   const { theme, toggleTheme } = useTheme();
   const { isMobile, setOpenMobile } = useSidebar();
   const location = useLocation();
+  const { currentPath } = useCurrentPageName();
 
   useEffect(() => {
     if (isMobile) {
@@ -33,14 +36,35 @@ const MainSidebar = () => {
     }
   }, [location.pathname, isMobile, setOpenMobile]);
 
-  // Função NavLink className - Agora só precisa diferenciar ativo/inativo
+  // Função NavLink className - Botões com indicador visual ilustrativo quando ativo
   const getNavLinkClass = ({ isActive }: { isActive: boolean }) => {
-    const baseClasses = "flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm transition-all duration-150 ease-in-out group focus:outline-none focus:ring-2 focus:ring-sidebar-ring"; // Base + Focus Ring
+    const baseClasses = `
+      flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm
+      transition-all duration-300 ease-out group focus:outline-none focus:ring-2 focus:ring-sidebar-ring
+      sidebar-button-hover sidebar-button-transparent relative overflow-hidden
+    `; // Base + Focus Ring + Efeitos aprimorados + Indicador visual
 
-    const inactiveClasses = "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:bg-sidebar-accent"; // Estilos Inativo + Hover + Focus BG
+    const inactiveClasses = `
+      text-sidebar-foreground hover:bg-sidebar-accent/40 hover:text-sidebar-accent-foreground
+      hover:shadow-sm hover:-translate-y-0.5 focus:bg-sidebar-accent/40
+      before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-transparent
+      before:transition-all before:duration-300 before:ease-out
+    `; // Estilos Inativo - hover sutil + barra transparente
 
-    // A classe .sidebar-active definida no CSS cuidará dos estilos ativos
-    return `${baseClasses} ${isActive ? 'sidebar-active' : inactiveClasses}`;
+    const activeClasses = `
+      bg-gradient-to-r from-sidebar-primary/20 to-sidebar-primary/8
+      text-sidebar-primary-foreground font-bold shadow-lg
+      hover:shadow-2xl hover:-translate-y-1 hover:from-sidebar-primary/30 hover:to-sidebar-primary/15
+      border-l-4 border-sidebar-primary
+      before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1
+      before:bg-sidebar-primary before:shadow-[0_0_15px_rgba(var(--sidebar-primary),0.8)]
+      before:transition-all before:duration-300 before:ease-out
+      [&>svg]:text-sidebar-primary [&>svg]:drop-shadow-[0_0_8px_rgba(var(--sidebar-primary),1)]
+      [&>svg]:scale-110 [&>svg]:transition-transform [&>svg]:duration-300
+      ring-2 ring-sidebar-primary/30 ring-offset-2 ring-offset-sidebar-background
+    `; // Estilos Ativo - indicador ilustrativo aprimorado com barra colorida, brilho intenso, animação e gradiente
+
+    return `${baseClasses} ${isActive ? activeClasses : inactiveClasses}`;
   };
 
   const handleMenuItemClick = () => {
@@ -106,9 +130,9 @@ const MainSidebar = () => {
           </div>
         </SidebarHeader>
 
-        {/* Conteúdo com padding */}
-        <SidebarContent className="p-2 flex-grow"> {/* Adiciona padding geral e flex-grow */}
-          <SidebarGroup>
+        {/* Conteúdo sem padding */}
+        <SidebarContent className="flex-grow"> {/* Remove padding para botões preencherem completamente */}
+          <SidebarGroup className="px-0"> {/* Remove padding para botões preencherem completamente */}
             {/* Label estilizado */}
             <SidebarGroupLabel className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70"> {/* Opacidade para mutar */}
               Principal
@@ -116,52 +140,72 @@ const MainSidebar = () => {
             <SidebarGroupContent>
               <SidebarMenu>
                 {/* Item Dashboard */}
-                <SidebarMenuItem>
+                <SidebarMenuItem className="relative">
                   <SidebarMenuButton asChild>
                     <NavLink to="/" className={getNavLinkClass} onClick={handleMenuItemClick}>
-                      {/* Ícone com animação sutil no hover do item pai */}
-                      <ClipboardList className="h-5 w-5 transition-transform duration-150 ease-in-out group-hover:scale-110" />
+                      {/* Ícone com animação aprimorada no hover do item pai */}
+                      <ClipboardList className="h-5 w-5 sidebar-icon-animate" />
                       <span>Dashboard</span>
                     </NavLink>
                   </SidebarMenuButton>
+                  {/* Indicador de localização atual - aparece quando usuário está nesta página */}
+                  <SidebarLocationIndicator currentPath="/" />
+                  {/* Indicador de profissionais ativos - aparece quando há profissionais ativos */}
+                  <SidebarActivityIndicator page="/" />
                 </SidebarMenuItem>
 
                 {/* Item Home (Condicional) */}
                 {isManagerOrAdmin && (
-                    <SidebarMenuItem>
+                    <SidebarMenuItem className="relative">
                       <SidebarMenuButton asChild>
                         <NavLink to="/home" className={getNavLinkClass} onClick={handleMenuItemClick}>
-                          <Home className="h-5 w-5 transition-transform duration-150 ease-in-out group-hover:scale-110" />
+                          <Home className="h-5 w-5 sidebar-icon-animate" />
                           <span>Home</span>
                         </NavLink>
                       </SidebarMenuButton>
+                      {/* Indicador de localização atual */}
+                      <SidebarLocationIndicator currentPath="/home" />
+                      {/* Indicador de profissionais ativos */}
+                      <SidebarActivityIndicator page="/home" />
                     </SidebarMenuItem>
                 )}
 
                 {/* Outros Itens Principais (Aplicar mesmo padrão) */}
-                <SidebarMenuItem>
+                <SidebarMenuItem className="relative">
                   <SidebarMenuButton asChild>
                     <NavLink to="/activities" className={getNavLinkClass} onClick={handleMenuItemClick}>
-                      <Calendar className="h-5 w-5 transition-transform duration-150 ease-in-out group-hover:scale-110" />
+                      <Calendar className="h-5 w-5 sidebar-icon-animate" />
                       <span>Atividades</span>
                     </NavLink>
                   </SidebarMenuButton>
+                  {/* Indicador de localização atual */}
+                  <SidebarLocationIndicator currentPath="/activities" />
+                  {/* Indicador de profissionais ativos */}
+                  <SidebarActivityIndicator page="/activities" />
                 </SidebarMenuItem>
-                <SidebarMenuItem>
+                <SidebarMenuItem className="relative">
                   <SidebarMenuButton asChild>
                     <NavLink to="/clients" className={getNavLinkClass} onClick={handleMenuItemClick}>
-                      <Users className="h-5 w-5 transition-transform duration-150 ease-in-out group-hover:scale-110" />
+                      <Users className="h-5 w-5 sidebar-icon-animate" />
                       <span>Clientes</span>
                     </NavLink>
                   </SidebarMenuButton>
+                  {/* Indicador de localização atual */}
+                  <SidebarLocationIndicator currentPath="/clients" />
+                  {/* Indicador de profissionais ativos */}
+                  <SidebarActivityIndicator page="/clients" />
                 </SidebarMenuItem>
-                <SidebarMenuItem>
+                <SidebarMenuItem className="relative">
                   <SidebarMenuButton asChild>
                     <NavLink to="/collaborators" className={getNavLinkClass} onClick={handleMenuItemClick}>
-                      <UserCircle className="h-5 w-5 transition-transform duration-150 ease-in-out group-hover:scale-110" />
+                      <UserCircle className="h-5 w-5 sidebar-icon-animate" />
                       <span>Colaboradores</span>
                     </NavLink>
                   </SidebarMenuButton>
+                  {/* Indicador de localização atual */}
+                  <SidebarLocationIndicator currentPath="/collaborators" />
+                  {/* Indicador de profissionais ativos */}
+                  <SidebarActivityIndicator page="/collaborators" />
                 </SidebarMenuItem>
 
               </SidebarMenu>
@@ -170,29 +214,37 @@ const MainSidebar = () => {
 
           {/* Grupo Gerenciamento (Condicional) */}
           {isManagerOrAdmin && (
-              <SidebarGroup className="mt-4"> {/* Adiciona margem acima do grupo */}
+              <SidebarGroup className="mt-4 px-0"> {/* Remove padding e mantém margem acima do grupo */}
                 <SidebarGroupLabel className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70">
                   Gerenciamento
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {/* Item Relatórios */}
-                    <SidebarMenuItem>
+                    <SidebarMenuItem className="relative">
                       <SidebarMenuButton asChild>
                         <NavLink to="/reports" className={getNavLinkClass} onClick={handleMenuItemClick}>
-                          <BarChart3 className="h-5 w-5 transition-transform duration-150 ease-in-out group-hover:scale-110" />
+                          <BarChart3 className="h-5 w-5 sidebar-icon-animate" />
                           <span>Relatórios</span>
                         </NavLink>
                       </SidebarMenuButton>
+                      {/* Indicador de localização atual */}
+                      <SidebarLocationIndicator currentPath="/reports" />
+                      {/* Indicador de profissionais ativos */}
+                      <SidebarActivityIndicator page="/reports" />
                     </SidebarMenuItem>
                     {/* Item Configurações */}
-                    <SidebarMenuItem>
+                    <SidebarMenuItem className="relative">
                       <SidebarMenuButton asChild>
                         <NavLink to="/settings" className={getNavLinkClass} onClick={handleMenuItemClick}>
-                          <Settings className="h-5 w-5 transition-transform duration-150 ease-in-out group-hover:scale-110" />
+                          <Settings className="h-5 w-5 sidebar-icon-animate" />
                           <span>Configurações</span>
                         </NavLink>
                       </SidebarMenuButton>
+                      {/* Indicador de localização atual */}
+                      <SidebarLocationIndicator currentPath="/settings" />
+                      {/* Indicador de profissionais ativos */}
+                      <SidebarActivityIndicator page="/settings" />
                     </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
@@ -200,20 +252,20 @@ const MainSidebar = () => {
           )}
         </SidebarContent>
 
-        {/* Footer com borda superior e padding */}
-        <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
+        {/* Footer com borda superior sem padding */}
+        <SidebarFooter className="mt-auto border-t border-sidebar-border">
           <SidebarMenu>
             <SidebarMenuItem>
               {/* Botão Sair estilizado */}
               <SidebarMenuButton asChild>
                 <button
-                    className="flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm transition-colors duration-150 ease-in-out text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/50 focus:bg-destructive/10 group"
+                    className="flex items-center w-full gap-3 px-0 py-2 rounded-md text-sm transition-colors duration-150 ease-in-out text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/50 focus:bg-destructive/10 group"
                     onClick={() => {
                       logout();
                       if (isMobile) setOpenMobile(false);
                     }}
                 >
-                  <LogOut className="h-5 w-5 transition-transform duration-150 ease-in-out group-hover:scale-110" />
+                  <LogOut className="h-5 w-5 sidebar-icon-animate" />
                   <span>Sair</span>
                 </button>
               </SidebarMenuButton>

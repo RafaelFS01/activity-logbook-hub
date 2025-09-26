@@ -253,3 +253,363 @@
 .h12-alt .login-container {
   @apply bg-background;
 }
+
+/* ===============================================
+   EFEITOS DE HOVER SUTIS PARA SIDEBAR
+   =============================================== */
+
+/* Neutralizar estilos padrão do shadcn/ui para botões da sidebar */
+.sidebar-button-hover {
+  @apply relative transition-all duration-200 ease-out;
+}
+
+/* Remover cores de fundo padrão do shadcn/ui */
+.sidebar-button-hover {
+  background-color: transparent !important;
+}
+
+/* Botões inativos - sem cor de fundo, apenas hover sutil */
+.sidebar-button-hover:not(.active) {
+  @apply text-sidebar-foreground;
+}
+
+.sidebar-button-hover:not(.active):hover {
+  @apply bg-sidebar-accent/40 text-sidebar-accent-foreground shadow-sm transform -translate-y-0.5;
+}
+
+.sidebar-button-hover:active {
+  @apply transform translate-y-0 scale-95 transition-transform duration-100;
+}
+
+/* Botões ativos - cor de fundo do tema */
+.sidebar-button-hover.active {
+  @apply bg-sidebar-primary text-sidebar-primary-foreground font-medium;
+}
+
+.sidebar-button-hover.active:hover {
+  @apply bg-sidebar-primary/90 shadow-md transform -translate-y-0.5;
+}
+
+/* Sobrescrever estilos do shadcn/ui para garantir que botões inativos não tenham cor */
+[data-sidebar="menu-button"]:not([data-active="true"]) {
+  @apply bg-transparent text-sidebar-foreground !important;
+}
+
+[data-sidebar="menu-button"]:not([data-active="true"]):hover {
+  @apply bg-sidebar-accent/40 text-sidebar-accent-foreground !important;
+}
+
+/* Remover cores aplicadas pelo shadcn/ui SidebarMenuButton */
+.peer\/menu-button:hover {
+  background-color: transparent !important;
+}
+
+.peer\/menu-button[data-active="true"] {
+  @apply bg-sidebar-primary text-sidebar-primary-foreground !important;
+}
+
+/* Garantir que todos os botões da sidebar sejam transparentes por padrão */
+[data-sidebar="menu-button"] {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+[data-sidebar="menu-button"]:hover {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Aplicar hover apenas quando tem a classe sidebar-button-hover */
+[data-sidebar="menu-button"]:hover.sidebar-button-hover {
+  background-color: hsl(var(--sidebar-accent) / 0.4) !important;
+  background: hsl(var(--sidebar-accent) / 0.4) !important;
+}
+
+/* Classe para garantir transparência total */
+.sidebar-button-transparent {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.sidebar-button-transparent:hover {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+.sidebar-button-transparent:hover.sidebar-button-hover {
+  background-color: hsl(var(--sidebar-accent) / 0.4) !important;
+  background: hsl(var(--sidebar-accent) / 0.4) !important;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Forçar transparência para todos os elementos de menu da sidebar */
+.sidebar-button-transparent,
+[data-sidebar="menu-button"],
+.peer\/menu-button {
+  background-color: transparent !important;
+  background-image: none !important;
+  background: transparent !important;
+}
+
+/* Efeitos específicos para diferentes temas - apenas para hover */
+.dark .sidebar-button-hover:not(.active):hover {
+  @apply bg-sidebar-accent/30;
+}
+
+.h12 .sidebar-button-hover:not(.active):hover {
+  @apply bg-sidebar-accent/40;
+}
+
+.h12-alt .sidebar-button-hover:not(.active):hover {
+  @apply bg-sidebar-accent/40;
+}
+
+/* Animações sutis para ícones */
+.sidebar-icon-animate {
+  @apply transition-all duration-200 ease-out;
+}
+
+.sidebar-icon-animate:hover {
+  @apply transform scale-105;
+}
+
+.sidebar-icon-animate:active {
+  @apply transform scale-95;
+}
+
+/* ===============================================
+   EFEITOS VISUAIS ILUSTRATIVOS PARA ABAS ATIVAS
+   =============================================== */
+
+/* Animação de pulso sutil para ícones ativos */
+
+
+/* Animação de pulso para barra lateral */
+
+
+/* Efeito de brilho para elementos ativos */
+.active-glow {
+  filter: drop-shadow(0 0 8px hsl(var(--sidebar-primary) / 0.6));
+}
+
+/* Animação de entrada para indicadores visuais */
+@keyframes slide-in-glow {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Aplicar animação apenas no ícone do link ativo (apenas uma vez) */
+[aria-current="page"] .sidebar-icon-animate,
+[data-active="true"] .sidebar-icon-animate {
+  animation: pulse-glow 1.5s ease-out;
+  color: hsl(var(--sidebar-primary));
+}
+
+/* Barra lateral animada para itens ativos (apenas uma vez) */
+
+
+/* Gradiente sutil para background de itens ativos */
+.active-gradient-bg {
+  background: linear-gradient(90deg,
+    hsl(var(--sidebar-primary) / 0.1) 0%,
+    hsl(var(--sidebar-primary) / 0.05) 100%);
+}
+
+/* Efeitos de hover aprimorados para o link ativo */
+[aria-current="page"].sidebar-button-hover:hover {
+  background: linear-gradient(90deg,
+    hsl(var(--sidebar-primary) / 0.3) 0%,
+    hsl(var(--sidebar-primary) / 0.15) 100%);
+  box-shadow: 0 6px 25px hsl(var(--sidebar-primary) / 0.4);
+  transform: translateY(-2px) scale(1.02);
+}
+
+/* Animação de destaque para o link ativo (apenas uma vez) */
+[aria-current="page"].sidebar-button-hover {
+  animation: active-glow-pulse 10s ease-out;
+}
+
+/* Keyframes para animação de destaque */
+
+
+/* Efeito de brilho intenso para ícones do link ativo */
+[aria-current="page"].sidebar-button-hover svg {
+  filter: drop-shadow(0 0 12px hsl(var(--sidebar-primary) / 1))
+          drop-shadow(0 0 20px hsl(var(--sidebar-primary) / 0.6))
+          brightness(1.2);
+}
+
+/* Transições suaves para todos os elementos */
+* {
+  transition-property: color, background-color, border-color, transform, box-shadow, filter;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+
+/* Otimização de performance para animações */
+.sidebar-icon-animate,
+.active-sidebar-indicator,
+.active-gradient-bg {
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* ===============================================
+   INDICADORES DE ATIVIDADE DE PROFISSIONAIS
+   =============================================== */
+
+/* Animação de pulso para indicadores de atividade */
+
+
+/* Indicador de atividade posicionado na sidebar */
+
+
+/* Badge de atividade com contagem */
+.activity-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  border: 2px solid hsl(var(--sidebar-background));
+  border-radius: 50%;
+  min-width: 18px;
+  height: 18px;
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* Tooltip personalizado para indicadores de atividade */
+.activity-tooltip {
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  max-width: 250px;
+}
+
+/* Responsividade para modo colapsado */
+.group-data-\[collapsible\=icon\] .activity-indicator {
+  position: static;
+  margin-left: 4px;
+}
+
+/* Ajustes para diferentes temas */
+.dark .activity-badge {
+  border-color: hsl(var(--sidebar-background));
+}
+
+.h12 .activity-badge {
+  border-color: hsl(var(--sidebar-background));
+}
+
+.h12-alt .activity-badge {
+  border-color: hsl(var(--sidebar-background));
+}
+
+/* Hover effects para indicadores */
+.activity-indicator:hover {
+  animation-play-state: paused;
+  transform: scale(1.2);
+  transition: transform 0.2s ease-out;
+}
+
+/* ===============================================
+   INDICADORES DE LOCALIZAÇÃO ATUAL
+   =============================================== */
+
+/* Animação específica para indicadores de localização */
+
+
+/* Indicador de localização - azul para diferenciar da atividade verde */
+
+
+/* Badge de localização com cores distintas */
+.location-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: rgb(59, 130, 246); /* blue-500 */
+  color: white;
+  border: 2px solid hsl(var(--sidebar-background));
+  border-radius: 12px;
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.5);
+  z-index: 10;
+}
+
+/* Posicionamento específico para sidebar colapsada */
+.group-data-\[collapsible\=icon\] .location-indicator {
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Efeitos visuais diferenciados */
+.location-indicator:hover {
+  animation-play-state: paused;
+  transform: scale(1.25);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+  transition: all 0.2s ease-out;
+}
+
+/* Quando ambos os indicadores estão presentes */
+.has-both-indicators .location-indicator {
+  top: -8px;
+  right: 8px;
+}
+
+.has-both-indicators .activity-indicator {
+  top: 8px;
+  right: -8px;
+}
+
+/* Responsividade para diferentes temas */
+.dark .location-indicator {
+  border-color: hsl(var(--sidebar-background));
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+}
+
+.h12 .location-indicator {
+  border-color: hsl(var(--sidebar-background));
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.h12-alt .location-indicator {
+  border-color: hsl(var(--sidebar-background));
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+/* Animação de entrada para localização */
+@keyframes slide-in-location {
+  0% {
+    opacity: 0;
+    transform: translateX(-15px) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+

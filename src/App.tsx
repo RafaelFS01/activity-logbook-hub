@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ActivityProvider } from "@/contexts/ActivityContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Layouts
@@ -38,11 +39,12 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
+        <ActivityProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
               {/* Rota de Login */}
               <Route path="/login" element={<Login />} />
               <Route path="/admin-setup" element={<AdminSetup />} />
@@ -115,6 +117,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+      </ActivityProvider>
       </ThemeProvider>
     </AuthProvider>
   </QueryClientProvider>

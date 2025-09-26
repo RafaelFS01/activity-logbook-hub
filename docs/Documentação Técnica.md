@@ -1506,6 +1506,133 @@ const SearchComponent = () => {
 
 ---
 
+## 🎨 Efeitos Visuais e Interações
+
+### Sistema de Hover Minimalista da Sidebar
+
+#### Visão Geral das Melhorias
+O mecanismo de hover dos botões da sidebar foi refinado para proporcionar uma experiência visual limpa e minimalista, onde apenas o botão da página atual tem cor de fundo.
+
+**Transições Otimizadas**
+- Duração reduzida: 200ms com easing `ease-out` para responsividade
+- Transições suaves de elevação e sombra
+- Feedback visual sutil apenas quando necessário
+
+**Efeitos de Hover Sutil**
+```css
+/* Botões inativos - apenas hover sutil */
+.sidebar-button-hover:not(.active):hover {
+  @apply bg-sidebar-accent/50 shadow-sm;
+}
+
+/* Botões ativos - cor de fundo do tema */
+.sidebar-button-hover.active {
+  @apply bg-sidebar-primary text-sidebar-primary-foreground font-medium;
+}
+```
+
+#### Animações Sutil dos Ícones
+```css
+/* Animações discretas */
+.sidebar-icon-animate:hover {
+  @apply transform scale-105;
+}
+```
+
+#### Estados Visuais Claros
+
+**Botões Inativos**
+- Sem cor de fundo por padrão (`text-sidebar-foreground`)
+- Hover sutil com fundo discreto (`bg-sidebar-accent/50`)
+- Mantém aparência limpa e organizada
+
+**Botões Ativos**
+- Cor de fundo do tema (`bg-sidebar-primary`)
+- Hover com opacidade reduzida (`bg-sidebar-primary/90`)
+- Identifica claramente a página atual
+
+#### Compatibilidade Multi-Tema com Contraste Preservado
+
+**Tema Dark**
+```css
+.dark .sidebar-button-hover:not(.active):hover {
+  @apply bg-sidebar-accent/40;
+}
+```
+
+**Tema H12**
+```css
+.h12 .sidebar-button-hover:not(.active):hover {
+  @apply bg-sidebar-accent/50;
+}
+```
+
+**Tema H12-Alt**
+```css
+.h12-alt .sidebar-button-hover:not(.active):hover {
+  @apply bg-sidebar-accent/50;
+}
+```
+
+#### Benefícios das Melhorias
+
+1. **UX Minimalista**: Interface limpa com feedback visual apenas quando necessário
+2. **Identidade Visual Clara**: Botão ativo claramente identificado pela cor do tema
+3. **Contraste Otimizado**: Efeitos de hover discretos que funcionam bem em todos os temas
+4. **Performance**: Transições leves sem impacto no desempenho
+5. **Acessibilidade**: Efeitos sutis que não distraem a navegação
+
+#### Implementação Técnica
+
+**Classe CSS Principal**
+```css
+.sidebar-button-hover {
+  @apply relative transition-all duration-200 ease-out;
+}
+
+/* Botões inativos - sem cor de fundo */
+.sidebar-button-hover:not(.active):hover {
+  @apply bg-sidebar-accent/50 shadow-sm;
+}
+
+/* Botões ativos - cor de fundo do tema */
+.sidebar-button-hover.active {
+  @apply bg-sidebar-primary text-sidebar-primary-foreground font-medium;
+}
+```
+
+**Classe de Animação de Ícones**
+```css
+.sidebar-icon-animate {
+  @apply transition-all duration-200 ease-out;
+}
+```
+
+**Função getNavLinkClass Refatorada**
+```typescript
+const getNavLinkClass = ({ isActive }: { isActive: boolean }) => {
+  const baseClasses = `
+    flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm
+    transition-all duration-200 ease-out group focus:outline-none focus:ring-2 focus:ring-sidebar-ring
+    sidebar-button-hover
+  `;
+
+  const inactiveClasses = `
+    text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground
+    hover:shadow-sm hover:-translate-y-0.5 focus:bg-sidebar-accent/50
+  `;
+
+  const activeClasses = `
+    bg-sidebar-primary text-sidebar-primary-foreground font-medium
+    hover:bg-sidebar-primary/90 hover:shadow-md hover:-translate-y-0.5
+  `;
+
+  return `${baseClasses} ${isActive ? 'active' : ''} ${isActive ? activeClasses : inactiveClasses}`;
+};
+```
+
+---
+
 ## 📝 Padrões de Código
 
 ### Convenções de Nomenclatura
