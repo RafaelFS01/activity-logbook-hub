@@ -16,7 +16,7 @@ Implementação de uma nova funcionalidade de relatórios que utiliza o arquivo 
 - Interface limpa e intuitiva focada em geração de relatórios
 
 ### 2. Card de Configurações
-- **Seleção de Cliente**: Dropdown com todos os clientes ativos
+- **Seleção de Cliente**: Combobox com busca e dropdown visual para todos os clientes ativos
 - **Período de Emissão**: Campos de data inicial e final
 - **Botão de Geração**: Inicia o processo de criação do relatório
 
@@ -119,6 +119,7 @@ Baseado na análise do código atual, o template deve conter:
 
 **Funcionalidades Implementadas:**
 - ✅ Interface responsiva e intuitiva
+- ✅ Combobox avançado para seleção de cliente (busca + dropdown visual)
 - ✅ Carregamento dinâmico de clientes ativos
 - ✅ Validação de período (data inicial ≤ data final)
 - ✅ Filtragem de atividades por cliente e período

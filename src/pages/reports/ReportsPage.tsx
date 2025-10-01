@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Settings, Calendar, Users } from "lucide-react";
+import { FileText, Settings } from "lucide-react";
 import { ReportConfigCard } from "./ReportConfigCard";
 
 const ReportsPage = () => {
@@ -33,24 +33,6 @@ const ReportsPage = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Relatórios Recentes
-            </CardTitle>
-            <CardDescription>
-              Histórico dos últimos relatórios gerados
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhum relatório gerado ainda.</p>
-              <p className="text-sm">Configure e gere seu primeiro relatório acima.</p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

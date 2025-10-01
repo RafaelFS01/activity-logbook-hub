@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -98,7 +98,7 @@ export const ReportConfigCard = ({}: ReportConfigCardProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  // Carregar clientes ativos
+  // Carregar clientes ativos e preparar opções para Combobox
   useEffect(() => {
     const loadClients = async () => {
       try {
@@ -117,6 +117,14 @@ export const ReportConfigCard = ({}: ReportConfigCardProps) => {
 
     loadClients();
   }, [toast]);
+
+  // Preparar opções para o Combobox
+  const clientOptions: ComboboxOption[] = clients.map(client => ({
+    value: client.id,
+    label: client.type === 'juridica'
+      ? (client as any).companyName || client.name
+      : client.name
+  }));
 
   // Função para gerar o relatório
   const handleGenerateReport = async () => {
@@ -277,22 +285,19 @@ export const ReportConfigCard = ({}: ReportConfigCardProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Seleção de Cliente */}
         <div className="space-y-2">
-          <Label htmlFor="client-select">Cliente *</Label>
-          <Select value={selectedClient} onValueChange={setSelectedClient}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um cliente" />
-            </SelectTrigger>
-            <SelectContent>
-              {clients.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.type === 'juridica'
-                    ? (client as any).companyName || client.name
-                    : client.name
-                  }
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="client-combobox">Cliente *</Label>
+          <Combobox
+            id="client-combobox"
+            options={clientOptions}
+            selectedValue={selectedClient}
+            onSelect={setSelectedClient}
+            placeholder="Selecione um cliente"
+            searchPlaceholder="Buscar cliente..."
+            noResultsText="Nenhum cliente encontrado."
+            allowClear={true}
+            disabled={clientOptions.length === 0}
+            className="w-full"
+          />
         </div>
 
         {/* Período - Data Inicial */}
