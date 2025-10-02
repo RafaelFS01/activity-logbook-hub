@@ -215,23 +215,31 @@ class GeminiService {
      */
     async generateSummariesSingleRequest(activities) {
         try {
-            const prompt = `Resuma as seguintes atividades de forma objetiva e em poucas palavras, combinando o título e a descrição.
+            const prompt = `Você é um assistente especializado em gestão de atividades profissionais. Analise cada atividade e crie descrições detalhadas, profissionais e informativas que combinem o título e a descrição de forma abrangente.
+
+            INSTRUÇÕES IMPORTANTES:
+            - Crie descrições PROFISSIONAIS e DETALHADAS (mínimo 50-100 palavras por atividade)
+            - Inclua informações técnicas, contexto empresarial e aspectos relevantes
+            - Mantenha tom profissional e formal
+            - Foque nos objetivos, resultados e impacto das atividades
+            - Use linguagem clara e precisa
+
             Responda APENAS com um JSON válido no seguinte formato, sem nenhum texto adicional antes ou depois:
             {
               "summaries": [
                 {
                   "id": "ID_DA_ATIVIDADE_1",
-                  "summary": "Resumo da atividade 1"
+                  "summary": "Descrição profissional detalhada da atividade 1, incluindo contexto, objetivos, metodologia e resultados esperados ou obtidos..."
                 },
                 {
                   "id": "ID_DA_ATIVIDADE_2",
-                  "summary": "Resumo da atividade 2"
+                  "summary": "Descrição profissional detalhada da atividade 2, incluindo contexto, objetivos, metodologia e resultados esperados ou obtidos..."
                 }
                 // ... para todas as atividades fornecidas
               ]
             }
 
-            Aqui estão as atividades:
+            ATIVIDADES PARA PROCESSAR:
             ${JSON.stringify(activities.map(a => ({ id: a.id, title: a.title, description: a.description })), null, 2)}`;
 
             // Preparar o payload para a API Gemini

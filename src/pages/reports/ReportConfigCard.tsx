@@ -14,6 +14,7 @@ import { getActivitiesByClient, Activity } from "@/services/firebase/activities"
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import { saveAs } from 'file-saver';
+import JSZip from 'jszip';
 // Importar o serviço Gemini
 import geminiService from "@/services/gemini-service";
 
@@ -119,12 +120,171 @@ export const ReportConfigCard = ({}: ReportConfigCardProps) => {
   }, [toast]);
 
   // Preparar opções para o Combobox
-  const clientOptions: ComboboxOption[] = clients.map(client => ({
-    value: client.id,
-    label: client.type === 'juridica'
-      ? (client as any).companyName || client.name
-      : client.name
-  }));
+  const clientOptions: ComboboxOption[] = [
+    { value: "all", label: "Todos os Clientes" },
+    ...clients.map(client => ({
+      value: client.id,
+      label: client.type === 'juridica'
+        ? (client as any).companyName || client.name
+        : client.name
+    }))
+  ];
+
+  // Função para gerar relatório em lote (múltiplos clientes)
+  const generateBulkReports = async (clients: Client[], startDate: Date, endDate: Date, toast: any) => {
+    const zip = new JSZip();
+    let processedCount = 0;
+    const totalClients = clients.length;
+
+    toast({
+      title: "Iniciando geração em lote",
+      description: `Processando ${totalClients} clientes...`
+    });
+
+    try {
+      // 1. Coletar todas as atividades de todos os clientes
+      const allActivities: Activity[] = [];
+      const clientActivitiesMap = new Map<string, Activity[]>();
+
+      for (const client of clients) {
+        const clientActivities = await getActivitiesByClient(client.id);
+        const filteredActivities = clientActivities.filter(activity => {
+          if (!activity.startDate) return false;
+          const activityDate = new Date(activity.startDate);
+          const startOfDay = new Date(startDate);
+          startOfDay.setHours(0, 0, 0, 0);
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          return activityDate >= startOfDay && activityDate <= endOfDay;
+        });
+
+        if (filteredActivities.length > 0) {
+          clientActivitiesMap.set(client.id, filteredActivities);
+          allActivities.push(...filteredActivities);
+        }
+      }
+
+      if (allActivities.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Sem atividades",
+          description: "Não foram encontradas atividades para o período selecionado em nenhum cliente."
+        });
+        return;
+      }
+
+      // 2. Uma única chamada para IA com todas as atividades
+      toast({
+        title: "Gerando resumos com IA",
+        description: `Processando ${allActivities.length} atividades em uma única requisição...`
+      });
+
+      const activitiesWithSummaries = await generateActivitySummaries(allActivities, toast);
+
+      // 3. Gerar DOCX para cada cliente
+      for (const client of clients) {
+        const clientActivities = clientActivitiesMap.get(client.id) || [];
+
+        if (clientActivities.length === 0) {
+          processedCount++;
+          continue;
+        }
+
+        // Filtrar apenas as atividades deste cliente que têm resumos
+        const clientActivityIds = new Set(clientActivities.map(a => a.id));
+        const clientSummaries = activitiesWithSummaries.filter(a => clientActivityIds.has(a.id));
+
+        // Preparar dados para o template
+        const clientName = client.type === 'juridica'
+          ? (client as any).companyName || client.name
+          : client.name;
+
+        const dataInicial = format(startDate, 'dd/MM/yyyy');
+        const dataFinal = format(endDate, 'dd/MM/yyyy');
+        const dataEmissao = new Date().toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        });
+
+        // Gerar estrutura hierárquica com letras e data_servico
+        const listaServicos = clientSummaries.map((activity, index) => {
+          const numeroSequencial = index + 1;
+          const letra = numeroSequencial === 1 ? '2.1.a' : `2.1.${String.fromCharCode(97 + numeroSequencial)}`;
+          const dataServico = activity.startDate ? format(new Date(activity.startDate), 'dd/MM/yyyy') : 'Data não disponível';
+          const tituloSumario = `${letra} Atendimento em ${dataServico}`;
+
+          return {
+            letra: letra,
+            data_servico: dataServico,
+            titulo_sumario: tituloSumario,
+            descricao_servico: (activity.summaryDescription || `${activity.title}${activity.description ? ` - ${activity.description}` : ''}`).replace(/\.\s+/g, '.\n\n')
+          };
+        });
+
+        const dataForTemplate = {
+          entidade_cliente: clientName,
+          data_inicial: dataInicial,
+          data_final: dataFinal,
+          lista_servicos: listaServicos,
+          data_extenso_emissao: dataEmissao
+        };
+
+        // Processar template
+        const templatePath = '/templates/template - Nova Estrutura.docx';
+        const response = await fetch(templatePath);
+        if (!response.ok) {
+          throw new Error(`Não foi possível carregar o template. Status: ${response.status}`);
+        }
+        const templateBlob = await response.arrayBuffer();
+
+        const zipTemplate = new PizZip(templateBlob);
+        const doc = new Docxtemplater(zipTemplate, {
+          paragraphLoop: true,
+          linebreaks: true,
+        });
+
+        doc.render(dataForTemplate);
+
+        // Gerar blob do DOCX
+        const outBlob = doc.getZip().generate({
+          type: "blob",
+          mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          compression: "DEFLATE"
+        });
+
+        // Adicionar ao ZIP
+        const safeClientName = clientName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const fileName = `Relatorio_Atividades_${safeClientName}_${dataInicial}_${dataFinal}.docx`;
+        zip.file(fileName, outBlob);
+
+        processedCount++;
+
+        toast({
+          title: "Gerando relatórios",
+          description: `${processedCount}/${totalClients} clientes processados...`
+        });
+      }
+
+      // 4. Gerar arquivo ZIP
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipFileName = `relatorios_clientes_${format(new Date(), 'yyyy-MM-dd')}.zip`;
+      saveAs(zipBlob, zipFileName);
+
+      toast({
+        title: "Relatórios gerados",
+        description: `ZIP com ${processedCount} relatórios baixado com sucesso!`
+      });
+
+    } catch (error: any) {
+      console.error("Erro na geração em lote:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro na geração em lote",
+        description: `Erro: ${error.message}`
+      });
+    }
+  };
 
   // Função para gerar o relatório
   const handleGenerateReport = async () => {
@@ -149,124 +309,115 @@ export const ReportConfigCard = ({}: ReportConfigCardProps) => {
     setIsGenerating(true);
 
     try {
-      // 1. Buscar atividades do cliente
-      const clientActivities = await getActivitiesByClient(selectedClient);
+      // Verificar se é geração em lote (todos os clientes)
+      if (selectedClient === "all") {
+        await generateBulkReports(clients, startDate, endDate, toast);
+      } else {
+        // Geração para cliente único (lógica existente)
+        const clientActivities = await getActivitiesByClient(selectedClient);
 
-      // 2. Filtrar atividades pelo período selecionado
-      const filteredActivities = clientActivities.filter(activity => {
-        if (!activity.startDate) return false;
-
-        const activityDate = new Date(activity.startDate);
-        const startOfDay = new Date(startDate);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        return activityDate >= startOfDay && activityDate <= endOfDay;
-      });
-
-      if (filteredActivities.length === 0) {
-        toast({
-          variant: "destructive",
-          title: "Sem atividades",
-          description: "Não foram encontradas atividades para o cliente e período selecionados."
+        const filteredActivities = clientActivities.filter(activity => {
+          if (!activity.startDate) return false;
+          const activityDate = new Date(activity.startDate);
+          const startOfDay = new Date(startDate);
+          startOfDay.setHours(0, 0, 0, 0);
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          return activityDate >= startOfDay && activityDate <= endOfDay;
         });
-        return;
-      }
 
-      // 3. Gerar descrições resumidas com a IA
-      toast({
-        title: "Processando Atividades",
-        description: "Gerando resumos com IA para o relatório...",
-      });
-      const activitiesWithSummaries = await generateActivitySummaries(filteredActivities, toast);
+        if (filteredActivities.length === 0) {
+          toast({
+            variant: "destructive",
+            title: "Sem atividades",
+            description: "Não foram encontradas atividades para o cliente e período selecionados."
+          });
+          return;
+        }
 
-      // 3. Buscar dados do cliente selecionado
-      const client = clients.find(c => c.id === selectedClient);
-      if (!client) {
-        toast({
-          variant: "destructive",
-          title: "Cliente não encontrado",
-          description: "Não foi possível encontrar os dados do cliente selecionado."
+        const activitiesWithSummaries = await generateActivitySummaries(filteredActivities, toast);
+
+        const client = clients.find(c => c.id === selectedClient);
+        if (!client) {
+          toast({
+            variant: "destructive",
+            title: "Cliente não encontrado",
+            description: "Não foi possível encontrar os dados do cliente selecionado."
+          });
+          return;
+        }
+
+        const clientName = client.type === 'juridica'
+          ? (client as any).companyName || client.name
+          : client.name;
+
+        const dataInicial = format(startDate, 'dd/MM/yyyy');
+        const dataFinal = format(endDate, 'dd/MM/yyyy');
+        const dataEmissao = new Date().toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
         });
-        return;
+
+        // Gerar estrutura hierárquica com letras e data_servico
+        const listaServicos = activitiesWithSummaries.map((activity, index) => {
+          const numeroSequencial = index + 1;
+          const letra = numeroSequencial === 1 ? '2.1.a' : `2.1.${String.fromCharCode(97 + numeroSequencial)}`;
+          const dataServico = activity.startDate ? format(new Date(activity.startDate), 'dd/MM/yyyy') : 'Data não disponível';
+          const tituloSumario = `${letra} Atendimento em ${dataServico}`;
+
+          return {
+            letra: letra,
+            data_servico: dataServico,
+            titulo_sumario: tituloSumario,
+            descricao_servico: (activity.summaryDescription || `${activity.title}${activity.description ? ` - ${activity.description}` : ''}`).replace(/\.\s+/g, '.\n\n')
+          };
+        });
+
+        const dataForTemplate = {
+          entidade_cliente: clientName,
+          data_inicial: dataInicial,
+          data_final: dataFinal,
+          lista_servicos: listaServicos,
+          data_extenso_emissao: dataEmissao
+        };
+
+        const templatePath = '/templates/template - Nova Estrutura.docx';
+        const response = await fetch(templatePath);
+        if (!response.ok) {
+          throw new Error(`Não foi possível carregar o template. Status: ${response.status}`);
+        }
+        const templateBlob = await response.arrayBuffer();
+
+        const zip = new PizZip(templateBlob);
+        const doc = new Docxtemplater(zip, {
+          paragraphLoop: true,
+          linebreaks: true,
+        });
+
+        doc.render(dataForTemplate);
+
+        const outBlob = doc.getZip().generate({
+          type: "blob",
+          mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          compression: "DEFLATE"
+        });
+
+        const safeClientName = clientName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const fileName = `Relatorio_Atividades_${safeClientName}_${dataInicial}_${dataFinal}.docx`;
+        saveAs(outBlob, fileName);
+
+        toast({
+          title: "Relatório gerado",
+          description: `${filteredActivities.length} atividades incluídas no relatório ${fileName}.`
+        });
       }
-
-      // 4. Carregar o template
-      const templatePath = '/templates/template - Copia.docx';
-      const response = await fetch(templatePath);
-      if (!response.ok) {
-        throw new Error(`Não foi possível carregar o template. Status: ${response.status}`);
-      }
-      const templateBlob = await response.arrayBuffer();
-
-      // 5. Preparar dados para o template
-      const clientName = client.type === 'juridica'
-        ? (client as any).companyName || client.name
-        : client.name;
-
-      const dataInicial = format(startDate, 'dd/MM/yyyy');
-      const dataFinal = format(endDate, 'dd/MM/yyyy');
-      const dataEmissao = new Date().toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      });
-
-      const dataForTemplate = {
-        entidade_cliente: clientName,
-        data_inicial: dataInicial,
-        data_final: dataFinal,
-        lista_servicos: activitiesWithSummaries.map(activity => ({
-          // Usar a descrição resumida gerada pela IA
-          descricao_servico: activity.summaryDescription || `${activity.title}${activity.description ? ` - ${activity.description}` : ''}`
-        })),
-        data_extenso_emissao: dataEmissao
-      };
-
-      // 6. Processar o template
-      const zip = new PizZip(templateBlob);
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-      });
-
-      doc.render(dataForTemplate);
-
-      // 7. Gerar o arquivo
-      const outBlob = doc.getZip().generate({
-        type: "blob",
-        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        compression: "DEFLATE"
-      });
-
-      // 8. Download do arquivo
-      const safeClientName = clientName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      const fileName = `Relatorio_Atividades_${safeClientName}_${format(startDate, 'yyyy-MM-dd')}_${format(endDate, 'yyyy-MM-dd')}.docx`;
-      saveAs(outBlob, fileName);
-
-      toast({
-        title: "Relatório gerado",
-        description: `${filteredActivities.length} atividades incluídas no relatório ${fileName}.`
-      });
-
     } catch (error: any) {
       console.error("Erro ao gerar relatório:", error);
-
-      let errorMessage = "Ocorreu um erro ao gerar o relatório.";
-      if (error.properties && error.properties.errors) {
-        const templateErrors = error.properties.errors.map((err: any) =>
-          err.properties?.explanation || err.message
-        ).join('; ');
-        errorMessage += ` Detalhes: ${templateErrors.substring(0, 150)}...`;
-      } else if (error.message) {
-        errorMessage = `Erro: ${error.message}`;
-      }
-
       toast({
         variant: "destructive",
         title: "Erro na geração do relatório",
-        description: errorMessage
+        description: `Erro: ${error.message}`
       });
     } finally {
       setIsGenerating(false);

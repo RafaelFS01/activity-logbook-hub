@@ -16,9 +16,9 @@ Implementação de uma nova funcionalidade de relatórios que utiliza o arquivo 
 - Interface limpa e intuitiva focada em geração de relatórios
 
 ### 2. Card de Configurações
-- **Seleção de Cliente**: Combobox com busca e dropdown visual para todos os clientes ativos
+- **Seleção de Cliente**: Combobox avançado com busca, dropdown visual e opção "Todos os Clientes"
 - **Período de Emissão**: Campos de data inicial e final
-- **Botão de Geração**: Inicia o processo de criação do relatório
+- **Botão de Geração**: Inicia processo de criação (individual ou em lote com ZIP)
 
 ### 3. Processo de Geração
 - Carrega o arquivo `template - Copia.docx` da pasta `public/templates/`
@@ -45,11 +45,11 @@ Implementação de uma nova funcionalidade de relatórios que utiliza o arquivo 
 ## Fluxo de Funcionamento
 
 1. **Navegação**: Usuário clica em "Relatórios" na barra lateral
-2. **Configuração**: Seleciona cliente e período desejado
+2. **Configuração**: Seleciona cliente (ou "Todos") e período desejado
 3. **Validação**: Sistema verifica se existem atividades no período selecionado
-4. **IA**: Gera resumos aprimorados das atividades usando Gemini
-5. **Geração**: Processa template com dados das atividades (incluindo resumos da IA)
-6. **Download**: Arquivo DOCX é baixado automaticamente
+4. **IA**: Gera resumos aprimorados das atividades usando Gemini (única requisição)
+5. **Geração**: Processa template(s) com dados das atividades (incluindo resumos da IA)
+6. **Download**: Arquivo DOCX individual ou ZIP com múltiplos arquivos é baixado
 
 ## Placeholders do Template
 Baseado na análise do código atual, o template deve conter:
