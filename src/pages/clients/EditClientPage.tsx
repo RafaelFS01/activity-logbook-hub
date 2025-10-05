@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -41,6 +42,7 @@ const pessoaFisicaSchema = z.object({
   cpf: z.string().min(11, "CPF inválido"),
   rg: z.string().optional(),
   address: z.string().optional(),
+  reportIntroduction: z.string().optional(),
   active: z.boolean().default(true),
 });
 
@@ -53,6 +55,7 @@ const pessoaJuridicaSchema = z.object({
   cnpj: z.string().min(14, "CNPJ inválido"),
   responsibleName: z.string().optional(),
   address: z.string().optional(),
+  reportIntroduction: z.string().optional(),
   active: z.boolean().default(true),
 });
 
@@ -108,6 +111,7 @@ const EditClientPage = () => {
               cpf: (client as any).cpf,
               rg: (client as any).rg || "",
               address: client.address || "",
+              reportIntroduction: (client as any).reportIntroduction || "",
               active: client.active,
             } as PessoaFisicaFormValues);
           } else {
@@ -120,6 +124,7 @@ const EditClientPage = () => {
               cnpj: (client as any).cnpj,
               responsibleName: (client as any).responsibleName || "",
               address: client.address || "",
+              reportIntroduction: (client as any).reportIntroduction || "",
               active: client.active,
             } as PessoaJuridicaFormValues);
           }
@@ -324,6 +329,19 @@ const EditClientPage = () => {
                       <p className="text-sm text-red-500">{errors.address.message}</p>
                     )}
                   </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="reportIntroduction-fisica">Introdução do Relatório de Serviços</Label>
+                    <Textarea
+                      id="reportIntroduction-fisica"
+                      placeholder="Digite uma introdução personalizada para os relatórios de serviços deste cliente"
+                      className="min-h-[100px] resize-y"
+                      {...register("reportIntroduction")}
+                    />
+                    {(errors as any).reportIntroduction && (
+                      <p className="text-sm text-destructive">{(errors as any).reportIntroduction.message}</p>
+                    )}
+                  </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="active-fisica">Status</Label>
@@ -429,6 +447,19 @@ const EditClientPage = () => {
                     />
                     {errors.address && (
                       <p className="text-sm text-red-500">{errors.address.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="reportIntroduction-juridica">Introdução do Relatório de Serviços</Label>
+                    <Textarea
+                      id="reportIntroduction-juridica"
+                      placeholder="Digite uma introdução personalizada para os relatórios de serviços deste cliente"
+                      className="min-h-[100px] resize-y"
+                      {...register("reportIntroduction")}
+                    />
+                    {(errors as any).reportIntroduction && (
+                      <p className="text-sm text-destructive">{(errors as any).reportIntroduction.message}</p>
                     )}
                   </div>
                   

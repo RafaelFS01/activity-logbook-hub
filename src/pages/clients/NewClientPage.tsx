@@ -47,6 +47,7 @@ const pessoaFisicaSchema = z.object({
   email: z.string().email("Email inválido"),
   phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
   address: z.string().optional(),
+  reportIntroduction: z.string().optional(),
 });
 
 // Schema de validação para pessoa jurídica
@@ -61,6 +62,7 @@ const pessoaJuridicaSchema = z.object({
   email: z.string().email("Email inválido"),
   phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
   address: z.string().optional(),
+  reportIntroduction: z.string().optional(),
 });
 
 // Schema combinado com discriminador
@@ -88,6 +90,7 @@ const NewClientPage = () => {
       email: "",
       phone: "",
       address: "",
+      reportIntroduction: "",
     }
   });
 
@@ -101,6 +104,7 @@ const NewClientPage = () => {
       email: "",
       phone: "",
       address: "",
+      reportIntroduction: "",
     }
   });
 
@@ -277,6 +281,21 @@ const NewClientPage = () => {
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="reportIntroduction">Introdução do Relatório de Serviços (Opcional)</Label>
+                  <Textarea
+                    id="reportIntroduction"
+                    placeholder="Digite uma introdução personalizada para os relatórios de serviços deste cliente"
+                    className="min-h-[100px] resize-y"
+                    {...formFisica.register("reportIntroduction")}
+                  />
+                  {formFisica.formState.errors.reportIntroduction && (
+                    <p className="text-sm text-red-500">
+                      {formFisica.formState.errors.reportIntroduction.message}
+                    </p>
+                  )}
+                </div>
+
                 <CardFooter className="flex justify-between px-0 pt-4">
                   <Button
                     type="button"
@@ -377,6 +396,21 @@ const NewClientPage = () => {
                   {formJuridica.formState.errors.address && (
                     <p className="text-sm text-red-500">
                       {formJuridica.formState.errors.address.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reportIntroduction">Introdução do Relatório de Serviços (Opcional)</Label>
+                  <Textarea
+                    id="reportIntroduction"
+                    placeholder="Digite uma introdução personalizada para os relatórios de serviços deste cliente"
+                    className="min-h-[100px] resize-y"
+                    {...formJuridica.register("reportIntroduction")}
+                  />
+                  {formJuridica.formState.errors.reportIntroduction && (
+                    <p className="text-sm text-red-500">
+                      {formJuridica.formState.errors.reportIntroduction.message}
                     </p>
                   )}
                 </div>

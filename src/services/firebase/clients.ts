@@ -18,6 +18,7 @@ export interface BaseClient {
   updatedAt: string;
   createdBy: string;
   notes?: string;
+  reportIntroduction?: string;
 }
 
 export interface PessoaFisicaClient extends BaseClient {
@@ -150,13 +151,65 @@ export const deleteClient = async (clientId: string) => {
   try {
     // Instead of deleting, we set the client to inactive
     const clientRef = ref(db, `clients/${clientId}`);
-    await update(clientRef, { 
+    await update(clientRef, {
       active: false,
       updatedAt: new Date().toISOString()
     });
     return true;
   } catch (error) {
     console.error('Erro ao desativar cliente:', error);
+    throw error;
+  }
+};
+
+// Update all existing clients with default report introduction
+export const migrateClientsWithReportIntroduction = async () => {
+  try {
+    const clientsRef = ref(db, 'clients');
+    const snapshot = await get(clientsRef);
+
+    if (!snapshot.exists()) {
+      return { success: true, message: 'Nenhum cliente encontrado para migração' };
+    }
+
+    const clientsData = snapshot.val();
+    const updates: Record<string, any> = {};
+
+    Object.entries(clientsData).forEach(([clientId, client]: [string, any]) => {
+      // Only add reportIntroduction if it doesn't exist
+      if (!client.reportIntroduction) {
+        updates[`clients/${clientId}/reportIntroduction`] = '';
+        updates[`clients/${clientId}/updatedAt`] = new Date().toISOString();
+      }
+    });
+
+    if (Object.keys(updates).length === 0) {
+      return { success: true, message: 'Todos os clientes já possuem o campo reportIntroduction' };
+    }
+
+    await update(ref(db), updates);
+
+    return {
+      success: true,
+      message: `${Object.keys(updates).length / 2} clientes atualizados com sucesso`
+    };
+  } catch (error) {
+    console.error('Erro ao migrar clientes:', error);
+    throw error;
+  }
+};
+
+// Update specific client with report introduction
+export const updateClientReportIntroduction = async (clientId: string, reportIntroduction: string) => {
+  try {
+    const clientRef = ref(db, `clients/${clientId}`);
+    await update(clientRef, {
+      reportIntroduction,
+      updatedAt: new Date().toISOString()
+    });
+    return true;
+  } catch (error) {
+    console.error('Erro ao atualizar introdução do relatório:', error);
     throw error;
   }
 };

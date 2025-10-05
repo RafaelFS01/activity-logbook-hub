@@ -5,10 +5,12 @@ import { getActivitiesByClient, Activity, ActivityStatus } from "@/services/fire
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   User, Building2, CheckCircle2, XCircle, Clock, FileEdit,
   ArrowLeft, List, CircleAlert, Search, Filter,
-  Calendar as CalendarIcon, RotateCcw, FileSpreadsheet, ChevronLeft, ChevronRight, FileText
+  Calendar as CalendarIcon, RotateCcw, FileSpreadsheet, ChevronLeft, ChevronRight, FileText,
+  Mail, Phone, MapPin, CreditCard, Building, UserCheck, Clock as ClockIcon
 } from "lucide-react";
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
@@ -16,6 +18,7 @@ import { saveAs } from 'file-saver';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
@@ -118,6 +121,7 @@ const ClientDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const { toast } = useToast();
 
   const [client, setClient] = useState<Client | null>(null);
@@ -687,63 +691,476 @@ const ClientDetailsPage = () => {
                       Detalhes do cliente {client.type === 'juridica' ? ' (Pessoa Jurídica)' : ' (Pessoa Física)'}.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium text-muted-foreground">Status:</span>
-                      <span className="text-right">{getStatusBadge('client')}</span>
+                  <CardContent className="p-6">
+                    {/* Status Section */}
+                    <div className="mb-6">
+                      <div className={`flex items-center justify-between p-4 rounded-lg border ${
+                        theme === 'dark' ? 'bg-gray-800/50 border-gray-700' :
+                        theme === 'h12' ? 'bg-muted/30 border-gray-200' :
+                        theme === 'h12-alt' ? 'bg-gray-800/30 border-gray-600' :
+                        'bg-muted/30 border-gray-200'
+                      }`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-full ${
+                            theme === 'dark' ? 'bg-primary/20' :
+                            theme === 'h12' ? 'bg-primary/10' :
+                            theme === 'h12-alt' ? 'bg-primary/15' :
+                            'bg-primary/10'
+                          }`}>
+                            <CheckCircle2 className={`h-5 w-5 ${
+                              theme === 'dark' ? 'text-primary' :
+                              theme === 'h12' ? 'text-primary' :
+                              theme === 'h12-alt' ? 'text-primary' :
+                              'text-primary'
+                            }`} />
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium text-muted-foreground">E-mail:</span>
-                      <span className="text-right break-all">{client.email || '-'}</span>
+                          <div>
+                            <p className={`text-sm font-medium ${
+                              theme === 'dark' ? 'text-gray-200' :
+                              theme === 'h12' ? 'text-muted-foreground' :
+                              theme === 'h12-alt' ? 'text-gray-300' :
+                              'text-muted-foreground'
+                            }`}>Status do Cliente</p>
+                            <p className={`text-sm ${
+                              theme === 'dark' ? 'text-gray-400' :
+                              theme === 'h12' ? 'text-muted-foreground' :
+                              theme === 'h12-alt' ? 'text-gray-400' :
+                              'text-muted-foreground'
+                            }`}>Estado atual na plataforma</p>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium text-muted-foreground">Telefone:</span>
-                      <span className="text-right whitespace-nowrap">{client.phone || '-'}</span>
                     </div>
+                        {getStatusBadge('client')}
+                      </div>
+                    </div>
+
+                    <Separator className="my-6" />
+
+                    {/* Contact Information */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <div className={`p-1.5 rounded-md ${
+                          theme === 'dark' ? 'bg-blue-900/30' :
+                          theme === 'h12' ? 'bg-blue-100' :
+                          theme === 'h12-alt' ? 'bg-blue-900/20' :
+                          'bg-blue-100'
+                        }`}>
+                          <Mail className={`h-4 w-4 ${
+                            theme === 'dark' ? 'text-blue-300' :
+                            theme === 'h12' ? 'text-blue-600' :
+                            theme === 'h12-alt' ? 'text-blue-400' :
+                            'text-blue-600'
+                          }`} />
+                        </div>
+                        Informações de Contato
+                      </h3>
+
+                      <div className="grid gap-4">
+                        <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                          theme === 'dark' ? 'bg-blue-950/30' :
+                          theme === 'h12' ? 'bg-muted/20' :
+                          theme === 'h12-alt' ? 'bg-blue-950/20' :
+                          'bg-muted/20'
+                        }`}>
+                          <Mail className={`h-4 w-4 flex-shrink-0 ${
+                            theme === 'dark' ? 'text-blue-400' :
+                            theme === 'h12' ? 'text-muted-foreground' :
+                            theme === 'h12-alt' ? 'text-blue-400' :
+                            'text-muted-foreground'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === 'dark' ? 'text-blue-300' :
+                              theme === 'h12' ? 'text-muted-foreground' :
+                              theme === 'h12-alt' ? 'text-blue-300' :
+                              'text-muted-foreground'
+                            }`}>E-mail</p>
+                            <p className={`text-sm break-all ${
+                              theme === 'dark' ? 'text-blue-100' :
+                              theme === 'h12' ? 'text-foreground' :
+                              theme === 'h12-alt' ? 'text-blue-100' :
+                              'text-foreground'
+                            }`}>{client.email || '-'}</p>
+                          </div>
+                        </div>
+
+                        <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                          theme === 'dark' ? 'bg-blue-950/30' :
+                          theme === 'h12' ? 'bg-muted/20' :
+                          theme === 'h12-alt' ? 'bg-blue-950/20' :
+                          'bg-muted/20'
+                        }`}>
+                          <Phone className={`h-4 w-4 flex-shrink-0 ${
+                            theme === 'dark' ? 'text-blue-400' :
+                            theme === 'h12' ? 'text-muted-foreground' :
+                            theme === 'h12-alt' ? 'text-blue-400' :
+                            'text-muted-foreground'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === 'dark' ? 'text-blue-300' :
+                              theme === 'h12' ? 'text-muted-foreground' :
+                              theme === 'h12-alt' ? 'text-blue-300' :
+                              'text-muted-foreground'
+                            }`}>Telefone</p>
+                            <p className={`text-sm ${
+                              theme === 'dark' ? 'text-blue-100' :
+                              theme === 'h12' ? 'text-foreground' :
+                              theme === 'h12-alt' ? 'text-blue-100' :
+                              'text-foreground'
+                            }`}>{client.phone || '-'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator className="my-6" />
+
+                    {/* Document Information */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <div className={`p-1.5 rounded-md ${
+                          theme === 'dark' ? 'bg-green-900/30' :
+                          theme === 'h12' ? 'bg-green-100' :
+                          theme === 'h12-alt' ? 'bg-green-900/20' :
+                          'bg-green-100'
+                        }`}>
+                          <CreditCard className={`h-4 w-4 ${
+                            theme === 'dark' ? 'text-green-300' :
+                            theme === 'h12' ? 'text-green-600' :
+                            theme === 'h12-alt' ? 'text-green-400' :
+                            'text-green-600'
+                          }`} />
+                        </div>
+                        Documentos {client.type === 'fisica' ? 'Pessoais' : 'Empresariais'}
+                      </h3>
+
+                      <div className="grid gap-4">
                     {client.type === 'fisica' ? (
                         <>
-                          <div className="flex justify-between items-center py-2 border-b">
-                            <span className="font-medium text-muted-foreground">CPF:</span>
-                            <span className="text-right">{(client as PessoaFisicaClient).cpf || '-'}</span>
+                            <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                              theme === 'dark' ? 'bg-green-950/30' :
+                              theme === 'h12' ? 'bg-muted/20' :
+                              theme === 'h12-alt' ? 'bg-green-950/20' :
+                              'bg-muted/20'
+                            }`}>
+                              <CreditCard className={`h-4 w-4 flex-shrink-0 ${
+                                theme === 'dark' ? 'text-green-400' :
+                                theme === 'h12' ? 'text-muted-foreground' :
+                                theme === 'h12-alt' ? 'text-green-400' :
+                                'text-muted-foreground'
+                              }`} />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-medium uppercase tracking-wide ${
+                                  theme === 'dark' ? 'text-green-300' :
+                                  theme === 'h12' ? 'text-muted-foreground' :
+                                  theme === 'h12-alt' ? 'text-green-300' :
+                                  'text-muted-foreground'
+                                }`}>CPF</p>
+                                <p className={`text-sm font-mono ${
+                                  theme === 'dark' ? 'text-green-100' :
+                                  theme === 'h12' ? 'text-foreground' :
+                                  theme === 'h12-alt' ? 'text-green-100' :
+                                  'text-foreground'
+                                }`}>{(client as PessoaFisicaClient).cpf || '-'}</p>
                           </div>
+                            </div>
+
                           {(client as PessoaFisicaClient).rg && (
-                              <div className="flex justify-between items-center py-2 border-b">
-                                <span className="font-medium text-muted-foreground">RG:</span>
-                                <span className="text-right">{(client as PessoaFisicaClient).rg}</span>
+                              <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                                theme === 'dark' ? 'bg-green-950/30' :
+                                theme === 'h12' ? 'bg-muted/20' :
+                                theme === 'h12-alt' ? 'bg-green-950/20' :
+                                'bg-muted/20'
+                              }`}>
+                                <CreditCard className={`h-4 w-4 flex-shrink-0 ${
+                                  theme === 'dark' ? 'text-green-400' :
+                                  theme === 'h12' ? 'text-muted-foreground' :
+                                  theme === 'h12-alt' ? 'text-green-400' :
+                                  'text-muted-foreground'
+                                }`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-xs font-medium uppercase tracking-wide ${
+                                    theme === 'dark' ? 'text-green-300' :
+                                    theme === 'h12' ? 'text-muted-foreground' :
+                                    theme === 'h12-alt' ? 'text-green-300' :
+                                    'text-muted-foreground'
+                                  }`}>RG</p>
+                                  <p className={`text-sm font-mono ${
+                                    theme === 'dark' ? 'text-green-100' :
+                                    theme === 'h12' ? 'text-foreground' :
+                                    theme === 'h12-alt' ? 'text-green-100' :
+                                    'text-foreground'
+                                  }`}>{(client as PessoaFisicaClient).rg}</p>
+                                </div>
                               </div>
                           )}
                         </>
                     ) : (
                         <>
-                          <div className="flex justify-between items-center py-2 border-b">
-                            <span className="font-medium text-muted-foreground">CNPJ:</span>
-                            <span className="text-right">{(client as PessoaJuridicaClient).cnpj || '-'}</span>
+                            <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                              theme === 'dark' ? 'bg-green-950/30' :
+                              theme === 'h12' ? 'bg-muted/20' :
+                              theme === 'h12-alt' ? 'bg-green-950/20' :
+                              'bg-muted/20'
+                            }`}>
+                              <Building className={`h-4 w-4 flex-shrink-0 ${
+                                theme === 'dark' ? 'text-green-400' :
+                                theme === 'h12' ? 'text-muted-foreground' :
+                                theme === 'h12-alt' ? 'text-green-400' :
+                                'text-muted-foreground'
+                              }`} />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-medium uppercase tracking-wide ${
+                                  theme === 'dark' ? 'text-green-300' :
+                                  theme === 'h12' ? 'text-muted-foreground' :
+                                  theme === 'h12-alt' ? 'text-green-300' :
+                                  'text-muted-foreground'
+                                }`}>CNPJ</p>
+                                <p className={`text-sm font-mono ${
+                                  theme === 'dark' ? 'text-green-100' :
+                                  theme === 'h12' ? 'text-foreground' :
+                                  theme === 'h12-alt' ? 'text-green-100' :
+                                  'text-foreground'
+                                }`}>{(client as PessoaJuridicaClient).cnpj || '-'}</p>
                           </div>
-                          <div className="flex justify-between items-center py-2 border-b">
-                            <span className="font-medium text-muted-foreground">Razão Social:</span>
-                            <span className="text-right">{(client as PessoaJuridicaClient).companyName || '-'}</span>
                           </div>
+
+                            <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                              theme === 'dark' ? 'bg-green-950/30' :
+                              theme === 'h12' ? 'bg-muted/20' :
+                              theme === 'h12-alt' ? 'bg-green-950/20' :
+                              'bg-muted/20'
+                            }`}>
+                              <Building className={`h-4 w-4 flex-shrink-0 ${
+                                theme === 'dark' ? 'text-green-400' :
+                                theme === 'h12' ? 'text-muted-foreground' :
+                                theme === 'h12-alt' ? 'text-green-400' :
+                                'text-muted-foreground'
+                              }`} />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-medium uppercase tracking-wide ${
+                                  theme === 'dark' ? 'text-green-300' :
+                                  theme === 'h12' ? 'text-muted-foreground' :
+                                  theme === 'h12-alt' ? 'text-green-300' :
+                                  'text-muted-foreground'
+                                }`}>Razão Social</p>
+                                <p className={`text-sm ${
+                                  theme === 'dark' ? 'text-green-100' :
+                                  theme === 'h12' ? 'text-foreground' :
+                                  theme === 'h12-alt' ? 'text-green-100' :
+                                  'text-foreground'
+                                }`}>{(client as PessoaJuridicaClient).companyName || '-'}</p>
+                              </div>
+                            </div>
+
                           {(client as PessoaJuridicaClient).responsibleName && (
-                              <div className="flex justify-between items-center py-2 border-b">
-                                <span className="font-medium text-muted-foreground">Responsável:</span>
-                                <span className="text-right">{(client as PessoaJuridicaClient).responsibleName}</span>
+                              <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                                theme === 'dark' ? 'bg-green-950/30' :
+                                theme === 'h12' ? 'bg-muted/20' :
+                                theme === 'h12-alt' ? 'bg-green-950/20' :
+                                'bg-muted/20'
+                              }`}>
+                                <UserCheck className={`h-4 w-4 flex-shrink-0 ${
+                                  theme === 'dark' ? 'text-green-400' :
+                                  theme === 'h12' ? 'text-muted-foreground' :
+                                  theme === 'h12-alt' ? 'text-green-400' :
+                                  'text-muted-foreground'
+                                }`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-xs font-medium uppercase tracking-wide ${
+                                    theme === 'dark' ? 'text-green-300' :
+                                    theme === 'h12' ? 'text-muted-foreground' :
+                                    theme === 'h12-alt' ? 'text-green-300' :
+                                    'text-muted-foreground'
+                                  }`}>Responsável</p>
+                                  <p className={`text-sm ${
+                                    theme === 'dark' ? 'text-green-100' :
+                                    theme === 'h12' ? 'text-foreground' :
+                                    theme === 'h12-alt' ? 'text-green-100' :
+                                    'text-foreground'
+                                  }`}>{(client as PessoaJuridicaClient).responsibleName}</p>
+                                </div>
                               </div>
                           )}
                         </>
                     )}
-                    {client.address && (
-                        <div className="flex justify-between items-start py-2 border-b">
-                          <span className="font-medium text-muted-foreground flex-shrink-0 mr-4">Endereço:</span>
-                          <span className="text-right">{client.address}</span>
-                        </div>
-                    )}
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium text-muted-foreground">Criado em:</span>
-                      <span className="text-right">{formatDate(client.createdAt)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <span className="font-medium text-muted-foreground">Última atualização:</span>
-                      <span className="text-right">{formatDate(client.updatedAt)}</span>
+
+                    {/* Address Information */}
+                    {client.address && (
+                      <>
+                        <Separator className="my-6" />
+                        <div className="mb-6">
+                          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <div className={`p-1.5 rounded-md ${
+                              theme === 'dark' ? 'bg-orange-900/30' :
+                              theme === 'h12' ? 'bg-orange-100' :
+                              theme === 'h12-alt' ? 'bg-orange-900/20' :
+                              'bg-orange-100'
+                            }`}>
+                              <MapPin className={`h-4 w-4 ${
+                                theme === 'dark' ? 'text-orange-300' :
+                                theme === 'h12' ? 'text-orange-600' :
+                                theme === 'h12-alt' ? 'text-orange-400' :
+                                'text-orange-600'
+                              }`} />
+                        </div>
+                            Localização
+                          </h3>
+
+                          <div className={`p-4 rounded-lg ${
+                            theme === 'dark' ? 'bg-orange-950/30' :
+                            theme === 'h12' ? 'bg-muted/20' :
+                            theme === 'h12-alt' ? 'bg-orange-950/20' :
+                            'bg-muted/20'
+                          }`}>
+                            <div className="flex items-start gap-3">
+                              <MapPin className={`h-4 w-4 flex-shrink-0 mt-0.5 ${
+                                theme === 'dark' ? 'text-orange-400' :
+                                theme === 'h12' ? 'text-muted-foreground' :
+                                theme === 'h12-alt' ? 'text-orange-400' :
+                                'text-muted-foreground'
+                              }`} />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-medium uppercase tracking-wide ${
+                                  theme === 'dark' ? 'text-orange-300' :
+                                  theme === 'h12' ? 'text-muted-foreground' :
+                                  theme === 'h12-alt' ? 'text-orange-300' :
+                                  'text-muted-foreground'
+                                }`}>Endereço</p>
+                                <p className={`text-sm ${
+                                  theme === 'dark' ? 'text-orange-100' :
+                                  theme === 'h12' ? 'text-foreground' :
+                                  theme === 'h12-alt' ? 'text-orange-100' :
+                                  'text-foreground'
+                                }`}>{client.address}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Report Introduction */}
+                    {(client as any).reportIntroduction && (
+                      <>
+                        <Separator className="my-6" />
+                        <div className="mb-6">
+                          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <div className={`p-1.5 rounded-md ${
+                              theme === 'dark' ? 'bg-purple-900/30' :
+                              theme === 'h12' ? 'bg-purple-100' :
+                              theme === 'h12-alt' ? 'bg-purple-900/20' :
+                              'bg-purple-100'
+                            }`}>
+                              <FileText className={`h-4 w-4 ${
+                                theme === 'dark' ? 'text-purple-300' :
+                                theme === 'h12' ? 'text-purple-600' :
+                                theme === 'h12-alt' ? 'text-purple-400' :
+                                'text-purple-600'
+                              }`} />
+                    </div>
+                            Introdução do Relatório
+                          </h3>
+
+                          <div className={`p-4 rounded-lg border ${
+                            theme === 'dark' ? 'bg-purple-950/50 border-purple-800' :
+                            theme === 'h12' ? 'bg-purple-50 border-purple-200' :
+                            theme === 'h12-alt' ? 'bg-purple-950/30 border-purple-700' :
+                            'bg-purple-50 border-purple-200'
+                          }`}>
+                            <p className={`text-sm leading-relaxed ${
+                              theme === 'dark' ? 'text-purple-100' :
+                              theme === 'h12' ? 'text-gray-700' :
+                              theme === 'h12-alt' ? 'text-purple-200' :
+                              'text-gray-700'
+                            }`}>
+                              {(client as any).reportIntroduction}
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <Separator className="my-6" />
+
+                    {/* System Information */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <div className={`p-1.5 rounded-md ${
+                          theme === 'dark' ? 'bg-gray-800/50' :
+                          theme === 'h12' ? 'bg-gray-100' :
+                          theme === 'h12-alt' ? 'bg-gray-700/50' :
+                          'bg-gray-100'
+                        }`}>
+                          <ClockIcon className={`h-4 w-4 ${
+                            theme === 'dark' ? 'text-gray-300' :
+                            theme === 'h12' ? 'text-gray-600' :
+                            theme === 'h12-alt' ? 'text-gray-400' :
+                            'text-gray-600'
+                          }`} />
+                        </div>
+                        Informações do Sistema
+                      </h3>
+
+                      <div className="grid gap-4">
+                        <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                          theme === 'dark' ? 'bg-gray-800/30' :
+                          theme === 'h12' ? 'bg-muted/20' :
+                          theme === 'h12-alt' ? 'bg-gray-700/30' :
+                          'bg-muted/20'
+                        }`}>
+                          <CalendarIcon className={`h-4 w-4 flex-shrink-0 ${
+                            theme === 'dark' ? 'text-gray-400' :
+                            theme === 'h12' ? 'text-muted-foreground' :
+                            theme === 'h12-alt' ? 'text-gray-400' :
+                            'text-muted-foreground'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === 'dark' ? 'text-gray-300' :
+                              theme === 'h12' ? 'text-muted-foreground' :
+                              theme === 'h12-alt' ? 'text-gray-300' :
+                              'text-muted-foreground'
+                            }`}>Criado em</p>
+                            <p className={`text-sm ${
+                              theme === 'dark' ? 'text-gray-100' :
+                              theme === 'h12' ? 'text-foreground' :
+                              theme === 'h12-alt' ? 'text-gray-100' :
+                              'text-foreground'
+                            }`}>{formatDate(client.createdAt)}</p>
+                          </div>
+                        </div>
+
+                        <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                          theme === 'dark' ? 'bg-gray-800/30' :
+                          theme === 'h12' ? 'bg-muted/20' :
+                          theme === 'h12-alt' ? 'bg-gray-700/30' :
+                          'bg-muted/20'
+                        }`}>
+                          <ClockIcon className={`h-4 w-4 flex-shrink-0 ${
+                            theme === 'dark' ? 'text-gray-400' :
+                            theme === 'h12' ? 'text-muted-foreground' :
+                            theme === 'h12-alt' ? 'text-gray-400' :
+                            'text-muted-foreground'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium uppercase tracking-wide ${
+                              theme === 'dark' ? 'text-gray-300' :
+                              theme === 'h12' ? 'text-muted-foreground' :
+                              theme === 'h12-alt' ? 'text-gray-300' :
+                              'text-muted-foreground'
+                            }`}>Última atualização</p>
+                            <p className={`text-sm ${
+                              theme === 'dark' ? 'text-gray-100' :
+                              theme === 'h12' ? 'text-foreground' :
+                              theme === 'h12-alt' ? 'text-gray-100' :
+                              'text-foreground'
+                            }`}>{formatDate(client.updatedAt)}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -751,22 +1168,76 @@ const ClientDetailsPage = () => {
 
               <TabsContent value="activities" className="mt-0">
                 <Card>
-                  <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4">
-                    <div>
-                      <CardTitle>Atividades do Cliente</CardTitle>
-                      <CardDescription>
-                        Visualize e gerencie as atividades associadas. {totalActivities} encontrada(s).
-                      </CardDescription>
-                    </div>
-                    <div className="flex flex-shrink-0 gap-2 w-full md:w-auto">
+                  <CardHeader className={`pb-6 ${
+                    theme === 'dark' ? 'bg-slate-800/50' :
+                    theme === 'h12' ? 'bg-slate-50/50' :
+                    theme === 'h12-alt' ? 'bg-slate-800/30' :
+                    'bg-slate-50/50'
+                  }`}>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-4">
+                        <div className={`p-3 rounded-xl flex-shrink-0 ${
+                          theme === 'dark' ? 'bg-indigo-900/40' :
+                          theme === 'h12' ? 'bg-indigo-100' :
+                          theme === 'h12-alt' ? 'bg-indigo-900/25' :
+                          'bg-indigo-100'
+                        }`}>
+                          <List className={`h-6 w-6 ${
+                            theme === 'dark' ? 'text-indigo-300' :
+                            theme === 'h12' ? 'text-indigo-600' :
+                            theme === 'h12-alt' ? 'text-indigo-400' :
+                            'text-indigo-600'
+                          }`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h1 className={`text-2xl font-bold mb-2 ${
+                            theme === 'dark' ? 'text-slate-100' :
+                            theme === 'h12' ? 'text-slate-900' :
+                            theme === 'h12-alt' ? 'text-slate-200' :
+                            'text-slate-900'
+                          }`}>
+                            Atividades do Cliente
+                          </h1>
+                          <div className={`space-y-2 ${
+                            theme === 'dark' ? 'text-slate-300' :
+                            theme === 'h12' ? 'text-slate-600' :
+                            theme === 'h12-alt' ? 'text-slate-400' :
+                            'text-slate-600'
+                          }`}>
+                            <p className="text-base leading-relaxed">
+                              Gerencie todas as atividades associadas a este cliente
+                            </p>
+                            <p className={`text-lg font-semibold ${
+                              theme === 'dark' ? 'text-slate-200' :
+                              theme === 'h12' ? 'text-slate-800' :
+                              theme === 'h12-alt' ? 'text-slate-300' :
+                              'text-slate-800'
+                            }`}>
+                              {totalActivities} atividade{totalActivities !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3 lg:flex-nowrap lg:gap-2">
                       <Button
                           size="sm"
                           variant="outline"
                           onClick={handleExport}
                           disabled={filteredActivities.length === 0}
-                          className="flex-1 md:flex-none"
-                      >
-                          <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            className={`flex-1 lg:flex-none ${
+                              theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' :
+                              theme === 'h12' ? 'border-slate-300 hover:bg-slate-100' :
+                              theme === 'h12-alt' ? 'border-slate-500 hover:bg-slate-700' :
+                              'border-slate-300 hover:bg-slate-100'
+                            }`}
+                        >
+                            <FileSpreadsheet className={`mr-2 h-4 w-4 ${
+                              theme === 'dark' ? 'text-slate-300' :
+                              theme === 'h12' ? 'text-slate-600' :
+                              theme === 'h12-alt' ? 'text-slate-400' :
+                              'text-slate-600'
+                            }`} />
                           Exportar (Excel) ({filteredActivities.length})
                       </Button>
                       <Button
@@ -774,16 +1245,31 @@ const ClientDetailsPage = () => {
                           variant="outline"
                           onClick={handleExportPdf}
                           disabled={filteredActivities.length === 0 || isGeneratingPdf}
-                          className="flex-1 md:flex-none"
+                            className={`flex-1 lg:flex-none ${
+                              theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' :
+                              theme === 'h12' ? 'border-slate-300 hover:bg-slate-100' :
+                              theme === 'h12-alt' ? 'border-slate-500 hover:bg-slate-700' :
+                              'border-slate-300 hover:bg-slate-100'
+                            }`}
                       >
                           {isGeneratingPdf ? (
                               <>
-                                  <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
+                                    <RotateCcw className={`mr-2 h-4 w-4 animate-spin ${
+                                      theme === 'dark' ? 'text-slate-300' :
+                                      theme === 'h12' ? 'text-slate-600' :
+                                      theme === 'h12-alt' ? 'text-slate-400' :
+                                      'text-slate-600'
+                                    }`} />
                                   Gerando PDF...
                               </>
                           ) : (
                               <>
-                                  <FileText className="mr-2 h-4 w-4" /> {/* Ou FilePdf se tiver */}
+                                    <FileText className={`mr-2 h-4 w-4 ${
+                                      theme === 'dark' ? 'text-slate-300' :
+                                      theme === 'h12' ? 'text-slate-600' :
+                                      theme === 'h12-alt' ? 'text-slate-400' :
+                                      'text-slate-600'
+                                    }`} />
                                   Exportar PDF ({filteredActivities.length})
                               </>
                           )}
@@ -793,16 +1279,31 @@ const ClientDetailsPage = () => {
                           variant="outline"
                           onClick={handleGenerateDocx}
                           disabled={filteredActivities.length === 0 || isGeneratingDocx}
-                          className="flex-1 md:flex-none" // Manter consistência de layout
+                            className={`flex-1 lg:flex-none ${
+                              theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' :
+                              theme === 'h12' ? 'border-slate-300 hover:bg-slate-100' :
+                              theme === 'h12-alt' ? 'border-slate-500 hover:bg-slate-700' :
+                              'border-slate-300 hover:bg-slate-100'
+                            }`}
                       >
                           {isGeneratingDocx ? (
                               <>
-                                  <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
+                                    <RotateCcw className={`mr-2 h-4 w-4 animate-spin ${
+                                      theme === 'dark' ? 'text-slate-300' :
+                                      theme === 'h12' ? 'text-slate-600' :
+                                      theme === 'h12-alt' ? 'text-slate-400' :
+                                      'text-slate-600'
+                                    }`} />
                                   Gerando DOCX...
                               </>
                           ) : (
                               <>
-                                  <FileText className="mr-2 h-4 w-4" /> {/* Ou FileWord se tiver */}
+                                    <FileText className={`mr-2 h-4 w-4 ${
+                                      theme === 'dark' ? 'text-slate-300' :
+                                      theme === 'h12' ? 'text-slate-600' :
+                                      theme === 'h12-alt' ? 'text-slate-400' :
+                                      'text-slate-600'
+                                    }`} />
                                   Exportar DOCX ({filteredActivities.length})
                               </>
                           )}
@@ -810,21 +1311,50 @@ const ClientDetailsPage = () => {
                       <Button
                           size="sm"
                           onClick={() => navigate("/activities/new", { state: { clientId: id } })}
-                          className="flex-1 md:flex-none"
+                            className="flex-1 lg:flex-none"
                       >
                         Nova Atividade
                       </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4 mb-6 p-4 border rounded-md bg-muted/30">
-                      <h4 className="text-base font-semibold mb-3 flex items-center"><Filter className="h-4 w-4 mr-2"/>Filtros</h4>
+                    <div className={`space-y-4 mb-6 p-4 border rounded-md ${
+                      theme === 'dark' ? 'bg-slate-800/50 border-slate-700' :
+                      theme === 'h12' ? 'bg-slate-50/80 border-slate-200' :
+                      theme === 'h12-alt' ? 'bg-slate-800/30 border-slate-600' :
+                      'bg-slate-50/80 border-slate-200'
+                    }`}>
+                      <h4 className={`text-base font-semibold mb-3 flex items-center ${
+                        theme === 'dark' ? 'text-slate-200' :
+                        theme === 'h12' ? 'text-slate-800' :
+                        theme === 'h12-alt' ? 'text-slate-300' :
+                        'text-slate-800'
+                      }`}>
+                        <Filter className={`h-4 w-4 mr-2 ${
+                          theme === 'dark' ? 'text-slate-400' :
+                          theme === 'h12' ? 'text-slate-600' :
+                          theme === 'h12-alt' ? 'text-slate-500' :
+                          'text-slate-600'
+                        }`} />
+                        Filtros
+                      </h4>
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                          theme === 'dark' ? 'text-slate-400' :
+                          theme === 'h12' ? 'text-slate-500' :
+                          theme === 'h12-alt' ? 'text-slate-500' :
+                          'text-slate-500'
+                        }`} />
                         <Input
                             type="search"
                             placeholder="Buscar por título ou descrição..."
-                            className="pl-9"
+                            className={`pl-9 ${
+                              theme === 'dark' ? 'bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400' :
+                              theme === 'h12' ? 'bg-slate-100 border-slate-300 text-slate-900 placeholder:text-slate-500' :
+                              theme === 'h12-alt' ? 'bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400' :
+                              'bg-slate-100 border-slate-300 text-slate-900 placeholder:text-slate-500'
+                            }`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -847,16 +1377,37 @@ const ClientDetailsPage = () => {
                       )}
 
                       <div>
-                        <Label className="block text-sm font-medium mb-2">Status</Label>
+                        <Label className={`block text-sm font-medium mb-2 ${
+                          theme === 'dark' ? 'text-slate-300' :
+                          theme === 'h12' ? 'text-slate-700' :
+                          theme === 'h12-alt' ? 'text-slate-400' :
+                          'text-slate-700'
+                        }`}>Status</Label>
                         <div className="flex flex-wrap gap-x-4 gap-y-2">
                           <div className="flex items-center gap-2">
                             <Checkbox
                                 id="status-pending"
                                 checked={statusFilters.includes("pending")}
                                 onCheckedChange={() => toggleStatusFilter("pending")}
+                                className={
+                                  theme === 'dark' ? 'data-[state=checked]:bg-yellow-600 data-[state=checked]:border-yellow-600' :
+                                  theme === 'h12' ? 'data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500' :
+                                  theme === 'h12-alt' ? 'data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500' :
+                                  'data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500'
+                                }
                             />
-                            <Label htmlFor="status-pending" className="flex items-center cursor-pointer text-sm font-normal">
-                              <Clock className="h-3 w-3 mr-1.5 text-yellow-600" /> Pendentes
+                            <Label htmlFor="status-pending" className={`flex items-center cursor-pointer text-sm font-normal ${
+                              theme === 'dark' ? 'text-slate-300' :
+                              theme === 'h12' ? 'text-slate-700' :
+                              theme === 'h12-alt' ? 'text-slate-400' :
+                              'text-slate-700'
+                            }`}>
+                              <Clock className={`h-3 w-3 mr-1.5 ${
+                                theme === 'dark' ? 'text-yellow-400' :
+                                theme === 'h12' ? 'text-yellow-600' :
+                                theme === 'h12-alt' ? 'text-yellow-500' :
+                                'text-yellow-600'
+                              }`} /> Pendentes
                             </Label>
                           </div>
                           <div className="flex items-center gap-2">
@@ -864,9 +1415,25 @@ const ClientDetailsPage = () => {
                                 id="status-in-progress"
                                 checked={statusFilters.includes("in-progress")}
                                 onCheckedChange={() => toggleStatusFilter("in-progress")}
+                                className={
+                                  theme === 'dark' ? 'data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600' :
+                                  theme === 'h12' ? 'data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500' :
+                                  theme === 'h12-alt' ? 'data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500' :
+                                  'data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500'
+                                }
                             />
-                            <Label htmlFor="status-in-progress" className="flex items-center cursor-pointer text-sm font-normal">
-                              <RotateCcw className="h-3 w-3 mr-1.5 text-blue-600" /> Em Progresso
+                            <Label htmlFor="status-in-progress" className={`flex items-center cursor-pointer text-sm font-normal ${
+                              theme === 'dark' ? 'text-slate-300' :
+                              theme === 'h12' ? 'text-slate-700' :
+                              theme === 'h12-alt' ? 'text-slate-400' :
+                              'text-slate-700'
+                            }`}>
+                              <RotateCcw className={`h-3 w-3 mr-1.5 ${
+                                theme === 'dark' ? 'text-blue-400' :
+                                theme === 'h12' ? 'text-blue-600' :
+                                theme === 'h12-alt' ? 'text-blue-500' :
+                                'text-blue-600'
+                              }`} /> Em Progresso
                             </Label>
                           </div>
                           <div className="flex items-center gap-2">
@@ -874,9 +1441,25 @@ const ClientDetailsPage = () => {
                                 id="status-completed"
                                 checked={statusFilters.includes("completed")}
                                 onCheckedChange={() => toggleStatusFilter("completed")}
+                                className={
+                                  theme === 'dark' ? 'data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600' :
+                                  theme === 'h12' ? 'data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500' :
+                                  theme === 'h12-alt' ? 'data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500' :
+                                  'data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500'
+                                }
                             />
-                            <Label htmlFor="status-completed" className="flex items-center cursor-pointer text-sm font-normal">
-                              <CheckCircle2 className="h-3 w-3 mr-1.5 text-green-600" /> Concluídas
+                            <Label htmlFor="status-completed" className={`flex items-center cursor-pointer text-sm font-normal ${
+                              theme === 'dark' ? 'text-slate-300' :
+                              theme === 'h12' ? 'text-slate-700' :
+                              theme === 'h12-alt' ? 'text-slate-400' :
+                              'text-slate-700'
+                            }`}>
+                              <CheckCircle2 className={`h-3 w-3 mr-1.5 ${
+                                theme === 'dark' ? 'text-green-400' :
+                                theme === 'h12' ? 'text-green-600' :
+                                theme === 'h12-alt' ? 'text-green-500' :
+                                'text-green-600'
+                              }`} /> Concluídas
                             </Label>
                           </div>
                           <div className="flex items-center gap-2">
@@ -884,9 +1467,25 @@ const ClientDetailsPage = () => {
                                 id="status-cancelled"
                                 checked={statusFilters.includes("cancelled")}
                                 onCheckedChange={() => toggleStatusFilter("cancelled")}
+                                className={
+                                  theme === 'dark' ? 'data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600' :
+                                  theme === 'h12' ? 'data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500' :
+                                  theme === 'h12-alt' ? 'data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500' :
+                                  'data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500'
+                                }
                             />
-                            <Label htmlFor="status-cancelled" className="flex items-center cursor-pointer text-sm font-normal">
-                              <XCircle className="h-3 w-3 mr-1.5 text-red-600" /> Canceladas
+                            <Label htmlFor="status-cancelled" className={`flex items-center cursor-pointer text-sm font-normal ${
+                              theme === 'dark' ? 'text-slate-300' :
+                              theme === 'h12' ? 'text-slate-700' :
+                              theme === 'h12-alt' ? 'text-slate-400' :
+                              'text-slate-700'
+                            }`}>
+                              <XCircle className={`h-3 w-3 mr-1.5 ${
+                                theme === 'dark' ? 'text-red-400' :
+                                theme === 'h12' ? 'text-red-600' :
+                                theme === 'h12-alt' ? 'text-red-500' :
+                                'text-red-600'
+                              }`} /> Canceladas
                             </Label>
                           </div>
                         </div>
@@ -894,70 +1493,175 @@ const ClientDetailsPage = () => {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end pt-2">
                         <div>
-                          <Label className="mb-1.5 block text-sm font-medium">Filtrar por Data</Label>
+                          <Label className={`mb-1.5 block text-sm font-medium ${
+                            theme === 'dark' ? 'text-slate-300' :
+                            theme === 'h12' ? 'text-slate-700' :
+                            theme === 'h12-alt' ? 'text-slate-400' :
+                            'text-slate-700'
+                          }`}>Filtrar por Data</Label>
                           <RadioGroup
                               value={dateType}
                               onValueChange={(value) => setDateType(value as "startDate" | "endDate")}
                               className="flex space-x-4"
                           >
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="startDate" id="start-date" />
-                              <Label htmlFor="start-date" className="font-normal cursor-pointer">Início</Label>
+                              <RadioGroupItem
+                                value="startDate"
+                                id="start-date"
+                                className={
+                                  theme === 'dark' ? 'border-slate-600 text-slate-400' :
+                                  theme === 'h12' ? 'border-slate-300 text-slate-600' :
+                                  theme === 'h12-alt' ? 'border-slate-500 text-slate-400' :
+                                  'border-slate-300 text-slate-600'
+                                }
+                              />
+                              <Label htmlFor="start-date" className={`font-normal cursor-pointer ${
+                                theme === 'dark' ? 'text-slate-300' :
+                                theme === 'h12' ? 'text-slate-700' :
+                                theme === 'h12-alt' ? 'text-slate-400' :
+                                'text-slate-700'
+                              }`}>Início</Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="endDate" id="end-date" />
-                              <Label htmlFor="end-date" className="font-normal cursor-pointer">Término</Label>
+                              <RadioGroupItem
+                                value="endDate"
+                                id="end-date"
+                                className={
+                                  theme === 'dark' ? 'border-slate-600 text-slate-400' :
+                                  theme === 'h12' ? 'border-slate-300 text-slate-600' :
+                                  theme === 'h12-alt' ? 'border-slate-500 text-slate-400' :
+                                  'border-slate-300 text-slate-600'
+                                }
+                              />
+                              <Label htmlFor="end-date" className={`font-normal cursor-pointer ${
+                                theme === 'dark' ? 'text-slate-300' :
+                                theme === 'h12' ? 'text-slate-700' :
+                                theme === 'h12-alt' ? 'text-slate-400' :
+                                'text-slate-700'
+                              }`}>Término</Label>
                             </div>
                           </RadioGroup>
                         </div>
                         <div>
-                          <Label htmlFor="date-start-popover" className="mb-1.5 block text-sm font-medium">Período - De</Label>
+                          <Label htmlFor="date-start-popover" className={`mb-1.5 block text-sm font-medium ${
+                            theme === 'dark' ? 'text-slate-300' :
+                            theme === 'h12' ? 'text-slate-700' :
+                            theme === 'h12-alt' ? 'text-slate-400' :
+                            'text-slate-700'
+                          }`}>Período - De</Label>
                           <Popover>
                             <PopoverTrigger asChild id="date-start-popover">
                               <Button
                                   variant="outline"
                                   className={cn(
-                                      "w-full justify-start text-left font-normal",
-                                      !startPeriod && "text-muted-foreground"
+                                      `w-full justify-start text-left font-normal ${
+                                        theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' :
+                                        theme === 'h12' ? 'border-slate-300 hover:bg-slate-100' :
+                                        theme === 'h12-alt' ? 'border-slate-500 hover:bg-slate-700' :
+                                        'border-slate-300 hover:bg-slate-100'
+                                      }`,
+                                      !startPeriod && (theme === 'dark' ? 'text-slate-400' :
+                                                      theme === 'h12' ? 'text-slate-500' :
+                                                      theme === 'h12-alt' ? 'text-slate-400' :
+                                                      'text-slate-500')
                                   )}
                               >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {startPeriod ? format(startPeriod, "dd/MM/yyyy") : <span>Selecione início</span>}
+                                <CalendarIcon className={`mr-2 h-4 w-4 ${
+                                  theme === 'dark' ? 'text-slate-400' :
+                                  theme === 'h12' ? 'text-slate-500' :
+                                  theme === 'h12-alt' ? 'text-slate-500' :
+                                  'text-slate-500'
+                                }`} />
+                                <span className={
+                                  theme === 'dark' ? 'text-slate-100' :
+                                  theme === 'h12' ? 'text-slate-900' :
+                                  theme === 'h12-alt' ? 'text-slate-100' :
+                                  'text-slate-900'
+                                }>
+                                  {startPeriod ? format(startPeriod, "dd/MM/yyyy") : "Selecione início"}
+                                </span>
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent className={`w-auto p-0 ${
+                              theme === 'dark' ? 'bg-slate-800 border-slate-700' :
+                              theme === 'h12' ? 'bg-white border-slate-200' :
+                              theme === 'h12-alt' ? 'bg-slate-800 border-slate-600' :
+                              'bg-white border-slate-200'
+                            }`} align="start">
                               <Calendar
                                   mode="single"
                                   selected={startPeriod}
                                   onSelect={setStartPeriod}
                                   initialFocus
                                   disabled={(date) => endPeriod ? date > endPeriod : false }
+                                  className={
+                                    theme === 'dark' ? 'bg-slate-800 text-slate-100' :
+                                    theme === 'h12' ? 'bg-white text-slate-900' :
+                                    theme === 'h12-alt' ? 'bg-slate-800 text-slate-100' :
+                                    'bg-white text-slate-900'
+                                  }
                               />
                             </PopoverContent>
                           </Popover>
                         </div>
                         <div>
-                          <Label htmlFor="date-end-popover" className="mb-1.5 block text-sm font-medium">Período - Até</Label>
+                          <Label htmlFor="date-end-popover" className={`mb-1.5 block text-sm font-medium ${
+                            theme === 'dark' ? 'text-slate-300' :
+                            theme === 'h12' ? 'text-slate-700' :
+                            theme === 'h12-alt' ? 'text-slate-400' :
+                            'text-slate-700'
+                          }`}>Período - Até</Label>
                           <Popover>
                             <PopoverTrigger asChild id="date-end-popover">
                               <Button
                                   variant="outline"
                                   className={cn(
-                                      "w-full justify-start text-left font-normal",
-                                      !endPeriod && "text-muted-foreground"
+                                      `w-full justify-start text-left font-normal ${
+                                        theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' :
+                                        theme === 'h12' ? 'border-slate-300 hover:bg-slate-100' :
+                                        theme === 'h12-alt' ? 'border-slate-500 hover:bg-slate-700' :
+                                        'border-slate-300 hover:bg-slate-100'
+                                      }`,
+                                      !endPeriod && (theme === 'dark' ? 'text-slate-400' :
+                                                     theme === 'h12' ? 'text-slate-500' :
+                                                     theme === 'h12-alt' ? 'text-slate-400' :
+                                                     'text-slate-500')
                                   )}
                               >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {endPeriod ? format(endPeriod, "dd/MM/yyyy") : <span>Selecione fim</span>}
+                                <CalendarIcon className={`mr-2 h-4 w-4 ${
+                                  theme === 'dark' ? 'text-slate-400' :
+                                  theme === 'h12' ? 'text-slate-500' :
+                                  theme === 'h12-alt' ? 'text-slate-500' :
+                                  'text-slate-500'
+                                }`} />
+                                <span className={
+                                  theme === 'dark' ? 'text-slate-100' :
+                                  theme === 'h12' ? 'text-slate-900' :
+                                  theme === 'h12-alt' ? 'text-slate-100' :
+                                  'text-slate-900'
+                                }>
+                                  {endPeriod ? format(endPeriod, "dd/MM/yyyy") : "Selecione fim"}
+                                </span>
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent className={`w-auto p-0 ${
+                              theme === 'dark' ? 'bg-slate-800 border-slate-700' :
+                              theme === 'h12' ? 'bg-white border-slate-200' :
+                              theme === 'h12-alt' ? 'bg-slate-800 border-slate-600' :
+                              'bg-white border-slate-200'
+                            }`} align="start">
                               <Calendar
                                   mode="single"
                                   selected={endPeriod}
                                   onSelect={setEndPeriod}
                                   initialFocus
                                   disabled={(date) => startPeriod ? date < startPeriod : false}
+                                  className={
+                                    theme === 'dark' ? 'bg-slate-800 text-slate-100' :
+                                    theme === 'h12' ? 'bg-white text-slate-900' :
+                                    theme === 'h12-alt' ? 'bg-slate-800 text-slate-100' :
+                                    'bg-white text-slate-900'
+                                  }
                                />
                             </PopoverContent>
                           </Popover>
@@ -965,8 +1669,24 @@ const ClientDetailsPage = () => {
                       </div>
 
                       <div className="flex justify-end pt-2">
-                        <Button variant="ghost" size="sm" onClick={resetFilters} disabled={!searchTerm && statusFilters.length === 0 && !startPeriod && !endPeriod && !selectedType}>
-                          <RotateCcw className="h-4 w-4 mr-1.5"/> Limpar Todos os Filtros
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={resetFilters}
+                          disabled={!searchTerm && statusFilters.length === 0 && !startPeriod && !endPeriod && !selectedType}
+                          className={
+                            theme === 'dark' ? 'text-slate-400 hover:text-slate-300 hover:bg-slate-700' :
+                            theme === 'h12' ? 'text-slate-600 hover:text-slate-700 hover:bg-slate-100' :
+                            theme === 'h12-alt' ? 'text-slate-400 hover:text-slate-300 hover:bg-slate-700' :
+                            'text-slate-600 hover:text-slate-700 hover:bg-slate-100'
+                          }
+                        >
+                          <RotateCcw className={`h-4 w-4 mr-1.5 ${
+                            theme === 'dark' ? 'text-slate-400' :
+                            theme === 'h12' ? 'text-slate-600' :
+                            theme === 'h12-alt' ? 'text-slate-500' :
+                            'text-slate-600'
+                          }`} /> Limpar Todos os Filtros
                         </Button>
                       </div>
                     </div>
@@ -974,33 +1694,78 @@ const ClientDetailsPage = () => {
                     {filteredActivities.length > 0 ? (
                         <div className="space-y-4" id="activity-list-container">
                           {currentActivities.map((activity) => (
-                              <Card key={activity.id} className="overflow-hidden transition-shadow hover:shadow-md">
+                              <Card key={activity.id} className={`overflow-hidden transition-shadow hover:shadow-md ${
+                                theme === 'dark' ? 'bg-slate-800/50 border-slate-700' :
+                                theme === 'h12' ? 'bg-white border-slate-200' :
+                                theme === 'h12-alt' ? 'bg-slate-800/30 border-slate-600' :
+                                'bg-white border-slate-200'
+                              }`}>
                                 <CardHeader className="p-4 flex flex-row items-start justify-between space-y-0">
                                   <div className="space-y-1">
-                                    <CardTitle className="text-base font-semibold leading-none">{activity.title}</CardTitle>
-                                    {activity.type && <CardDescription className="text-xs">Tipo: {activity.type}</CardDescription>}
+                                    <CardTitle className={`text-base font-semibold leading-none ${
+                                      theme === 'dark' ? 'text-slate-100' :
+                                      theme === 'h12' ? 'text-slate-900' :
+                                      theme === 'h12-alt' ? 'text-slate-200' :
+                                      'text-slate-900'
+                                    }`}>{activity.title}</CardTitle>
+                                    {activity.type && <CardDescription className={`text-xs ${
+                                      theme === 'dark' ? 'text-slate-400' :
+                                      theme === 'h12' ? 'text-slate-600' :
+                                      theme === 'h12-alt' ? 'text-slate-400' :
+                                      'text-slate-600'
+                                    }`}>Tipo: {activity.type}</CardDescription>}
                                   </div>
                                   <div className="flex-shrink-0 ml-4">
                                     {getStatusBadge('activity', activity.status)}
                                   </div>
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0 text-sm">
-                                  <p className="text-muted-foreground mb-3 line-clamp-2">
-                                    {activity.description || <span className="italic">Sem descrição</span>}
+                                  <p className={`mb-3 line-clamp-2 ${
+                                    theme === 'dark' ? 'text-slate-300' :
+                                    theme === 'h12' ? 'text-slate-700' :
+                                    theme === 'h12-alt' ? 'text-slate-400' :
+                                    'text-slate-700'
+                                  }`}>
+                                    {activity.description || <span className={`italic ${
+                                      theme === 'dark' ? 'text-slate-500' :
+                                      theme === 'h12' ? 'text-slate-400' :
+                                      theme === 'h12-alt' ? 'text-slate-500' :
+                                      'text-slate-400'
+                                    }`}>Sem descrição</span>}
                                   </p>
-                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground space-y-1 sm:space-y-0">
+                                  <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs space-y-1 sm:space-y-0 ${
+                                    theme === 'dark' ? 'text-slate-400' :
+                                    theme === 'h12' ? 'text-slate-500' :
+                                    theme === 'h12-alt' ? 'text-slate-500' :
+                                    'text-slate-500'
+                                  }`}>
                                     <div className="flex items-center">
-                                      <CalendarIcon className="h-3 w-3 mr-1.5" />
+                                      <CalendarIcon className={`h-3 w-3 mr-1.5 ${
+                                        theme === 'dark' ? 'text-slate-500' :
+                                        theme === 'h12' ? 'text-slate-400' :
+                                        theme === 'h12-alt' ? 'text-slate-500' :
+                                        'text-slate-400'
+                                      }`} />
                                       <span>Início: {formatDate(activity.startDate)}</span>
                                       {activity.endDate && (
                                           <>
-                                            <span className="mx-1.5">?</span>
+                                            <span className={`mx-1.5 ${
+                                              theme === 'dark' ? 'text-slate-600' :
+                                              theme === 'h12' ? 'text-slate-300' :
+                                              theme === 'h12-alt' ? 'text-slate-600' :
+                                              'text-slate-300'
+                                            }`}>•</span>
                                             <span>Fim: {formatDate(activity.endDate)}</span>
                                           </>
                                       )}
                                     </div>
                                     <div className="flex items-center">
-                                      <Clock className="h-3 w-3 mr-1.5" />
+                                      <Clock className={`h-3 w-3 mr-1.5 ${
+                                        theme === 'dark' ? 'text-slate-500' :
+                                        theme === 'h12' ? 'text-slate-400' :
+                                        theme === 'h12-alt' ? 'text-slate-500' :
+                                        'text-slate-400'
+                                      }`} />
                                       <span>
                                     Atualizado {formatDistanceToNow(new Date(activity.updatedAt), {
                                         addSuffix: true,
@@ -1010,12 +1775,22 @@ const ClientDetailsPage = () => {
                                     </div>
                                   </div>
                                 </CardContent>
-                                <CardFooter className="p-2 bg-muted/50 flex justify-end">
+                                <CardFooter className={`p-2 flex justify-end ${
+                                  theme === 'dark' ? 'bg-slate-700/50' :
+                                  theme === 'h12' ? 'bg-slate-100/80' :
+                                  theme === 'h12-alt' ? 'bg-slate-700/30' :
+                                  'bg-slate-100/80'
+                                }`}>
                                   <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => navigate(`/activities/${activity.id}`)}
-                                      className="text-primary hover:text-primary"
+                                      className={
+                                        theme === 'dark' ? 'text-indigo-400 hover:text-indigo-300 hover:bg-slate-600' :
+                                        theme === 'h12' ? 'text-indigo-600 hover:text-indigo-700 hover:bg-slate-200' :
+                                        theme === 'h12-alt' ? 'text-indigo-400 hover:text-indigo-300 hover:bg-slate-600' :
+                                        'text-indigo-600 hover:text-indigo-700 hover:bg-slate-200'
+                                      }
                                   >
                                     Ver detalhes
                                   </Button>
@@ -1024,18 +1799,57 @@ const ClientDetailsPage = () => {
                           ))}
                         </div>
                     ) : (
-                        <div className="text-center py-10 px-6 border border-dashed rounded-lg bg-muted/20">
-                          <List className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                          <h3 className="text-lg font-medium mb-2">Nenhuma atividade encontrada</h3>
-                          <p className="text-muted-foreground text-sm mb-4 max-w-xs mx-auto">
+                        <div className={`text-center py-10 px-6 border border-dashed rounded-lg ${
+                          theme === 'dark' ? 'bg-slate-800/30 border-slate-600' :
+                          theme === 'h12' ? 'bg-slate-50/80 border-slate-300' :
+                          theme === 'h12-alt' ? 'bg-slate-800/20 border-slate-500' :
+                          'bg-slate-50/80 border-slate-300'
+                        }`}>
+                          <List className={`h-12 w-12 mx-auto mb-4 ${
+                            theme === 'dark' ? 'text-slate-500' :
+                            theme === 'h12' ? 'text-slate-400' :
+                            theme === 'h12-alt' ? 'text-slate-500' :
+                            'text-slate-400'
+                          }`} />
+                          <h3 className={`text-lg font-medium mb-2 ${
+                            theme === 'dark' ? 'text-slate-200' :
+                            theme === 'h12' ? 'text-slate-800' :
+                            theme === 'h12-alt' ? 'text-slate-300' :
+                            'text-slate-800'
+                          }`}>Nenhuma atividade encontrada</h3>
+                          <p className={`text-sm mb-4 max-w-xs mx-auto ${
+                            theme === 'dark' ? 'text-slate-400' :
+                            theme === 'h12' ? 'text-slate-600' :
+                            theme === 'h12-alt' ? 'text-slate-400' :
+                            'text-slate-600'
+                          }`}>
                             {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod || selectedType ?
                                 "Não foram encontradas atividades com os filtros aplicados. Tente ajustar sua busca." :
                                 "Este cliente ainda não possui atividades registradas."}
                           </p>
                           {searchTerm || statusFilters.length > 0 || startPeriod || endPeriod || selectedType ? (
-                              <Button variant="secondary" onClick={resetFilters}>Limpar Filtros</Button>
+                              <Button
+                                variant="secondary"
+                                onClick={resetFilters}
+                                className={
+                                  theme === 'dark' ? 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600' :
+                                  theme === 'h12' ? 'bg-slate-200 border-slate-300 text-slate-700 hover:bg-slate-300' :
+                                  theme === 'h12-alt' ? 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600' :
+                                  'bg-slate-200 border-slate-300 text-slate-700 hover:bg-slate-300'
+                                }
+                              >
+                                Limpar Filtros
+                              </Button>
                           ) : (
-                              <Button onClick={() => navigate("/activities/new", { state: { clientId: id } })}>
+                              <Button
+                                onClick={() => navigate("/activities/new", { state: { clientId: id } })}
+                                className={
+                                  theme === 'dark' ? 'bg-indigo-600 hover:bg-indigo-700 text-white' :
+                                  theme === 'h12' ? 'bg-indigo-600 hover:bg-indigo-700 text-white' :
+                                  theme === 'h12-alt' ? 'bg-indigo-600 hover:bg-indigo-700 text-white' :
+                                  'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                }
+                              >
                                 Criar Nova Atividade
                               </Button>
                           )}

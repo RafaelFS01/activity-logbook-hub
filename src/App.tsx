@@ -29,6 +29,7 @@ import CollaboratorDetailsPage from "@/pages/collaborators/CollaboratorDetailsPa
 import NewCollaboratorPage from "@/pages/collaborators/NewCollaboratorPage";
 import EditCollaboratorPage from "@/pages/collaborators/EditCollaboratorPage";
 import ReportsPage from "@/pages/reports/ReportsPage";
+import Settings from "@/pages/Settings";
 import AdminSetup from "@/pages/AdminSetup";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
@@ -107,9 +108,11 @@ const App = () => (
                   </ProtectedRoute>
                 } />
                 
-                {/* Settings - to be implemented */}
+                {/* Settings - apenas admin e manager podem acessar */}
                 <Route path="settings" element={
-                  <div>Configurações (A implementar)</div>
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <Settings />
+                  </ProtectedRoute>
                 } />
               </Route>
               
