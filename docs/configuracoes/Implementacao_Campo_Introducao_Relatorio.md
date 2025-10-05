@@ -168,6 +168,48 @@ A seção de introdução do relatório adapta automaticamente suas cores confor
 - Transições suaves entre os modos
 - Compatibilidade com todos os temas suportados
 
+### 📄 **Integração com Relatórios DOCX**
+
+#### **Template Word Atualizado**
+O campo `reportIntroduction` é automaticamente integrado ao sistema de geração de relatórios:
+
+- **Template utilizado**: `template - Nova Estrutura.docx`
+- **Arquivo modificado**: `src/pages/reports/ReportConfigCard.tsx`
+- **Placeholder**: `{introducao}` no template Word
+- **Dados fornecidos**: Campo `reportIntroduction` do cliente específico
+
+#### **Funcionalidades Implementadas**
+- ✅ **Preenchimento automático**: Campo `introducao` recebe o valor de `client.reportIntroduction`
+- ✅ **Fallback seguro**: Usa string vazia se o campo não estiver preenchido
+- ✅ **Geração em lote**: Funciona para relatórios individuais e em lote por cliente
+- ✅ **Compatibilidade**: Mantém todos os outros placeholders funcionando
+
+#### **Código de Integração**
+```typescript
+// Em src/pages/reports/ReportConfigCard.tsx
+const dataForTemplate = {
+  entidade_cliente: clientName,
+  data_inicial: dataInicial,
+  data_final: dataFinal,
+  lista_servicos: listaServicos,
+  data_extenso_emissao: dataEmissao,
+  introducao: (client as any).reportIntroduction || ''  // ← NOVO CAMPO
+};
+```
+
+#### **Fluxo de Funcionamento**
+1. **Cliente selecionado** → Sistema busca atividades do período
+2. **Dados preparados** → Campo `reportIntroduction` incluído no objeto de dados
+3. **Template processado** → Placeholder `{introducao}` substituído pelo valor personalizado
+4. **Relatório gerado** → Introdução específica do cliente inserida automaticamente
+
+#### **Benefícios da Integração**
+- 🎯 **Personalização automática**: Cada relatório terá introdução única do cliente
+- 📋 **Consistência**: Introdução padronizada para todos os relatórios do mesmo cliente
+- ⚡ **Eficiência**: Não requer edição manual do template para cada cliente
+- 🔄 **Flexibilidade**: Campo pode ser editado a qualquer momento na interface
+- 📈 **Escalabilidade**: Funciona para geração individual e em lote
+
 ### 📐 **Reorganização do Layout da Aba de Atividades**
 
 #### **Problema Original**

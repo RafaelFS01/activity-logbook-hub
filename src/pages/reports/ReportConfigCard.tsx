@@ -227,7 +227,8 @@ export const ReportConfigCard = ({}: ReportConfigCardProps) => {
           data_inicial: dataInicial,
           data_final: dataFinal,
           lista_servicos: listaServicos,
-          data_extenso_emissao: dataEmissao
+          data_extenso_emissao: dataEmissao,
+          introducao: (client as any).reportIntroduction || ''
         };
 
         // Processar template
@@ -255,7 +256,7 @@ export const ReportConfigCard = ({}: ReportConfigCardProps) => {
 
         // Adicionar ao ZIP
         const safeClientName = clientName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        const fileName = `Relatorio_Atividades_${safeClientName}_${dataInicial}_${dataFinal}.docx`;
+        const fileName = `Relatório de Atividades - ${safeClientName} ${dataInicial} até ${dataFinal}.docx`;
         zip.file(fileName, outBlob);
 
         processedCount++;
@@ -379,7 +380,8 @@ export const ReportConfigCard = ({}: ReportConfigCardProps) => {
           data_inicial: dataInicial,
           data_final: dataFinal,
           lista_servicos: listaServicos,
-          data_extenso_emissao: dataEmissao
+          data_extenso_emissao: dataEmissao,
+          introducao: (client as any).reportIntroduction || ''
         };
 
         const templatePath = '/templates/template - Nova Estrutura.docx';
@@ -404,7 +406,7 @@ export const ReportConfigCard = ({}: ReportConfigCardProps) => {
         });
 
         const safeClientName = clientName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        const fileName = `Relatorio_Atividades_${safeClientName}_${dataInicial}_${dataFinal}.docx`;
+        const fileName = `Relatório de Atividades - ${safeClientName} - ${dataInicial} até ${dataFinal}.docx`;
         saveAs(outBlob, fileName);
 
         toast({
