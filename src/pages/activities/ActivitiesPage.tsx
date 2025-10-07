@@ -427,12 +427,12 @@ const ActivitiesPage = () => {
         {/* Cabeçalho da Página */}
       <div className="flex flex-col gap-6 mb-8">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <ActivityIcon className="h-8 w-8 text-primary" />
+          <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+            <div className="p-2 sm:p-3 bg-primary/10 rounded-lg shrink-0">
+              <ActivityIcon className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            <div className="min-w-0 flex-1 sm:flex-none">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground">
                 Gerenciamento de Atividades
               </h1>
               <p className="text-sm sm:text-base text-muted-foreground mt-1 leading-relaxed">
@@ -441,15 +441,15 @@ const ActivitiesPage = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Botão Exportar Excel */}
             <Button
                 variant="outline"
                 onClick={handleExport}
                 disabled={isLoading || filteredActivities.length === 0}
-              className="flex-1 sm:flex-none"
+                className="flex-1 sm:flex-none text-sm sm:text-base"
             >
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              <FileSpreadsheet className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Exportar Excel</span>
               <span className="sm:hidden">Excel</span>
               <span className="ml-1">({filteredActivities.length})</span>
@@ -460,9 +460,9 @@ const ActivitiesPage = () => {
                 variant="outline"
                 onClick={handleExportPdf}
                 disabled={isLoading || filteredActivities.length === 0 || isGeneratingPdf}
-              className="flex-1 sm:flex-none"
+                className="flex-1 sm:flex-none text-sm sm:text-base"
             >
-              <FileText className="mr-2 h-4 w-4" />
+              <FileText className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">
                 {isGeneratingPdf ? 'Gerando PDF...' : 'Exportar PDF'}
               </span>
@@ -474,11 +474,11 @@ const ActivitiesPage = () => {
 
             {/* Botão Nova Atividade */}
             <Button
-              onClick={() => navigate("/activities/new")}
-              disabled={isLoading}
-              className="flex-1 sm:flex-none bg-primary hover:bg-primary/90"
+                onClick={() => navigate("/activities/new")}
+                disabled={isLoading}
+                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-sm sm:text-base"
             >
-              <PlusCircle className="mr-2 h-4 w-4" />
+              <PlusCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Nova Atividade</span>
               <span className="sm:hidden">Nova</span>
             </Button>
