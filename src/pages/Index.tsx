@@ -322,8 +322,6 @@ const Dashboard = () => {
         const label = `${hour}h`;
         dataMap[key] = { label, 'Concluída': 0, 'Em Andamento': 0, 'Futura': 0, 'Cancelada': 0, 'Atrasada': 0 };
       }
-      // Adicionar categoria para atividades sem horário
-      dataMap["sem_horario_hoje"] = { label: "Hoje (sem horário)", 'Concluída': 0, 'Em Andamento': 0, 'Futura': 0, 'Cancelada': 0, 'Atrasada': 0 };
     } else if (period === 'week') {
       // Para semana, criar todos os dias da semana (segunda a domingo)
       const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -360,20 +358,50 @@ const Dashboard = () => {
           const slot = dataMap[key];
 
           if (period === 'today') {
-            // Para hoje, verificar se a atividade está ativa hoje usando a mesma lógica da agenda (por dia)
+            // Para hoje, distribuir somente no slot correspondente à chave atual, evitando duplicações
             if (isActivityActiveOnDate(activity, todayDate)) {
-              const hasTimeInfo = activity.startDate.includes('T');
-              const startsToday = isSameDay(activityStartDate, todayDate);
+              const todayStart = new Date(todayDate);
+              todayStart.setHours(8, 0, 0, 0);
+              const todayEnd = new Date(todayDate);
+              todayEnd.setHours(18, 0, 0, 0);
 
-              if (startsToday && hasTimeInfo) {
-                // Apenas atividades que INICIAM hoje e têm horário vão para o slot de hora correspondente
-                const activityHour = activityStartDate.getHours();
-                if (key !== "sem_horario_hoje" && activityHour.toString() === key) {
-                  addActivityToSlot(activity, slot, key);
+              // Derivar horários de início/fim efetivos da atividade
+              const startHasTime = activity.startDate.includes('T');
+              const endHasTime = activity.endDate ? activity.endDate.includes('T') : false;
+
+              // Base: início
+              let effectiveStart = new Date(activityStartDate);
+              if (!startHasTime) {
+                // Sem hora no início: assumir 08:00 no dia informado
+                effectiveStart.setHours(8, 0, 0, 0);
+              }
+
+              // Base: fim
+              let effectiveEnd = activity.endDate ? new Date(activityEndDate) : new Date(activityStartDate);
+              if (activity.endDate) {
+                if (!endHasTime) {
+                  // Sem hora no fim: assumir 18:00 no dia informado
+                  effectiveEnd.setHours(18, 0, 0, 0);
                 }
               } else {
-                // Demais casos (sem horário, ou não iniciou hoje mas está ativa hoje) agrupam em "Hoje (sem horário)"
-                if (key === "sem_horario_hoje") {
+                // Sem data de fim: se início sem hora, considerar até 18:00 do mesmo dia; caso contrário, mesmo horário do início
+                if (!startHasTime) {
+                  effectiveEnd = new Date(effectiveStart);
+                  effectiveEnd.setHours(18, 0, 0, 0);
+                } else {
+                  effectiveEnd = new Date(effectiveStart);
+                }
+              }
+
+              // Interseção do intervalo da atividade com o dia de hoje (08:00..18:00)
+              const dayStart = todayStart > effectiveStart ? todayStart : effectiveStart;
+              const dayEnd = todayEnd < effectiveEnd ? todayEnd : effectiveEnd;
+
+              if (dayEnd >= dayStart) {
+                const startHour = Math.max(8, dayStart.getHours());
+                const endHour = Math.min(18, dayEnd.getHours());
+                const keyHour = parseInt(key);
+                if (!isNaN(keyHour) && keyHour >= startHour && keyHour <= endHour) {
                   addActivityToSlot(activity, slot, key);
                 }
               }
@@ -423,19 +451,11 @@ const Dashboard = () => {
     const chartData = Object.values(dataMap);
 
     if (period === 'today') {
+      // Ordenar por hora
       chartData.sort((a, b) => {
-        // Colocar "Hoje (sem horário)" no final
-        if (a.label === "Hoje (sem horário)") return 1;
-        if (b.label === "Hoje (sem horário)") return -1;
-
-        // Para outros itens, ordenar por hora
         const aHour = parseInt(a.label.replace('h', ''));
         const bHour = parseInt(b.label.replace('h', ''));
-
-        if (isNaN(aHour) || isNaN(bHour)) {
-          return a.label.localeCompare(b.label);
-        }
-
+        if (isNaN(aHour) || isNaN(bHour)) return 0;
         return aHour - bHour;
       });
     } else if (period === 'week') {
