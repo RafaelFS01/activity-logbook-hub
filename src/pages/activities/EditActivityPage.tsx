@@ -5,7 +5,9 @@ import {
   CalendarIcon,
   Loader2,
   Check, // Ícone para o item selecionado no Combobox (Se for usar Combobox para cliente)
-  ChevronsUpDown // Ícone para o botão do Combobox (Se for usar Combobox para cliente)
+  ChevronsUpDown, // Ícone para o botão do Combobox (Se for usar Combobox para cliente)
+  FileEdit,
+  ArrowLeft
 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isValid } from "date-fns"; // Importa isValid
@@ -271,13 +273,28 @@ const EditActivityPage = () => {
   // --- MODIFICAÇÃO 4: Atualização do JSX (Label/Description de endDate) ---
   return (
       <div className="container mx-auto py-6 px-4 md:px-6">
-        <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">
-            Editar Atividade
-          </h1>
-          <Link to="/activities" className="text-sm text-blue-600 hover:underline">
-            ← Voltar para Atividades
-          </Link>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-500/10 rounded-lg">
+                <FileEdit className="h-8 w-8 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Atividade</h1>
+                <p className="text-muted-foreground mt-1 leading-relaxed">
+                  Modifique as informações da atividade selecionada
+                </p>
+              </div>
+            </div>
+
+            <Link
+              to="/activities"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors p-2 rounded-md hover:bg-muted"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar para Atividades
+            </Link>
+          </div>
         </div>
 
 
@@ -294,7 +311,7 @@ const EditActivityPage = () => {
               </div>
               <div className="space-y-2">
                 <Skeleton className="h-5 w-24" /> {/* Label */}
-                <Skeleton className="h-32 w-full" /> {/* Textarea */}
+                <Skeleton className="h-60 w-full" /> {/* Textarea */}
               </div>
               <div className="space-y-2">
                 <Skeleton className="h-5 w-24" /> {/* Label */}
@@ -373,7 +390,7 @@ const EditActivityPage = () => {
                           <FormControl>
                             <Textarea
                                 placeholder="Detalhes da atividade"
-                                className="resize-none h-32" // Altura consistente
+                                className="resize-none h-60" // Altura consistente
                                 {...field}
                             />
                           </FormControl>

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar, Clock, FileEdit, CircleAlert, CheckCircle, Play, Ban, ClipboardList, AlertTriangle, UserCircle, Trash2, Building2, Tag, Timer } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, FileEdit, CircleAlert, CheckCircle, Play, Ban, ClipboardList, AlertTriangle, UserCircle, Trash2, Building2, Tag, Timer, Eye } from "lucide-react";
 import { formatDistanceToNow, format, isAfter, isBefore, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
@@ -244,50 +244,66 @@ const ActivityDetailsPage = () => {
   // --- Renderização Principal ---
   return (
       <div className="container mx-auto py-6 px-4 md:px-6">
-        {/* Header com Título e Botões (inalterado) */}
-        <div className="flex items-center mb-6">
-          <Button variant="outline" size="sm" onClick={() => navigate("/activities")} className="mr-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <h1 className="text-3xl font-bold">
-            {activity?.title}
-          </h1>
-          <div className="ml-auto flex gap-2">
-            {activity && activity.status !== "completed" && activity.status !== "cancelled" && (
-                <Button variant="outline" onClick={() => navigate(`/activities/edit/${id}`)}>
-                  <FileEdit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
-            )}
-            {user?.role === 'admin' && activity && activity.status !== "cancelled" && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Cancelar/Remover {/* Texto do botão pode variar dependendo da ação real */}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Cancelar/Remover atividade</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja { /* Ajustar texto aqui */ } esta atividade? Esta ação pode não ser reversível.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Voltar</AlertDialogCancel>
-                      <AlertDialogAction
-                          onClick={handleDeleteActivity}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          disabled={deleteLoading}
-                      >
-                        {deleteLoading ? "Processando..." : "Confirmar"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-            )}
+        {/* Header com Título e Botões */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="sm" onClick={() => navigate("/activities")} className="shrink-0">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar
+              </Button>
+
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-500/10 rounded-lg">
+                  <Eye className="h-8 w-8 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                    {activity?.title}
+                  </h1>
+                  <p className="text-muted-foreground mt-1 leading-relaxed">
+                    Detalhes completos da atividade selecionada
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              {activity && activity.status !== "completed" && activity.status !== "cancelled" && (
+                  <Button variant="outline" onClick={() => navigate(`/activities/edit/${id}`)}>
+                    <FileEdit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+              )}
+              {user?.role === 'admin' && activity && activity.status !== "cancelled" && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Cancelar/Remover
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Cancelar/Remover atividade</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja esta atividade? Esta ação pode não ser reversível.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteActivity}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={deleteLoading}
+                        >
+                          {deleteLoading ? "Processando..." : "Confirmar"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+              )}
+            </div>
           </div>
         </div>
 

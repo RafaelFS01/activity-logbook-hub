@@ -225,11 +225,18 @@ const NewActivityPage = () => {
     // --- Renderização ---
     return (
         <div className="container mx-auto py-6 px-4 md:px-6">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold">Nova Atividade</h1>
-                <p className="text-muted-foreground">
-                    Crie uma nova atividade para sua equipe.
-                </p>
+            <div className="mb-8">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-primary/10 rounded-lg">
+                        <PlusCircle className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nova Atividade</h1>
+                        <p className="text-muted-foreground mt-1 leading-relaxed">
+                            Crie uma nova atividade para sua equipe
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <Form {...form}>
@@ -355,7 +362,7 @@ const NewActivityPage = () => {
                                 <FormControl>
                                     <Textarea
                                         placeholder="Detalhe o que precisa ser feito nesta atividade."
-                                        className="resize-none h-32"
+                                        className="resize-none h-60"
                                         {...field}
                                     />
                                 </FormControl>
