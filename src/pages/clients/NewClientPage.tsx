@@ -151,20 +151,17 @@ const NewClientPage = () => {
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
-      <div className="mb-6">
-        <Button
-          variant="outline"
-          onClick={() => navigate("/clients")}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar para Clientes
-        </Button>
-
-        <h1 className="text-3xl font-bold">Novo Cliente</h1>
-        <p className="text-muted-foreground">
-          Preencha o formulário para cadastrar um novo cliente no sistema.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex items-start gap-3">
+          <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="h-9 w-9">
+            <ArrowLeft className="h-5 w-5" />
+            <span className="sr-only">Voltar para Clientes</span>
+          </Button>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Novo Cliente</h1>
+            <p className="text-muted-foreground">Preencha o formulário para cadastrar um novo cliente no sistema.</p>
+          </div>
+        </div>
       </div>
 
       <Card className="max-w-2xl mx-auto">

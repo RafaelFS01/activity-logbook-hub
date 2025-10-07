@@ -652,20 +652,23 @@ const ClientDetailsPage = () => {
   return (
       <div className="container mx-auto py-6 px-4 md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex items-center">
-            <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="mr-4 h-9 w-9">
+          <div className="flex items-start gap-3">
+            <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="h-9 w-9">
               <ArrowLeft className="h-5 w-5" />
               <span className="sr-only">Voltar para Clientes</span>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-              {getClientTypeIcon()}
-              <span className="truncate max-w-[200px] sm:max-w-[400px] md:max-w-full">
-              {client.type === 'juridica'
-                  ? (client as PessoaJuridicaClient).companyName
-                  : client.name
-              }
-            </span>
-            </h1>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+                {getClientTypeIcon()}
+                <span className="truncate max-w-[200px] sm:max-w-[400px] md:max-w-full">
+                {client.type === 'juridica'
+                    ? (client as PessoaJuridicaClient).companyName
+                    : client.name
+                }
+              </span>
+              </h1>
+              <p className="text-muted-foreground mt-1">Visualize dados, atividades e gere relatórios deste cliente.</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button variant="default" onClick={() => navigate(`/clients/edit/${id}`)}>

@@ -1,11 +1,14 @@
 import { useState, useEffect, useMemo } from "react"; // Adicionado useMemo
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Building2, User, CheckCircle2, XCircle, Trash2, FileSpreadsheet } from "lucide-react";
+import { PlusCircle, Search, Building2, User, Trash2, FileSpreadsheet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import EmptyState from "@/components/ui/empty-state";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getClients, Client, ClientType, deleteClient } from "@/services/firebase/clients";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -25,6 +28,7 @@ const ClientsPage = () => {
   const [filter, setFilter] = useState<"all" | ClientType>("all");
   // Estado para a página atual da paginação
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<"name" | "createdAt">("name");
 
   // Busca inicial de clientes
   useEffect(() => {
@@ -82,17 +86,21 @@ const ClientsPage = () => {
       });
     }
 
-    // Ordena os clientes (ex: por nome ou nome da empresa)
-    filtered.sort((a, b) => {
-      const nameA = a.type === 'juridica' ? (a as any).companyName || '' : a.name || '';
-      const nameB = b.type === 'juridica' ? (b as any).companyName || '' : b.name || '';
-      return nameA.localeCompare(nameB);
-    });
+    // Ordena os clientes por critério
+    if (sortBy === 'name') {
+      filtered.sort((a, b) => {
+        const nameA = a.type === 'juridica' ? (a as any).companyName || '' : a.name || '';
+        const nameB = b.type === 'juridica' ? (b as any).companyName || '' : b.name || '';
+        return nameA.localeCompare(nameB);
+      });
+    } else if (sortBy === 'createdAt') {
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
 
     setFilteredClients(filtered);
     // Reseta para a primeira página sempre que os filtros mudam
     setCurrentPage(1);
-  }, [searchTerm, filter, clients]); // Depende dos filtros e da lista base
+  }, [searchTerm, filter, clients, sortBy]); // Depende dos filtros e da lista base
 
   // Calcula os clientes para a página atual usando useMemo
   const paginatedClients = useMemo(() => {
@@ -197,8 +205,11 @@ const ClientsPage = () => {
       <div className="container mx-auto py-6 px-4 md:px-6">
         {/* Cabeçalho */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold">Gerenciamento de Clientes</h1>
-          <div className="flex flex-wrap gap-2"> {/* Adicionado flex-wrap */}
+          <div>
+            <h1 className="text-3xl font-bold">Clientes</h1>
+            <p className="text-muted-foreground">Gerencie seus clientes cadastrados e acesse detalhes rapidamente.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={handleExport} disabled={isLoading || filteredClients.length === 0}>
               <FileSpreadsheet className="mr-2 h-4 w-4" />
               Exportar Visíveis
@@ -211,7 +222,7 @@ const ClientsPage = () => {
         </div>
 
         {/* Filtros */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="relative flex-1 min-w-[200px]"> {/* Adicionado min-width */}
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -223,7 +234,7 @@ const ClientsPage = () => {
                 disabled={isLoading}
             />
           </div>
-          <div className="flex gap-2 flex-wrap sm:flex-nowrap"> {/* Adicionado flex-wrap */}
+          <div className="flex gap-2 flex-wrap lg:flex-nowrap items-center">
             <Button
                 variant={filter === "all" ? "secondary" : "outline"} // Usar secondary para ativo
                 size="sm"
@@ -250,6 +261,18 @@ const ClientsPage = () => {
               <Building2 className="h-4 w-4 mr-1" />
               Pessoa Jurídica
             </Button>
+
+            <div className="w-full lg:w-[220px] lg:ml-auto">
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Ordenar: Nome</SelectItem>
+                  <SelectItem value="createdAt">Ordenar: Mais recentes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -284,15 +307,24 @@ const ClientsPage = () => {
                 {paginatedClients.map((client) => (
                     <Card key={client.id} className="overflow-hidden flex flex-col"> {/* flex flex-col para footer */}
                       <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start gap-2">
-                          <div className="flex-1 overflow-hidden"> {/* Evitar overflow do título */}
-                            <CardTitle className="text-lg truncate"> {/* Truncar texto longo */}
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="flex items-start gap-3 flex-1 overflow-hidden">
+                            <Avatar className="h-9 w-9">
+                              <AvatarFallback>
+                                {client.type === 'juridica'
+                                  ? ((client as any).companyName || 'C')[0]
+                                  : (client.name || 'C')[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <CardTitle className="text-lg truncate"> {/* Truncar texto longo */}
                               {client.type === 'juridica'
                                   ? (client as any).companyName || 'Empresa sem nome'
                                   : client.name || 'Cliente sem nome'
                               }
-                            </CardTitle>
-                            <CardDescription className="truncate">{client.email || 'Sem email'}</CardDescription>
+                              </CardTitle>
+                              <CardDescription className="truncate">{client.email || 'Sem email'}</CardDescription>
+                            </div>
                           </div>
                           <div className="flex flex-col gap-1 items-end flex-shrink-0">
                             {getClientBadge(client.type)}
@@ -400,28 +432,23 @@ const ClientsPage = () => {
               )}
             </> // Fim do Fragmento
         ) : (
-            // Mensagem de Nenhum Cliente Encontrado
-            <div className="text-center p-10 border rounded-lg bg-card shadow-sm mt-6"> {/* Usando bg-card */}
-              <h3 className="text-xl font-semibold mb-2">Nenhum cliente encontrado</h3> {/* Aumentado texto */}
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || filter !== "all"
-                    ? "Não encontramos clientes ativos que correspondam aos seus filtros."
-                    : "Nenhum cliente ativo cadastrado no sistema."}
-              </p>
-              {searchTerm || filter !== "all" ? ( // Botão para limpar filtros
-                  <Button
-                      variant="outline"
-                      onClick={() => { setSearchTerm(''); setFilter('all'); }}
-                      className="mr-2"
-                  >
-                    Limpar Filtros
-                  </Button>
-              ) : null}
-              <Button onClick={() => navigate("/clients/new")}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Novo Cliente
-              </Button>
-            </div>
+            <EmptyState
+              title="Nenhum cliente encontrado"
+              description={
+                (searchTerm || filter !== 'all')
+                  ? 'Não encontramos clientes ativos que correspondam aos seus filtros.'
+                  : 'Nenhum cliente ativo cadastrado no sistema.'
+              }
+              action={{
+                label: searchTerm || filter !== 'all' ? 'Limpar filtros' : 'Adicionar novo cliente',
+                variant: searchTerm || filter !== 'all' ? 'outline' : 'default',
+                onClick: () => {
+                  if (searchTerm || filter !== 'all') { setSearchTerm(''); setFilter('all'); }
+                  else { navigate('/clients/new'); }
+                }
+              }}
+              className="mt-6"
+            />
         )}
       </div> // Fim do Container Principal
   );
