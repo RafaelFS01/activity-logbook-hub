@@ -1,5 +1,2043 @@
 {
   "activities": {
+        "-OZozH-_X9BMuxeEu_Hl": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-10T18:57:07.491Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Lançamentos de despesas e pagamentos fornecedores no OMIE. ",
+      "endDate": "2025-09-10T03:00:00.000Z",
+      "id": "-OZozH-_X9BMuxeEu_Hl",
+      "priority": "medium",
+      "startDate": "2025-09-10T18:07:00.000Z",
+      "status": "completed",
+      "title": "Lançamentos de despesas e pagamentos fornecedores no OMIE. ",
+      "type": "",
+      "updatedAt": "2025-09-10T18:57:07.491Z"
+    },
+    "-OZtU2J_LS1E4jmV9hsm": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OSxcQQUWMjSGd06rIz6",
+      "completedDate": "2025-09-11T17:26:33.935Z",
+      "createdAt": "2025-09-11T15:54:26.073Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Confecção do relatório previdenciário para entrega.",
+      "endDate": "2025-09-11T03:00:00.000Z",
+      "id": "-OZtU2J_LS1E4jmV9hsm",
+      "priority": "medium",
+      "startDate": "2025-09-11T10:30:00.000Z",
+      "status": "completed",
+      "title": "Relatório Previdenciário- versão entrega",
+      "type": "Auditoria",
+      "updatedAt": "2025-09-11T17:26:33.935Z"
+    },
+    "-OZtyVxCqseLcns4MAXA": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OYXCjUDKZXxaG-InI47",
+      "completedDate": "2025-09-11T18:22:35.714Z",
+      "createdAt": "2025-09-11T18:11:53.902Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Elaboração de um passo a passo explicativo de como reabrir e fechar folha por dentro do portal eSocial.",
+      "endDate": "2025-09-11T03:00:00.000Z",
+      "id": "-OZtyVxCqseLcns4MAXA",
+      "priority": "medium",
+      "startDate": "2025-09-11T18:10:00.000Z",
+      "status": "completed",
+      "title": "Montagem de passo a passo ",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-11T18:22:35.714Z"
+    },
+    "-OZymzCFhBkAwjVcJtML": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OYXCjUDKZXxaG-InI47",
+      "createdAt": "2025-09-12T16:39:38.602Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Auxílio no envio retroativo de um servidor, corrigindo os erros de 1200",
+      "endDate": "2025-09-12T03:00:00.000Z",
+      "id": "-OZymzCFhBkAwjVcJtML",
+      "priority": "medium",
+      "startDate": "2025-09-12T03:00:00.000Z",
+      "status": "completed",
+      "title": "Auxílio envio esocial retroativo",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-12T16:39:38.603Z"
+    },
+    "-OZynJre9y9IhCORmplw": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2kfj0oujVyar2oH3b",
+      "createdAt": "2025-09-12T16:41:07.332Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Retificação de remuneração para incluí-la dentro do evento S-2299, e após emissão de guias de FGTS- rescisório e mensal. ",
+      "endDate": "2025-09-12T03:00:00.000Z",
+      "id": "-OZynJre9y9IhCORmplw",
+      "priority": "medium",
+      "startDate": "2025-09-12T03:00:00.000Z",
+      "status": "completed",
+      "title": "REtificação remuneração e emissão de guias",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-12T16:41:07.332Z"
+    },
+    "-OZynXhJQ8TS0tyUWZAc": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-12T16:42:04.013Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Emissão de comprovantes de desligamentos solicitados pela prefeitura.",
+      "endDate": "2025-09-12T03:00:00.000Z",
+      "id": "-OZynXhJQ8TS0tyUWZAc",
+      "priority": "medium",
+      "startDate": "2025-09-12T03:00:00.000Z",
+      "status": "completed",
+      "title": "Comprovantes de desligamentos",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-12T16:42:04.013Z"
+    },
+    "-OZzR5xkj2qyk2IBP7w_": {
+      "assignedTo": [
+        "TsXlQWHxqNg6r0I9QB7AtxitSJM2"
+      ],
+      "clientId": "-OSxcQQUWMjSGd06rIz6",
+      "createdAt": "2025-09-12T19:39:17.132Z",
+      "createdBy": "TsXlQWHxqNg6r0I9QB7AtxitSJM2",
+      "description": "Planilha SST de Cataguases em preenchimento.",
+      "endDate": "2025-10-15T03:00:00.000Z",
+      "id": "-OZzR5xkj2qyk2IBP7w_",
+      "priority": "medium",
+      "startDate": "2025-09-10T11:00:00.000Z",
+      "status": "in-progress",
+      "title": "Planilha SST Cataguases ",
+      "type": "Consultoria e Auditoria",
+      "updatedAt": "2025-10-06T20:42:46.111Z"
+    },
+    "-OZzRrMs8KcSgm0ivvsk": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-12T19:42:49.911Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Ao chegar no escritório eu passei uma demanda para gustavo, ele lançou as informações de SST para o relatório de cataguases, e terá uma reunião com rafael hoje a noite para alinhar os relatórios de castro alves.\nEster ficou com dias davila, emitir guias de fgts do consorcio, e corrigir dois desligamentos, passei o acesso de pilão arcado com login e senha, além disso ajuste nos relatórios de lauro e jacobina.\nAlem de fazer toda essa gestão, atendi alguns clientes no dia de hoje, marquei uma reunião persencial com a engenheira de SST no dia 17, alinhei essa situação com claudio e cobrei de rafael os relatórios de castro alves.",
+      "endDate": "2025-09-12T19:30:00.000Z",
+      "id": "-OZzRrMs8KcSgm0ivvsk",
+      "priority": "medium",
+      "startDate": "2025-09-12T11:30:00.000Z",
+      "status": "completed",
+      "title": "Coordenação",
+      "type": "Outros",
+      "updatedAt": "2025-09-12T19:45:00.837Z"
+    },
+    "-OZzSgC0BYYp5x4tlYqP": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OOY0miPMKwAnTt0zMZ3",
+      "createdAt": "2025-09-12T19:46:13.043Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Esclarecimento com o suporte do sistema Fator, sobre como proceder com o envio do 1200 somente de centros de custos específicos, como solicitado pela prefeitura.",
+      "endDate": "2025-09-12T03:00:00.000Z",
+      "id": "-OZzSgC0BYYp5x4tlYqP",
+      "priority": "medium",
+      "startDate": "2025-09-12T03:00:00.000Z",
+      "status": "completed",
+      "title": "Esclarecimento sobre procedimento",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-12T19:46:13.043Z"
+    },
+    "-OZzT2aLiRfL8MDj2cUt": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-OMwwIi7h8gV0dlw_HO3",
+      "createdAt": "2025-09-12T19:48:02.134Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Podemos fazer agora? SIM\nPeguei a nota fiscal com ana, acessei sua maquina, efetuei os lançamentos, pedir para ela conferir, mandei a dctf, fechei a reinf e gerei as guias e comprovantes.",
+      "endDate": "2025-09-12T14:10:00.000Z",
+      "id": "-OZzT2aLiRfL8MDj2cUt",
+      "priority": "medium",
+      "startDate": "2025-09-12T13:30:00.000Z",
+      "status": "completed",
+      "title": "EFD-Reinf",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-12T19:48:02.134Z"
+    },
+    "-OZzTKuKoeXUkUPS3mc8": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "completedDate": "2025-09-22T12:01:30.030Z",
+      "createdAt": "2025-09-12T19:49:03.791Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Padronizar parte de esocial no modelo feito para Cataguases e Jacobina, para entrega final.",
+      "endDate": "2025-09-22T03:00:00.000Z",
+      "id": "-OZzTKuKoeXUkUPS3mc8",
+      "priority": "medium",
+      "startDate": "2025-09-17T17:00:00.000Z",
+      "status": "completed",
+      "title": "Relatório- final",
+      "type": "Auditoria",
+      "updatedAt": "2025-09-22T12:01:30.030Z"
+    },
+    "-OZzU_iT8iuXDDxYqcgO": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON7IXFe1fxEdJvitVNW",
+      "createdAt": "2025-09-12T19:54:44.162Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "A cliente estava com duvidas nos totalizadores do Esocial em março de 2024, mostrei como o esocial efetua os calculos e que as verbas e naturezas estavam conforme o manual.\nEm 2025 faltava ela mandar o 1210 para contabilizar os IRRF da servidora sallete, mostrei como era o procedimento e ensinei a cliente a reabrir a folha e fazer as edições na verba.",
+      "endDate": "2025-09-12T19:40:00.000Z",
+      "id": "-OZzU_iT8iuXDDxYqcgO",
+      "priority": "medium",
+      "startDate": "2025-09-12T17:50:00.000Z",
+      "status": "completed",
+      "title": "IRRF",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-12T19:54:44.162Z"
+    },
+    "-O_CVOJtAJ_DkaPOPcsm": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OOY0miPMKwAnTt0zMZ3",
+      "completedDate": "2025-09-15T17:27:43.886Z",
+      "createdAt": "2025-09-15T13:12:44.608Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Envio dos eventos de remunaração, pagamento e fechamento, de centro de custros específicos estupulados pela prefeitura.",
+      "endDate": "2025-09-15T03:00:00.000Z",
+      "id": "-O_CVOJtAJ_DkaPOPcsm",
+      "priority": "medium",
+      "startDate": "2025-09-15T12:50:00.000Z",
+      "status": "completed",
+      "title": "esocial- 1200/1210/1299",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-15T17:27:43.886Z"
+    },
+    "-O_D13rbEGgxuBFgUg4L": {
+      "assignedTo": [
+        "7YtnSxdLG2StUJV1mvNRzfu96zp2"
+      ],
+      "clientId": "-OYXCjUDKZXxaG-InI47",
+      "createdAt": "2025-09-15T15:39:51.218Z",
+      "createdBy": "7YtnSxdLG2StUJV1mvNRzfu96zp2",
+      "description": "Foi solicitado por Caio um relatório comparativo, de todas as verbas do município de Castro Alves - BA, entre os meses de 05/2025, 07/2025 e 08/2025.",
+      "endDate": "2025-09-15T12:00:00.000Z",
+      "id": "-O_D13rbEGgxuBFgUg4L",
+      "priority": "high",
+      "startDate": "2025-09-11T11:00:00.000Z",
+      "status": "completed",
+      "title": "Relatório de Comparação entre Competências",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-15T15:39:51.218Z"
+    },
+    "-O_D1jEmj4HkAXXHuxHL": {
+      "assignedTo": [
+        "7YtnSxdLG2StUJV1mvNRzfu96zp2"
+      ],
+      "clientId": "-OQPPaUZu6EFG3SjI4Id",
+      "completedDate": "2025-09-17T14:10:21.703Z",
+      "createdAt": "2025-09-15T15:42:44.797Z",
+      "createdBy": "7YtnSxdLG2StUJV1mvNRzfu96zp2",
+      "description": "Nova Pesquisa solicitada por Doutora Claúdia:\n\nEmitir relatórios das verbas abaixo para o ano de 2023/2024\n\n40051\n260\n5\n13\n40061\n48",
+      "endDate": "2025-09-16T21:00:00.000Z",
+      "id": "-O_D1jEmj4HkAXXHuxHL",
+      "priority": "high",
+      "startDate": "2025-09-13T14:00:00.000Z",
+      "status": "completed",
+      "title": "Emissão de Relatório de Verbas",
+      "type": "Auditoria",
+      "updatedAt": "2025-09-17T14:10:21.703Z"
+    },
+    "-O_D2TNcILRPm_1t0t3m": {
+      "assignedTo": [
+        "7YtnSxdLG2StUJV1mvNRzfu96zp2"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "completedDate": "2025-09-25T18:46:00.986Z",
+      "createdAt": "2025-09-15T15:45:57.875Z",
+      "createdBy": "7YtnSxdLG2StUJV1mvNRzfu96zp2",
+      "description": "Estão sendo desenvolvidas as atividades do sistema WorkFlow, dos seguintes códigos de atividade:\n\n002\n022\n025\n028\n030\n031",
+      "endDate": "2025-09-24T21:00:00.000Z",
+      "id": "-O_D2TNcILRPm_1t0t3m",
+      "priority": "medium",
+      "startDate": "2025-09-15T11:00:00.000Z",
+      "status": "completed",
+      "title": "Complemento do Restante das Pesquisas",
+      "type": "Auditoria",
+      "updatedAt": "2025-09-25T18:46:00.986Z"
+    },
+    "-O_Dg2enXnBs29fuOJsG": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-OMwwIi7h8gV0dlw_HO3",
+      "createdAt": "2025-09-15T18:43:16.789Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Envio de documentação  referente participação TERMO DE DISPENSA Nº 023/2025, serviços de EFD-Reinf na Câmara de Madre de Deus-Ba.",
+      "endDate": "2025-09-15T03:00:00.000Z",
+      "id": "-O_Dg2enXnBs29fuOJsG",
+      "priority": "high",
+      "startDate": "2025-09-15T16:54:00.000Z",
+      "status": "completed",
+      "title": "Envio de documentações referente participação TERMO DE DISPENSA Nº 023/2025, serviços de EFD-Reinf na Câmara de Madre de Deus-Ba.",
+      "type": "",
+      "updatedAt": "2025-09-15T18:43:16.789Z"
+    },
+    "-O_DkjuvDL-QsC7LVbPL": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OYXCjUDKZXxaG-InI47",
+      "completedDate": "2025-09-15T20:19:08.863Z",
+      "createdAt": "2025-09-15T19:03:48.255Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Segregação da folha para envio dos eventos periódicos do esocial, conforme solicitado pela prefeitura.",
+      "endDate": "2025-09-15T03:00:00.000Z",
+      "id": "-O_DkjuvDL-QsC7LVbPL",
+      "priority": "medium",
+      "startDate": "2025-09-15T18:30:00.000Z",
+      "status": "completed",
+      "title": "Segregação da folha ",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-15T20:19:08.863Z"
+    },
+    "-O_DzPPSet80FlReFtQd": {
+      "assignedTo": [
+        "TsXlQWHxqNg6r0I9QB7AtxitSJM2"
+      ],
+      "clientId": "-OPlPTWqsAbFg1eTz1Dv",
+      "createdAt": "2025-09-15T20:07:50.178Z",
+      "createdBy": "TsXlQWHxqNg6r0I9QB7AtxitSJM2",
+      "description": "Envio de folha de Itaprev para o eSocial.",
+      "endDate": "2025-09-15T14:57:00.000Z",
+      "id": "-O_DzPPSet80FlReFtQd",
+      "priority": "medium",
+      "startDate": "2025-09-15T12:30:00.000Z",
+      "status": "completed",
+      "title": "Consultoria ITAPREV",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-15T20:07:50.178Z"
+    },
+    "-O_H8o5bgyQFGqU3-mRX": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON7KDGRLzEs3MUlzGhF",
+      "createdAt": "2025-09-16T10:52:10.216Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Reenvio de documentação referente renovação contrato e-social IPM São Francisco-Ba. ",
+      "endDate": "2025-09-16T03:00:00.000Z",
+      "id": "-O_H8o5bgyQFGqU3-mRX",
+      "priority": "high",
+      "startDate": "2025-09-16T10:46:00.000Z",
+      "status": "completed",
+      "title": "Reenvio de documentação referente renovação contrato e-social IPM São Francisco-Ba. ",
+      "type": "",
+      "updatedAt": "2025-09-16T10:52:10.216Z"
+    },
+    "-O_ICmhoXXnH2_t3UgNI": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-16T15:49:10.039Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Envio de documentção referente consultoria e-social na Prefeitura de Castro Alves-Ba.",
+      "endDate": "2025-09-16T03:00:00.000Z",
+      "id": "-O_ICmhoXXnH2_t3UgNI",
+      "priority": "high",
+      "startDate": "2025-09-16T15:13:00.000Z",
+      "status": "completed",
+      "title": "Envio de documentção referente consultoria e-social na Prefeitura de Castro Alves-Ba.",
+      "type": "",
+      "updatedAt": "2025-09-16T15:49:10.039Z"
+    },
+    "-O_IY2IfRmIAamjfCk5H": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-16T17:22:02.964Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Envio de nota fiscal e documentação referente aos serviços de auditoria na Prefeitura de Lauro de Freitas-Ba. ",
+      "endDate": "2025-09-16T03:00:00.000Z",
+      "id": "-O_IY2IfRmIAamjfCk5H",
+      "priority": "high",
+      "startDate": "2025-09-16T17:10:00.000Z",
+      "status": "completed",
+      "title": "Envio de nota fiscal e documentação referente aos serviços de auditoria na Prefeitura de Lauro de Freitas-Ba. ",
+      "type": "",
+      "updatedAt": "2025-09-16T17:22:02.964Z"
+    },
+    "-O_IbMSYMv09js7eyOHN": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON7IGtoQR0jZB9gLaGw",
+      "createdAt": "2025-09-16T17:40:54.182Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Envio de certificados Heleno para compor processo contrato e-social Município de Feira de Santana-Ba. ",
+      "endDate": "2025-09-16T03:00:00.000Z",
+      "id": "-O_IbMSYMv09js7eyOHN",
+      "priority": "high",
+      "startDate": "2025-09-16T17:32:00.000Z",
+      "status": "completed",
+      "title": "Envio de certificados Heleno para compor processo contrato e-social Município de Feira de Santana-Ba. ",
+      "type": "",
+      "updatedAt": "2025-09-16T17:40:54.182Z"
+    },
+    "-O_JH4epDLiv9YCgjSnB": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-OYXCjUDKZXxaG-InI47",
+      "createdAt": "2025-09-16T20:47:33.622Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Encaminhei a dctf-web, e solicitei que fosse acertado com a contabilidade como seria feito a emissão da darf.\nRecebido um email solicitando o comprovante do regime previdenciario de uma servidora, mande para andreia.\nAjudei hildemar com as documentações e proposta para o municipio.",
+      "endDate": "2025-09-16T13:00:00.000Z",
+      "id": "-O_JH4epDLiv9YCgjSnB",
+      "priority": "medium",
+      "startDate": "2025-09-16T11:30:00.000Z",
+      "status": "completed",
+      "title": "DCTF-Web",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-16T20:47:33.622Z"
+    },
+    "-O_JIFXY77HazhLtDpBR": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-OSxcQQUWMjSGd06rIz6",
+      "createdAt": "2025-09-16T20:52:40.291Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Alinhamento com  dra. claudia sobre o Processo trabalhista, fiz um teste no portal para vê se conseguia passar, revisei o manual e acrescentei pontos no relatório que tinha gerado.",
+      "endDate": "2025-09-16T03:00:00.000Z",
+      "id": "-O_JIFXY77HazhLtDpBR",
+      "priority": "medium",
+      "startDate": "2025-09-16T14:00:00.000Z",
+      "status": "cancelled",
+      "title": "Processo 2500",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-22T17:44:28.707Z"
+    },
+    "-O_JInFIRwKhHzU8P9Zo": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "completedDate": "2025-09-23T16:50:04.662Z",
+      "createdAt": "2025-09-16T20:55:02.484Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Confirmação dos cargos, reativei nosso cadastro no sistema e vi que tinha caargos em falta, o sistema vai refazer a migração e nos passar para uma nova checagem.",
+      "endDate": "2025-09-17T03:00:00.000Z",
+      "id": "-O_JInFIRwKhHzU8P9Zo",
+      "priority": "medium",
+      "startDate": "2025-09-16T19:00:00.000Z",
+      "status": "completed",
+      "title": "SISTEMA ESO",
+      "type": "Outros",
+      "updatedAt": "2025-09-23T16:50:04.662Z"
+    },
+    "-O_MQsCBPSxDvkExP939": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2ixcvf99YSReicGyB",
+      "createdAt": "2025-09-17T11:29:09.997Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Visita técnica no município, para tratar da demanda dos envios retroativos de Outubro à Dezembro 2022. ",
+      "endDate": "2025-09-16T20:00:00.000Z",
+      "id": "-O_MQsCBPSxDvkExP939",
+      "priority": "medium",
+      "startDate": "2025-09-16T11:00:00.000Z",
+      "status": "completed",
+      "title": "Visita técnica",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T11:29:09.997Z"
+    },
+    "-O_MR5FsIdk0u-2Qfn4B": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "completedDate": "2025-09-17T11:42:59.139Z",
+      "createdAt": "2025-09-17T11:30:07.577Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Emissão dos relatórios de encargos mediante divisão imposta pelo município para a emissão das guias previdenciárias.",
+      "endDate": "2025-09-17T03:00:00.000Z",
+      "id": "-O_MR5FsIdk0u-2Qfn4B",
+      "priority": "medium",
+      "startDate": "2025-09-17T11:00:00.000Z",
+      "status": "completed",
+      "title": "Emissão de relatórios ",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T11:42:59.139Z"
+    },
+    "-O_Ma1DtikdPqYueudN7": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "completedDate": "2025-09-17T14:02:47.503Z",
+      "createdAt": "2025-09-17T12:13:32.501Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Emissão das guias previdenciárias, referentes a Agosto 2025, explicando a demanda a Gustavo.",
+      "endDate": "2025-09-17T03:00:00.000Z",
+      "id": "-O_Ma1DtikdPqYueudN7",
+      "priority": "medium",
+      "startDate": "2025-09-17T12:13:00.000Z",
+      "status": "completed",
+      "title": "Emissão de guias ",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T14:02:47.503Z"
+    },
+    "-O_N890KDDFSblYVzg-J": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OSxcQQUWMjSGd06rIz6",
+      "createdAt": "2025-09-17T14:46:59.511Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Checagem dos envios de esocial de Agosto 2025, verificando se houveram erros.",
+      "endDate": "2025-09-17T03:00:00.000Z",
+      "id": "-O_N890KDDFSblYVzg-J",
+      "priority": "medium",
+      "startDate": "2025-09-17T14:30:00.000Z",
+      "status": "completed",
+      "title": "Checagem de envio",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T14:46:59.511Z"
+    },
+    "-O_NUMPhq3t4g1nqG0Sc": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OYXCjUDKZXxaG-InI47",
+      "createdAt": "2025-09-17T16:24:02.208Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Emissão das guias previdenciárias.",
+      "endDate": "2025-09-17T03:00:00.000Z",
+      "id": "-O_NUMPhq3t4g1nqG0Sc",
+      "priority": "medium",
+      "startDate": "2025-09-17T16:23:00.000Z",
+      "status": "completed",
+      "title": "Emissão de guias",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T16:24:02.208Z"
+    },
+    "-O_NalAUh-YXzSmrZqwq": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-17T16:56:22.739Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Verificação sobre desligamentos, sendo necessário o envio do S-2299 de uma ex servidora, como solicitado pela equipe do município.",
+      "endDate": "2025-09-17T03:00:00.000Z",
+      "id": "-O_NalAUh-YXzSmrZqwq",
+      "priority": "medium",
+      "startDate": "2025-09-17T03:00:00.000Z",
+      "status": "completed",
+      "title": "Verificação de desligamentos",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T16:56:22.739Z"
+    },
+    "-O_NcPSwEnqYeeJVxolH": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-17T17:03:34.595Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Devolução de envio de solicitação de fornecimento assinado para o Município de Lauro de Freitas-Ba. ",
+      "endDate": "2025-09-17T03:00:00.000Z",
+      "id": "-O_NcPSwEnqYeeJVxolH",
+      "priority": "medium",
+      "startDate": "2025-09-17T14:31:00.000Z",
+      "status": "completed",
+      "title": "Devolução de envio de solicitação de fornecimento assinado para o Município de Lauro de Freitas-Ba. ",
+      "type": "",
+      "updatedAt": "2025-09-17T17:03:34.595Z"
+    },
+    "-O_Nc_vUc4yOWJ4_TmBX": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-17T17:04:20.947Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Parametrização de nova verba para a folha de Setembro 2025 e envio do S-1010.",
+      "endDate": "2025-09-17T03:00:00.000Z",
+      "id": "-O_Nc_vUc4yOWJ4_TmBX",
+      "priority": "medium",
+      "startDate": "2025-09-17T03:00:00.000Z",
+      "status": "completed",
+      "title": "Parametrização de verbas",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T17:04:20.947Z"
+    },
+    "-O_Nd7BS5OkA6kA79Bvk": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OOY0miPMKwAnTt0zMZ3",
+      "createdAt": "2025-09-17T17:06:41.296Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Emissão de guia previdencária. ",
+      "endDate": "2025-09-17T03:00:00.000Z",
+      "id": "-O_Nd7BS5OkA6kA79Bvk",
+      "priority": "medium",
+      "startDate": "2025-09-17T03:00:00.000Z",
+      "status": "completed",
+      "title": "Emissão de guia previdenciária ",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T17:06:41.296Z"
+    },
+    "-O_O205QZjY5Pt5Ytk13": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON7IXFe1fxEdJvitVNW",
+      "completedDate": "2025-09-18T13:57:01.887Z",
+      "createdAt": "2025-09-17T18:59:47.912Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Elaborar planilha com os valores a serem repassados para o Instituto de Previdência do município cedente da servidora.",
+      "endDate": "2025-09-18T03:00:00.000Z",
+      "id": "-O_O205QZjY5Pt5Ytk13",
+      "priority": "medium",
+      "startDate": "2025-09-18T11:00:00.000Z",
+      "status": "completed",
+      "title": "Planilha Patronal RPPS",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-18T13:57:01.887Z"
+    },
+    "-O_OA9sHs_DrqykVKZ6u": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-17T19:35:27.387Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Criamos um grupo com todos nossos cliente e ex clientes, para divulgar um evento sobre SST na gestão publica.",
+      "endDate": "2025-09-17T13:20:00.000Z",
+      "id": "-O_OA9sHs_DrqykVKZ6u",
+      "priority": "medium",
+      "startDate": "2025-09-17T13:00:00.000Z",
+      "status": "completed",
+      "title": "Curso de SST",
+      "type": "Outros",
+      "updatedAt": "2025-09-17T19:35:27.387Z"
+    },
+    "-O_OAbFyYVfKdTEXGciL": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-17T19:37:23.656Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Orientei ester e gustavo na geração das guias, falei com alan da sefaz e a equipe finalizou o processo da emissão de guias.",
+      "endDate": "2025-09-17T12:30:00.000Z",
+      "id": "-O_OAbFyYVfKdTEXGciL",
+      "priority": "medium",
+      "startDate": "2025-09-17T11:30:00.000Z",
+      "status": "completed",
+      "title": "Guias de recolhimento",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T19:37:23.656Z"
+    },
+    "-O_ODnfNZta75vRhVNtz": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-OOY0miPMKwAnTt0zMZ3",
+      "createdAt": "2025-09-17T19:51:20.930Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Solicitamos do setor de recursos humanos, informações de como seria gerado as guias e inss, email para envio das informações de fechamento e os comprovantes.\nFoi encaminhado o email e será alinhado uma reunião com o municipio para ajustar o Esocial.",
+      "endDate": "2025-09-17T14:00:00.000Z",
+      "id": "-O_ODnfNZta75vRhVNtz",
+      "priority": "medium",
+      "startDate": "2025-09-17T13:30:00.000Z",
+      "status": "completed",
+      "title": "Guias de recolhimento INSS",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T19:51:20.930Z"
+    },
+    "-O_OE0cD-QP4U17owyzM": {
+      "assignedTo": [
+        "TsXlQWHxqNg6r0I9QB7AtxitSJM2"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-17T19:52:15.087Z",
+      "createdBy": "TsXlQWHxqNg6r0I9QB7AtxitSJM2",
+      "description": "Emissão das Guias de Lauro de Freitas",
+      "endDate": "2025-09-17T14:35:00.000Z",
+      "id": "-O_OE0cD-QP4U17owyzM",
+      "priority": "medium",
+      "startDate": "2025-09-17T13:01:00.000Z",
+      "status": "completed",
+      "title": "Emissão das Guias",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T19:52:15.087Z"
+    },
+    "-O_OFnadE7ANhjxaEULe": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-OYXCjUDKZXxaG-InI47",
+      "createdAt": "2025-09-17T20:00:04.915Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Enviamos o email para o setor pessoal com a guia e os comprovantes do mês de agosto para pagamento da darf, separado segurado do patronal.",
+      "endDate": "2025-09-17T15:00:00.000Z",
+      "id": "-O_OFnadE7ANhjxaEULe",
+      "priority": "medium",
+      "startDate": "2025-09-17T14:30:00.000Z",
+      "status": "completed",
+      "title": "Guias de recolhimento INSS",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T20:00:04.915Z"
+    },
+    "-O_OKQS52cIceqkLPrls": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON2k1M5udWuEm8uR7b-",
+      "createdAt": "2025-09-17T20:20:16.733Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Liguei para cliente perguntando sobre o contrato de sst antigo, entendi o assunto verifiquei que estava sem contrato, iremos aditivar 25% em cima do nosso.",
+      "endDate": "2025-09-17T13:23:00.000Z",
+      "id": "-O_OKQS52cIceqkLPrls",
+      "priority": "medium",
+      "startDate": "2025-09-17T13:00:00.000Z",
+      "status": "completed",
+      "title": "SST aditivo",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T20:20:16.733Z"
+    },
+    "-O_OKxDuvetzopkrwnLL": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON2kfj0oujVyar2oH3b",
+      "createdAt": "2025-09-17T20:22:35.087Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "A cliente estava com duvidas sobre o desconto do inss em outro vinculo, disse que era para ela pegar uma comprovação do outro vinculo, cnpj valor de salario e inss, que iriamos lançar.\nJá a diferença do contra cheque precisa saber se o valor das pessoas que foram comparadas são realmente iguais... para ter uma resposta.",
+      "endDate": "2025-09-17T18:00:00.000Z",
+      "id": "-O_OKxDuvetzopkrwnLL",
+      "priority": "medium",
+      "startDate": "2025-09-17T14:30:00.000Z",
+      "status": "completed",
+      "title": "contracheque divergentes e desconto em outro vinculo",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T20:22:35.087Z"
+    },
+    "-O_OMNHTP246qBy_hJG7": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-OYXCjUDKZXxaG-InI47",
+      "createdAt": "2025-09-17T20:28:48.052Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Elaboração do relatório de serviços prestados ao município de Cataguases, envio para Ana.",
+      "endDate": "2025-09-17T17:40:00.000Z",
+      "id": "-O_OMNHTP246qBy_hJG7",
+      "priority": "medium",
+      "startDate": "2025-09-17T16:30:00.000Z",
+      "status": "completed",
+      "title": "Emissão de relatório",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-17T20:28:48.052Z"
+    },
+    "-O_OMlZl3n7FuYRc9snF": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON7IXFe1fxEdJvitVNW",
+      "completedDate": "2025-09-22T17:44:01.568Z",
+      "createdAt": "2025-09-17T20:30:31.623Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Servidora solicitou com brevidade a planilha de valores da servidora salete, para recolhimento do DAE.\nEstamos finalizando esse serviço, amanhã iremos mandar uma parte para vê se esta do agrado da cliente.",
+      "endDate": "2025-09-19T03:00:00.000Z",
+      "id": "-O_OMlZl3n7FuYRc9snF",
+      "priority": "medium",
+      "startDate": "2025-09-17T19:00:00.000Z",
+      "status": "completed",
+      "title": "SALETE, Planilha de valores",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-22T17:44:01.568Z"
+    },
+    "-O_RY3CJibRQ-Jjo8FrE": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-18T11:18:42.491Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Solicitação à Administração do Hangar o acesso de Fábio Lisboa - serviços de eletrica. ",
+      "endDate": "2025-09-18T03:00:00.000Z",
+      "id": "-O_RY3CJibRQ-Jjo8FrE",
+      "priority": "medium",
+      "startDate": "2025-09-18T11:13:00.000Z",
+      "status": "completed",
+      "title": "Solicitação à Administração do Hangar o acesso de Fábio Lisboa - serviços de eletrica. ",
+      "type": "",
+      "updatedAt": "2025-09-18T11:18:42.491Z"
+    },
+    "-O_Rw2y76GjaBVhd0wO3": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-18T13:07:53.693Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Analise dos pagamentos das DARFs DCTFweb, verificando se houve pagamentos feitos a maior ou a menor, e posterior elaboração de planilha com essas diferenças. ",
+      "endDate": "2025-09-18T03:00:00.000Z",
+      "id": "-O_Rw2y76GjaBVhd0wO3",
+      "priority": "medium",
+      "startDate": "2025-09-18T03:00:00.000Z",
+      "status": "completed",
+      "title": "Análise de pagamentos ",
+      "type": "Auditoria",
+      "updatedAt": "2025-09-18T13:07:53.693Z"
+    },
+    "-O_S7FxmaRK4MWaXHY7S": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OQPPaUZu6EFG3SjI4Id",
+      "completedDate": "2025-09-19T12:14:26.178Z",
+      "createdAt": "2025-09-18T14:01:12.622Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Formatação do relatório para entrega ",
+      "endDate": "2025-09-22T03:00:00.000Z",
+      "id": "-O_S7FxmaRK4MWaXHY7S",
+      "priority": "medium",
+      "startDate": "2025-09-18T11:00:00.000Z",
+      "status": "completed",
+      "title": "Relatório final",
+      "type": "Auditoria",
+      "updatedAt": "2025-09-19T12:14:26.178Z"
+    },
+    "-O_SQV3KbUNI89l5413P": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON2jLMeSTXHwBuNhSyl",
+      "createdAt": "2025-09-18T15:25:16.449Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Envio de ofício e documentação para fins de renovação contrato consultoria e-social , Município de Banzaê-Ba.",
+      "endDate": "2025-09-18T03:00:00.000Z",
+      "id": "-O_SQV3KbUNI89l5413P",
+      "priority": "high",
+      "startDate": "2025-09-18T14:59:00.000Z",
+      "status": "completed",
+      "title": "Envio de ofício e documentação para fins de renovação contrato consultoria e-social , Município de Banzaê-Ba.",
+      "type": "",
+      "updatedAt": "2025-09-18T15:25:16.449Z"
+    },
+    "-O_Si5Bt8zrZakHkT9G9": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-18T16:46:30.000Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Retificação do CBO dentro do portal, mediante solicitação da servidora, pois na CTPS Digital constava função não exercida pela mesma.",
+      "endDate": "2025-09-18T03:00:00.000Z",
+      "id": "-O_Si5Bt8zrZakHkT9G9",
+      "priority": "medium",
+      "startDate": "2025-09-18T03:00:00.000Z",
+      "status": "completed",
+      "title": "Retificação de CBO",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-18T16:46:30.000Z"
+    },
+    "-O_T7Gg3qTS2lGJcX0Xc": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-18T18:40:53.805Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Atualização planilha discriminativa de despesa de insumos e mão de obra e declaração insenção da retenção IRPJ, CSLL, COFINS e PIS/Pasep, mês set/2025. ",
+      "endDate": "2025-09-18T03:00:00.000Z",
+      "id": "-O_T7Gg3qTS2lGJcX0Xc",
+      "priority": "medium",
+      "startDate": "2025-09-18T18:35:00.000Z",
+      "status": "completed",
+      "title": "Atualização planilha discriminativa de despesa de insumos e mão de obra e declaração insenção da retenção IRPJ, CSLL, COFINS e PIS/Pasep, mês set/2025. ",
+      "type": "",
+      "updatedAt": "2025-09-18T18:40:53.805Z"
+    },
+    "-O_TLNjMhMOc1EEu_6U4": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON7KDGRLzEs3MUlzGhF",
+      "createdAt": "2025-09-18T19:42:31.014Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Estou com alguns servidores que já foram desligados do quadro ativos no Esocial, como faço para excluir?\nEu acessei a maquina dela para verificar como foi que os eventos foram para o esocial, foram mandados no mês 08/agosto, com isso tentamos fazer a exclusão pelo sistema e não foi.\nPedi que ela tentasse pelo suporte do sistema, caso não conseguisse faríamos pelo E-social. Já os cadastro de Dona Eleonor e Dr. Flavio seriam desligados e não excluidos.",
+      "endDate": "2025-09-18T14:30:00.000Z",
+      "id": "-O_TLNjMhMOc1EEu_6U4",
+      "priority": "medium",
+      "startDate": "2025-09-18T14:00:00.000Z",
+      "status": "completed",
+      "title": "Exclusão do S-2200",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-18T19:42:31.014Z"
+    },
+    "-O_TP5vINmV7RRt2WeFk": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-18T19:58:46.657Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Elaborei a introdução dos relatórios, revisão, reajustes, elaboração do texto de SST de acordo com as normas NR 01, 09, 15, 16, 17 e 28.",
+      "endDate": "2025-09-18T20:00:00.000Z",
+      "id": "-O_TP5vINmV7RRt2WeFk",
+      "priority": "medium",
+      "startDate": "2025-09-18T11:30:00.000Z",
+      "status": "completed",
+      "title": "Auditoria Jacobina e lauro",
+      "type": "Auditoria",
+      "updatedAt": "2025-09-18T19:58:46.657Z"
+    },
+    "-O_WrwkD2b8erIpaAiri": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-19T12:08:03.140Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Envio para Setor Contabil (Iza)  extratos ASAAS e GerenciaNet, nos formatos OFX e PDF referente ao mês de agosto/25. ",
+      "endDate": "2025-09-19T03:00:00.000Z",
+      "id": "-O_WrwkD2b8erIpaAiri",
+      "priority": "medium",
+      "startDate": "2025-09-19T12:04:00.000Z",
+      "status": "completed",
+      "title": "Envio para Setor Contabil (Iza)  extratos ASAAS e GerenciaNet, nos formatos OFX e PDF referente ao mês de agosto/25. ",
+      "type": "",
+      "updatedAt": "2025-09-19T12:08:03.140Z"
+    },
+    "-O_WvRnY1p1k3jOqdk74": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OQPPaUZu6EFG3SjI4Id",
+      "completedDate": "2025-09-22T12:01:28.149Z",
+      "createdAt": "2025-09-19T12:23:19.668Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Montagem dos anexos do relatório de auditoria.",
+      "endDate": "2025-09-19T03:00:00.000Z",
+      "id": "-O_WvRnY1p1k3jOqdk74",
+      "priority": "medium",
+      "startDate": "2025-09-19T11:00:00.000Z",
+      "status": "completed",
+      "title": "Montagem de anexos",
+      "type": "Auditoria",
+      "updatedAt": "2025-09-22T12:01:28.149Z"
+    },
+    "-O_Xnt7_6y-YTSYTDMdu": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON2kMtbSAYBQ1oBin3S",
+      "createdAt": "2025-09-19T16:29:56.702Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Envio de nota fiscal e documentação referente consultroria e-social mês setembro/2025, Câmara de Uauá-Ba.",
+      "endDate": "2025-09-19T03:00:00.000Z",
+      "id": "-O_Xnt7_6y-YTSYTDMdu",
+      "priority": "high",
+      "startDate": "2025-09-19T16:13:00.000Z",
+      "status": "completed",
+      "title": "Envio de nota fiscal e documentação referente consultroria e-social mês setembro/2025, Câmara de Uauá-Ba.",
+      "type": "",
+      "updatedAt": "2025-09-19T16:29:56.702Z"
+    },
+    "-O_lIeoplhM1gFksRvQt": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "completedDate": "2025-09-22T14:20:49.154Z",
+      "createdAt": "2025-09-22T12:03:27.408Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Montagem dos anexos do relatório de auditoria.",
+      "endDate": "2025-09-22T03:00:00.000Z",
+      "id": "-O_lIeoplhM1gFksRvQt",
+      "priority": "medium",
+      "startDate": "2025-09-22T11:00:00.000Z",
+      "status": "completed",
+      "title": "Montagem de anexos",
+      "type": "Auditoria",
+      "updatedAt": "2025-09-22T14:20:49.154Z"
+    },
+    "-O_lnLsyBWxka4Zw_4b4": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-22T14:21:54.284Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Relatório mensal para emissão das notas dos municípios de Dias Davila e Madre de Deus.",
+      "endDate": "2025-09-22T03:00:00.000Z",
+      "id": "-O_lnLsyBWxka4Zw_4b4",
+      "priority": "medium",
+      "startDate": "2025-09-22T03:00:00.000Z",
+      "status": "completed",
+      "title": "Relatório mensal",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-22T14:21:54.284Z"
+    },
+    "-O_mD_neOeiOT2MVOqu7": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "completedDate": "2025-10-01T20:26:51.824Z",
+      "createdAt": "2025-09-22T16:20:53.066Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Revisão final do relatório com os anexos.",
+      "endDate": "2025-09-26T03:00:00.000Z",
+      "id": "-O_mD_neOeiOT2MVOqu7",
+      "priority": "medium",
+      "startDate": "2025-09-22T16:00:00.000Z",
+      "status": "completed",
+      "title": "Revisão final ",
+      "type": "Auditoria",
+      "updatedAt": "2025-10-01T20:26:51.824Z"
+    },
+    "-O_mFgOu19tcFdp9vcB_": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "completedDate": "2025-09-22T17:12:33.101Z",
+      "createdAt": "2025-09-22T16:30:04.378Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Verificação de situações de vinculos, remunerações e regime previdenciário, mediante solicitação dos srvidores, repassado pela prefeitura.",
+      "endDate": "2025-09-22T03:00:00.000Z",
+      "id": "-O_mFgOu19tcFdp9vcB_",
+      "priority": "medium",
+      "startDate": "2025-09-22T16:00:00.000Z",
+      "status": "completed",
+      "title": "Verficação esocial",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-22T17:12:33.101Z"
+    },
+    "-O_mWYjkbYg3F57csaDl": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-22T17:43:49.044Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Emissão e revisão dos relatórios mensais para enviar conjunto a NFS",
+      "endDate": "2025-09-22T17:20:00.000Z",
+      "id": "-O_mWYjkbYg3F57csaDl",
+      "priority": "medium",
+      "startDate": "2025-09-22T12:30:00.000Z",
+      "status": "completed",
+      "title": "Relatórios mensais",
+      "type": "Outros",
+      "updatedAt": "2025-09-22T17:43:49.044Z"
+    },
+    "-O_qOc3Jr5Ugt-fGVzAK": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-23T11:47:32.631Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Envio de notas fiscais mês de setembro/25, clientes orgão público.",
+      "endDate": "2025-09-24T14:50:00.000Z",
+      "id": "-O_qOc3Jr5Ugt-fGVzAK",
+      "priority": "high",
+      "startDate": "2025-09-22T11:50:00.000Z",
+      "status": "completed",
+      "title": "Envio de notas fiscais mês de setembro/25, clientes orgão público.",
+      "type": "",
+      "updatedAt": "2025-09-24T15:50:58.354Z"
+    },
+    "-O_qn1NfaLtQrMMZCJYf": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-23T13:38:33.921Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "A pedido da Prefeitura de Lauro de Freitas-Ba, enviando ordem de serviço (referente pagamento auditoria) devidamente assinada e carimbada.",
+      "endDate": "2025-09-23T03:00:00.000Z",
+      "id": "-O_qn1NfaLtQrMMZCJYf",
+      "priority": "high",
+      "startDate": "2025-09-23T13:33:00.000Z",
+      "status": "completed",
+      "title": "A pedido da Prefeitura de Lauro de Freitas-Ba, enviando ordem de serviço (referente pagamento auditoria) devidamente assinada e carimbada.",
+      "type": "",
+      "updatedAt": "2025-09-23T13:38:33.921Z"
+    },
+    "-O_rQCm9O6S57ptS53t-": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON2lyMSQQeqTAKvcMPR",
+      "createdAt": "2025-09-23T16:34:12.717Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "O cliente ligou para relatar sobre uma mensagem da qual ele recebeu, em acesso anydesk li e verifiquei os meses no sistema de folha, ele encaminhou o oficio pelo whatsap.\nFiz a leitura e entendimento do material, passei o conhecimento para a equipe retornei para o cliente esplicando como deveria ser preenchida a planilha do Oficio. ",
+      "endDate": "2025-09-23T13:00:00.000Z",
+      "id": "-O_rQCm9O6S57ptS53t-",
+      "priority": "medium",
+      "startDate": "2025-09-23T12:10:00.000Z",
+      "status": "completed",
+      "title": "Oficio da receita federal",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-23T16:34:12.717Z"
+    },
+    "-O_rTm01pn0iIQmUEJQn": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-23T16:49:47.557Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Isa da contabilidade me ligou para falar sobre um oficio que foi recebido no dia 05, identifiquei a situação com ela, passei que a responsabilidade é do setor de RH, passei uma mensagem no grupo solicitando uma reunião com a equipe e os sistemas de folha.",
+      "endDate": "2025-09-23T14:20:00.000Z",
+      "id": "-O_rTm01pn0iIQmUEJQn",
+      "priority": "medium",
+      "startDate": "2025-09-23T13:20:00.000Z",
+      "status": "completed",
+      "title": "Oficio da receita federal, evento S-1210.",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-23T16:49:47.557Z"
+    },
+    "-O_rUaGeYvBJ0ddCwYsJ": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON2kfj0oujVyar2oH3b",
+      "createdAt": "2025-09-23T16:53:21.614Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Niniva mandou os documentos dos servidores que estavam a reclamar dos valores que receberam, já que todo mundo recebe o mesmo valor, mostrei a ela que o salario era diferente e tinham gratificações a mais, logo não tinha como o contra cheque ser igual.\nanalise e liberação do cadastro de remunerações em outras empresas do servidor enfermeiro.",
+      "endDate": "2025-09-23T15:00:00.000Z",
+      "id": "-O_rUaGeYvBJ0ddCwYsJ",
+      "priority": "medium",
+      "startDate": "2025-09-23T14:30:00.000Z",
+      "status": "completed",
+      "title": "Diferença no contra cheque",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-23T16:53:21.614Z"
+    },
+    "-O_rya5KpnvuXXIHP4Jh": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-23T19:08:43.943Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Fcehamento dosperíodos que estavam em aberto no ano de 2025, logo após, transmissão das DCTFweb retificadoras.",
+      "endDate": "2025-09-23T03:00:00.000Z",
+      "id": "-O_rya5KpnvuXXIHP4Jh",
+      "priority": "medium",
+      "startDate": "2025-09-23T03:00:00.000Z",
+      "status": "completed",
+      "title": "Fechamentos de períodos",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-23T19:21:05.226Z"
+    },
+    "-O_s282Gr3necIXdw_Z6": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-23T19:28:35.683Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Desligamento foi enviado de forma equivocada pela edza, sendo assim, efetuei a exclusão do registro.\n",
+      "endDate": "2025-09-23T03:00:00.000Z",
+      "id": "-O_s282Gr3necIXdw_Z6",
+      "priority": "medium",
+      "startDate": "2025-09-23T03:00:00.000Z",
+      "status": "completed",
+      "title": "Exclusão de desligamento",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-23T19:28:35.683Z"
+    },
+    "-O_vOk8mfDciAs--BXn_": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-OSxcQQUWMjSGd06rIz6",
+      "createdAt": "2025-09-23T11:05:25.003Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Assinatura digital aditivo auditoria Cataguases-MG.",
+      "endDate": "2025-09-23T03:00:00.000Z",
+      "id": "-O_vOk8mfDciAs--BXn_",
+      "priority": "medium",
+      "startDate": "2025-09-23T10:58:00.000Z",
+      "status": "completed",
+      "title": "Assinatura digital aditivo auditoria Cataguases-MG.",
+      "type": "",
+      "updatedAt": "2025-09-23T11:05:25.003Z"
+    },
+    "-O_w8X0shdA9mC7nPXiA": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-OMwwIi7h8gV0dlw_HO3",
+      "createdAt": "2025-09-24T14:34:57.278Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Conferência e assinatura contrato EFD-reinf , Câmara de Madre de Deus-BA.",
+      "endDate": "2025-09-24T03:00:00.000Z",
+      "id": "-O_w8X0shdA9mC7nPXiA",
+      "priority": "high",
+      "startDate": "2025-09-24T14:23:00.000Z",
+      "status": "completed",
+      "title": "Conferência e assinatura contrato EFD-reinf , Câmara de Madre de Deus-BA.",
+      "type": "",
+      "updatedAt": "2025-09-24T14:34:57.278Z"
+    },
+    "-O_wV2hwX9JWs1uS67B1": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON7J2TPGMWsRclxxZFS",
+      "createdAt": "2025-09-24T16:13:22.348Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Reenviio de notas fiscais, planilha insumos, declaração insenção e relatório atividades do período de março a agosto/25, para o Município de Morpará-BA.",
+      "endDate": "2025-09-24T03:00:00.000Z",
+      "id": "-O_wV2hwX9JWs1uS67B1",
+      "priority": "high",
+      "startDate": "2025-09-24T14:29:00.000Z",
+      "status": "completed",
+      "title": "Reenviio de notas fiscais, planilha insumos, declaração insenção e relatório atividades do período de março a agosto/25, para o Município de Morpará-BA.",
+      "type": "",
+      "updatedAt": "2025-09-24T16:13:22.348Z"
+    },
+    "-O_xZQhHv69fUsfTnSSN": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-24T21:12:13.462Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Pela manhã fui a um treinamento sobre retenção de imposto de renda, porem fiquei assessorando Gustavo e Ester de lá.\nNa parte da tarde revisei o trabalho que Gustavo fez da câmara de formosa, ajustei uns pontos, e repassei como ele deve atender ao cliente, mandei um material de legislação trabalhista para estudo.\nPubliquei para os clientes um material sobre o oficio da receita, marquei atendimentos para amanhã, e estudei a nova forma de declaração da DIRF.\n",
+      "endDate": "2025-09-24T20:00:00.000Z",
+      "id": "-O_xZQhHv69fUsfTnSSN",
+      "priority": "medium",
+      "startDate": "2025-09-24T11:00:00.000Z",
+      "status": "completed",
+      "title": "Consultoria, estudo e treinamento.",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-24T21:12:13.462Z"
+    },
+    "-Oa-ZrIN8RPSLfiCkhMO": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2ixcvf99YSReicGyB",
+      "createdAt": "2025-09-25T11:12:51.790Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Visita técnica, para tratar de assuntos ainda relacionados aos retroativos de Outubro a Dezembro de 2022.",
+      "endDate": "2025-09-25T03:00:00.000Z",
+      "id": "-Oa-ZrIN8RPSLfiCkhMO",
+      "priority": "medium",
+      "startDate": "2025-09-25T11:00:00.000Z",
+      "status": "completed",
+      "title": "Visita técnica ",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-25T11:12:51.790Z"
+    },
+    "-Oa0HOjnN5T4sNWFV8uH": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON7IXFe1fxEdJvitVNW",
+      "createdAt": "2025-09-25T14:31:49.178Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Orentação e auxílio no preenchimento da planilha relacionada a DIRF e o evento s1210, enviada pela Receita Federal ao município.",
+      "endDate": "2025-09-25T03:00:00.000Z",
+      "id": "-Oa0HOjnN5T4sNWFV8uH",
+      "priority": "medium",
+      "startDate": "2025-09-25T03:00:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Ferderal",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-25T14:31:49.178Z"
+    },
+    "-Oa0Ie4i8_rhbgM6p0nn": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2jLMeSTXHwBuNhSyl",
+      "completedDate": "2025-09-26T12:06:34.738Z",
+      "createdAt": "2025-09-25T14:37:18.261Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Orientação e auxílio sobre a planilha enviada pela Receita Federal ao município sobre a DIRF e os envios do evento s1210.",
+      "endDate": "2025-09-26T03:00:00.000Z",
+      "id": "-Oa0Ie4i8_rhbgM6p0nn",
+      "priority": "medium",
+      "startDate": "2025-09-26T11:30:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Federal ",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-26T12:06:34.738Z"
+    },
+    "-Oa0JIiWwEEcpVqKebZZ": {
+      "assignedTo": [
+        "TsXlQWHxqNg6r0I9QB7AtxitSJM2"
+      ],
+      "clientId": "-ON2kMtbSAYBQ1oBin3S",
+      "createdAt": "2025-09-25T14:40:08.709Z",
+      "createdBy": "TsXlQWHxqNg6r0I9QB7AtxitSJM2",
+      "description": "Auxilio e preenchimento da planilha da Receita Federal CM UAUÁ.",
+      "endDate": "2025-09-25T14:00:00.000Z",
+      "id": "-Oa0JIiWwEEcpVqKebZZ",
+      "priority": "medium",
+      "startDate": "2025-09-25T11:40:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Federal",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-25T14:40:08.709Z"
+    },
+    "-Oa0JzGshUQRjnmUp9X-": {
+      "assignedTo": [
+        "TsXlQWHxqNg6r0I9QB7AtxitSJM2"
+      ],
+      "clientId": "-ON2k1M5udWuEm8uR7b-",
+      "createdAt": "2025-09-25T14:43:07.099Z",
+      "createdBy": "TsXlQWHxqNg6r0I9QB7AtxitSJM2",
+      "description": "Envio dos eventos S-1200 e S-1210 do Mês de Setembro da Câmara de Formosa.",
+      "endDate": "2025-09-25T19:00:00.000Z",
+      "id": "-Oa0JzGshUQRjnmUp9X-",
+      "priority": "medium",
+      "startDate": "2025-09-25T16:00:00.000Z",
+      "status": "completed",
+      "title": "Eventos CM Formosa",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-25T14:43:07.099Z"
+    },
+    "-Oa0OmDekPa6VNUOGdQt": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2ixcvf99YSReicGyB",
+      "completedDate": "2025-09-25T16:58:12.959Z",
+      "createdAt": "2025-09-25T15:04:04.465Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "auxílio no preenchimento da planilha enviada pela Receita Federal ao município referente as informações do evento s1210, para a DIRF.",
+      "endDate": "2025-09-25T03:00:00.000Z",
+      "id": "-Oa0OmDekPa6VNUOGdQt",
+      "priority": "medium",
+      "startDate": "2025-09-25T16:00:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Federal",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-25T16:58:12.959Z"
+    },
+    "-Oa19GuFSP9AQxuoffAU": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON7J2TPGMWsRclxxZFS",
+      "completedDate": "2025-09-26T18:22:27.883Z",
+      "createdAt": "2025-09-25T18:35:57.114Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Orientação e auxílio sobre a planilha enviada pela Receita Federal sobre a DIRF e os evento s1210",
+      "endDate": "2025-09-26T03:00:00.000Z",
+      "id": "-Oa19GuFSP9AQxuoffAU",
+      "priority": "medium",
+      "startDate": "2025-09-26T12:00:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Federal",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-26T18:22:27.883Z"
+    },
+    "-Oa1E7O_k43JH203QmfK": {
+      "assignedTo": [
+        "7YtnSxdLG2StUJV1mvNRzfu96zp2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-25T18:57:12.593Z",
+      "createdBy": "7YtnSxdLG2StUJV1mvNRzfu96zp2",
+      "description": "Criação de novo relatório semanal, focado nas atividades semanais dos clientes.\n\nO intuito é que a cada fim de semana, sejam gerados relatórios para cada cliente, com as atividades desenvolvidas e que foram registradas no sistema.\n\nA funcionalidade tem como requisitos básicos:\n\nA readequação das descrições e atividades, por intermédio de IA, para avaliar o conteúdo inserido pelo colaborador, transformando as descrições das atividades em conteúdos mais ricos e profissionais na apresentação do relatório ao cliente.\nExportação nos formatos Excel e PDF.\nGeração semanal do relatório automaticamente.\n\n\nTarefa adicional:\n\nIncluído novo campo de \"Introdução do Relatório de Serviços\" para os clientes, com o intuito de que, o texto colocado nesse campo seja diretamente puxado para a introdução do relatório em cada solicitação nova de relatório.",
+      "endDate": "2025-10-05T22:53:00.000Z",
+      "id": "-Oa1E7O_k43JH203QmfK",
+      "priority": "medium",
+      "startDate": "2025-09-25T11:00:00.000Z",
+      "status": "completed",
+      "title": "Nova Funcionalidade de Relatórios",
+      "type": "Melhorias no HUB",
+      "updatedAt": "2025-10-05T22:53:58.538Z"
+    },
+    "-Oa1ITU9vU3dXtf8R052": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-25T19:16:07.941Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Análise de vinculos e regimes, solicitados pelo município de servidores específicos.",
+      "endDate": "2025-09-25T03:00:00.000Z",
+      "id": "-Oa1ITU9vU3dXtf8R052",
+      "priority": "medium",
+      "startDate": "2025-09-25T18:50:00.000Z",
+      "status": "completed",
+      "title": "Análise de situações",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-25T19:16:07.941Z"
+    },
+    "-Oa1WZ1TkQngT314vkUM": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-25T20:17:49.064Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Pela manhã ensinei a todos colaboradores como deve ser feito a alimentação da planilha no E-cac, acompanhei todos os atendimentos e auxiliei nos erros.\nPela tarde, agendei mais outros atendimentos, negocie o preço do serviço da engenheira, e elaborei o relatório de rescisão contratual com IPM São Francisco.\nReunião  marcada com Lauro para o dia 29/09.\nCriamos uma nova pasta para arquivar os relatórios de visitas e as fotos tiradas de cada atendimento...\n",
+      "endDate": "2025-09-25T20:00:00.000Z",
+      "id": "-Oa1WZ1TkQngT314vkUM",
+      "priority": "medium",
+      "startDate": "2025-09-25T11:00:00.000Z",
+      "status": "completed",
+      "title": "Gerenciamento da equipe",
+      "type": "Outros",
+      "updatedAt": "2025-09-25T20:17:49.064Z"
+    },
+    "-Oa5l_OgzYMbVV_nGp6g": {
+      "assignedTo": [
+        "7YtnSxdLG2StUJV1mvNRzfu96zp2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-26T16:06:13.810Z",
+      "createdBy": "7YtnSxdLG2StUJV1mvNRzfu96zp2",
+      "description": "Corrigido bug onde a pesquisa de filtragem por colaborador na página de atividades não funcionava corretamente.\n\nMelhora no estilo visual da barra lateral.",
+      "endDate": "2025-09-26T16:00:00.000Z",
+      "id": "-Oa5l_OgzYMbVV_nGp6g",
+      "priority": "medium",
+      "startDate": "2025-09-26T11:00:00.000Z",
+      "status": "completed",
+      "title": "Correção de Bug e Melhora Visual da Barra Lateral",
+      "type": "Melhorias no HUB",
+      "updatedAt": "2025-09-26T16:06:13.810Z"
+    },
+    "-Oa6GA7WtPWJ5VxR86C7": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2laYUNBNKLhPb5QgM",
+      "completedDate": "2025-09-29T20:14:54.575Z",
+      "createdAt": "2025-09-26T18:24:11.160Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "orientação e auxílio no preenchimento da planilha enviada pela Receita Federal sobre os envios do 1210 e a DIRF.",
+      "endDate": "2025-09-29T03:00:00.000Z",
+      "id": "-Oa6GA7WtPWJ5VxR86C7",
+      "priority": "medium",
+      "startDate": "2025-09-26T13:00:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita ",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-29T20:14:54.575Z"
+    },
+    "-Oa6Gm6KJPQbQyEVcdV6": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "completedDate": "2025-09-29T20:15:01.610Z",
+      "createdAt": "2025-09-26T18:26:50.828Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Orientação e auxílio no preenchimento da planilha enviada pela Receita Federal sobre os envio do 1210  e DIRF",
+      "endDate": "2025-09-29T03:00:00.000Z",
+      "id": "-Oa6Gm6KJPQbQyEVcdV6",
+      "priority": "medium",
+      "startDate": "2025-09-29T11:00:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Federal",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-29T20:15:01.610Z"
+    },
+    "-Oa6GouzgQ69qOBqXCHc": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON2kfj0oujVyar2oH3b",
+      "completedDate": "2025-10-02T20:24:28.578Z",
+      "createdAt": "2025-09-26T18:27:10.970Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "A cliente enfrenta um grande problema nos calculos de inss e IR, fiz tres exemplos de calulos para ela, mostrei como funciona a forma de calculo do sistema  e expliquei como é aplicado as faixas tributarias de INSS e IR.",
+      "endDate": "2025-09-26T13:00:00.000Z",
+      "id": "-Oa6GouzgQ69qOBqXCHc",
+      "priority": "medium",
+      "startDate": "2025-09-26T12:00:00.000Z",
+      "status": "completed",
+      "title": "Diferenças de INSS",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-02T20:24:28.578Z"
+    },
+    "-Oa6IpC7KHjTRWVayHYg": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON2jkVne54d5o2HeNLf",
+      "createdAt": "2025-09-26T18:35:56.420Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Acessei o computador do cliente para verificar a notificação da receita, abrir a notificação e executei o processo de extração da planilha, expliquei para a cliente como funcionava este procedimento, porem na hora de assinar sua internet caiu, só na semana seguinte.",
+      "endDate": "2025-09-26T17:40:00.000Z",
+      "id": "-Oa6IpC7KHjTRWVayHYg",
+      "priority": "medium",
+      "startDate": "2025-09-26T16:30:00.000Z",
+      "status": "completed",
+      "title": "Comprovante DIRF 2025",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-26T18:35:56.420Z"
+    },
+    "-Oa6KqR-U4hF1GdibF4n": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-26T18:44:45.756Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Pela manhã distribuir as atividades com ester e gustavo, planejei o curso de sst com mona e o marketing, marquei atendimentos para segunda e fiz 3 atendimentos.\n",
+      "endDate": "2025-09-26T18:00:00.000Z",
+      "id": "-Oa6KqR-U4hF1GdibF4n",
+      "priority": "medium",
+      "startDate": "2025-09-26T12:00:00.000Z",
+      "status": "completed",
+      "title": "Gerenciamento",
+      "type": "Outros",
+      "updatedAt": "2025-09-26T18:44:45.756Z"
+    },
+    "-Oa6NUCdwlCb_sVeM3qQ": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON7KDGRLzEs3MUlzGhF",
+      "createdAt": "2025-09-26T18:56:17.060Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Acessei o computador da servidora, expliquei todo o processo para ela, não receberam a intimaçaão, olhei no ecac, DET e E-processos. Mandei que ficassem acompanhando a caixa postal.",
+      "endDate": "2025-09-26T13:30:00.000Z",
+      "id": "-Oa6NUCdwlCb_sVeM3qQ",
+      "priority": "medium",
+      "startDate": "2025-09-26T13:00:00.000Z",
+      "status": "completed",
+      "title": "Dirf 2025",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-26T18:56:17.060Z"
+    },
+    "-OaM6ozqJimZhghqbli-": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OOY0miPMKwAnTt0zMZ3",
+      "createdAt": "2025-09-29T20:17:16.007Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Orientação e auxílio no preenchimento  e envio da planilha enviada pela Receita sobre o 1210 e a DIRF",
+      "endDate": "2025-09-29T03:00:00.000Z",
+      "id": "-OaM6ozqJimZhghqbli-",
+      "priority": "medium",
+      "startDate": "2025-09-29T03:00:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Federal",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-29T20:17:16.007Z"
+    },
+    "-OaM7DHgHcZ6BQqn86ba": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2jkVne54d5o2HeNLf",
+      "completedDate": "2025-10-01T15:10:53.651Z",
+      "createdAt": "2025-09-29T20:18:59.613Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Assinatura do envio da planilha Receita Federal- DIRF e 1210",
+      "endDate": "2025-09-30T03:00:00.000Z",
+      "id": "-OaM7DHgHcZ6BQqn86ba",
+      "priority": "medium",
+      "startDate": "2025-09-30T12:00:00.000Z",
+      "status": "completed",
+      "title": "Assinatura Planlilha Receita ",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-01T15:10:53.651Z"
+    },
+    "-OaM7gQKecE0FMi0pKY4": {
+      "assignedTo": [
+        "TsXlQWHxqNg6r0I9QB7AtxitSJM2"
+      ],
+      "clientId": "-ON2kfj0oujVyar2oH3b",
+      "createdAt": "2025-09-29T20:21:02.844Z",
+      "createdBy": "TsXlQWHxqNg6r0I9QB7AtxitSJM2",
+      "description": "Envios para o esocial dos eventos 1200 e 2200 e inclusão das verbas.",
+      "endDate": "2025-09-29T03:00:00.000Z",
+      "id": "-OaM7gQKecE0FMi0pKY4",
+      "priority": "medium",
+      "startDate": "2025-09-29T17:00:00.000Z",
+      "status": "completed",
+      "title": "Envios Consórcio Juazeiro",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-29T20:21:02.844Z"
+    },
+    "-OaM8u4Jp8ZRd7KbuRZJ": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-09-29T20:26:21.125Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Visita técnica para a orientação e auxílio para preenchimento da planilha da Receita Federal e demais dúvidas sobre o evento 1210.",
+      "endDate": "2025-09-29T03:00:00.000Z",
+      "id": "-OaM8u4Jp8ZRd7KbuRZJ",
+      "priority": "medium",
+      "startDate": "2025-09-29T17:00:00.000Z",
+      "status": "completed",
+      "title": "Visita técnica ",
+      "type": "Consultoria",
+      "updatedAt": "2025-09-29T20:26:21.125Z"
+    },
+    "-OaM9EwBtUN0r0WgUnjR": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2ixcvf99YSReicGyB",
+      "completedDate": "2025-10-01T11:55:30.963Z",
+      "createdAt": "2025-09-29T20:27:50.654Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Visita presencial para verificação do andamento dos envios retroativos referentes à Outubro e Novembro 2022, e planejamento para os envios de Dezembro 2022.",
+      "endDate": "2025-09-30T03:00:00.000Z",
+      "id": "-OaM9EwBtUN0r0WgUnjR",
+      "priority": "medium",
+      "startDate": "2025-09-30T12:00:00.000Z",
+      "status": "completed",
+      "title": "Visita técnica ",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-01T11:55:30.963Z"
+    },
+    "-OaQi74gqoeqKdXlinQ7": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON7KDGRLzEs3MUlzGhF",
+      "createdAt": "2025-09-30T17:43:05.963Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Solicitação de atestado de capacidade técnica ao IPM São Francisco do Condé-Ba",
+      "endDate": "2025-09-30T03:00:00.000Z",
+      "id": "-OaQi74gqoeqKdXlinQ7",
+      "priority": "medium",
+      "startDate": "2025-09-30T17:37:00.000Z",
+      "status": "completed",
+      "title": "Solicitação de atestado de capacidade técnica ao IPM São Francisco do Condé-Ba",
+      "type": "",
+      "updatedAt": "2025-09-30T17:43:05.963Z"
+    },
+    "-OaQifb_TNKl5TPqr1rt": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-09-30T17:45:31.492Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Elaboração de proposta de preço consultoria esocial e envio para o Município de Pojuca-Ba.",
+      "endDate": "2025-09-30T03:00:00.000Z",
+      "id": "-OaQifb_TNKl5TPqr1rt",
+      "priority": "high",
+      "startDate": "2025-09-30T17:40:00.000Z",
+      "status": "completed",
+      "title": "Elaboração de proposta de preço consultoria esocial e envio para o Município de Pojuca-Ba.",
+      "type": "",
+      "updatedAt": "2025-09-30T17:45:31.492Z"
+    },
+    "-OaQkdHfhORJ2dtLzSp7": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON7IGtoQR0jZB9gLaGw",
+      "createdAt": "2025-09-30T17:54:06.250Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Contato com Meire - Prefeitura de Feira de Santana, para saber andamento da renovação da consultoria do esocial.",
+      "endDate": "2025-09-30T03:00:00.000Z",
+      "id": "-OaQkdHfhORJ2dtLzSp7",
+      "priority": "medium",
+      "startDate": "2025-09-30T17:39:00.000Z",
+      "status": "completed",
+      "title": "Contato com Meire - Prefeitura de Feira de Santana, para saber andamento da renovação da consultoria do esocial.",
+      "type": "",
+      "updatedAt": "2025-09-30T17:54:06.250Z"
+    },
+    "-OaQlNZOkPOXpdvSZ4Yg": {
+      "assignedTo": [
+        "uzZn2hxEGybfAAu6lMf3FHQtAco2"
+      ],
+      "clientId": "-ON7J2TPGMWsRclxxZFS",
+      "createdAt": "2025-09-30T17:57:19.896Z",
+      "createdBy": "uzZn2hxEGybfAAu6lMf3FHQtAco2",
+      "description": "Contato com Lucal - Prefeitura de Morpará, sobre previsão pagamento dos valores em aberto no ano de 2025.",
+      "endDate": "2025-09-30T03:00:00.000Z",
+      "id": "-OaQlNZOkPOXpdvSZ4Yg",
+      "priority": "medium",
+      "startDate": "2025-09-30T12:55:00.000Z",
+      "status": "completed",
+      "title": "Contato com Lucal - Prefeitura de Morpará, sobre previsão pagamento dos valores em aberto no ano de 2025.",
+      "type": "",
+      "updatedAt": "2025-09-30T17:57:19.896Z"
+    },
+    "-OaUvEDYW0E2Y1ywwS_8": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON7J_KIEQakenQ76ljC",
+      "completedDate": "2025-10-01T15:10:49.509Z",
+      "createdAt": "2025-10-01T13:18:51.176Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Conferência dos erros apontados no relatório de ocorrências para preencimento da planilha de forma concreta ",
+      "endDate": "2025-10-02T03:00:00.000Z",
+      "id": "-OaUvEDYW0E2Y1ywwS_8",
+      "priority": "medium",
+      "startDate": "2025-10-01T12:00:00.000Z",
+      "status": "completed",
+      "title": "Conferência 1210",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-01T15:10:49.509Z"
+    },
+    "-OaVN8DdtOR24UXAWu0S": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwwIi7h8gV0dlw_HO3",
+      "createdAt": "2025-10-01T15:25:08.878Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Orientação e auxílio no preenchimento da planilha enviada pela Receita Federal ao município sobre a DIRF em paralelo ao evento S1210 do esocial",
+      "endDate": "2025-10-01T14:20:00.000Z",
+      "id": "-OaVN8DdtOR24UXAWu0S",
+      "priority": "medium",
+      "startDate": "2025-10-01T13:48:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Federal",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-01T15:25:08.878Z"
+    },
+    "-OaVNK04YVV-6uG9nLQ6": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwwIi7h8gV0dlw_HO3",
+      "completedDate": "2025-10-02T18:05:47.150Z",
+      "createdAt": "2025-10-01T15:25:57.160Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Envio e conferência do esocial, posteriormente emissão de guia previdenciária.\nProblema interno do sistema em relação aos eventos não periódicos, aguardando resolução do suporte de TI do sistema, para continuação.",
+      "endDate": "2025-10-10T03:00:00.000Z",
+      "id": "-OaVNK04YVV-6uG9nLQ6",
+      "priority": "medium",
+      "startDate": "2025-10-01T14:20:00.000Z",
+      "status": "completed",
+      "title": "esocial",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-02T18:05:47.150Z"
+    },
+    "-OaVNkbqrA-mnWINc_YT": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2kfj0oujVyar2oH3b",
+      "completedDate": "2025-10-02T16:06:37.433Z",
+      "createdAt": "2025-10-01T15:27:50.233Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Análise dos enviios dos eventos não periódicos e dos pagamentos e posteriormente emissão de guias.",
+      "endDate": "2025-10-02T03:00:00.000Z",
+      "id": "-OaVNkbqrA-mnWINc_YT",
+      "priority": "medium",
+      "startDate": "2025-10-02T12:00:00.000Z",
+      "status": "completed",
+      "title": "Esocial",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-02T16:06:37.433Z"
+    },
+    "-OaVPGVjkPEC46gOVqNd": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON7J_KIEQakenQ76ljC",
+      "completedDate": "2025-10-02T19:39:39.056Z",
+      "createdAt": "2025-10-01T15:34:27.091Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Orientação e auxílio no preenchimento da planilha enviada pela Receita Federal ao município sobre a DIRF em paralelo ao evento s1210 do esocial. \nProblema no assinador, aguardando resolução do suporte de TI do município.",
+      "endDate": "2025-10-06T03:00:00.000Z",
+      "id": "-OaVPGVjkPEC46gOVqNd",
+      "priority": "medium",
+      "startDate": "2025-10-01T17:00:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Federal",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-02T19:39:39.056Z"
+    },
+    "-Oa_i9iqkYNt1hyXXAkN": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON7J2TPGMWsRclxxZFS",
+      "createdAt": "2025-10-02T16:19:29.281Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Acompanhar o colaborador Gustavo na conferência dos envios do evento 1210 do município, para posterior preenchimento da planilha da Receita federal e envio de resposta da mesma. ",
+      "endDate": "2025-10-02T16:14:00.000Z",
+      "id": "-Oa_i9iqkYNt1hyXXAkN",
+      "priority": "medium",
+      "startDate": "2025-10-02T11:00:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita- término",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-02T16:19:29.281Z"
+    },
+    "-Oa_l5A9NTyqJSigqa8s": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OSxcQQUWMjSGd06rIz6",
+      "completedDate": "2025-10-06T13:20:51.138Z",
+      "createdAt": "2025-10-02T16:32:17.030Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Orientação e auxílio no preenchimento da planilha enviada pela Receita Federal ao município, referente a DIRF",
+      "endDate": "2025-10-06T03:00:00.000Z",
+      "id": "-Oa_l5A9NTyqJSigqa8s",
+      "priority": "medium",
+      "startDate": "2025-10-06T12:30:00.000Z",
+      "status": "completed",
+      "title": "Planilha Receita Federal",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-06T13:20:51.138Z"
+    },
+    "-Oa_rzetjN38EEWOpsU8": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "completedDate": "2025-10-02T19:39:48.665Z",
+      "createdAt": "2025-10-02T17:02:25.400Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Verificação de situações de desligamentos solicitados pelo município. ",
+      "endDate": "2025-10-02T03:00:00.000Z",
+      "id": "-Oa_rzetjN38EEWOpsU8",
+      "priority": "medium",
+      "startDate": "2025-10-02T17:02:00.000Z",
+      "status": "completed",
+      "title": "Verificação esocial",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-02T19:39:48.665Z"
+    },
+    "-OaaDN_UqtwGmtmgSeYy": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2laYUNBNKLhPb5QgM",
+      "createdAt": "2025-10-02T18:40:14.659Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Conferência dos envios, fechamento e emissão das guias, referentes à setembro 2025.",
+      "endDate": "2025-10-07T03:00:00.000Z",
+      "id": "-OaaDN_UqtwGmtmgSeYy",
+      "priority": "medium",
+      "startDate": "2025-10-07T12:00:00.000Z",
+      "status": "in-progress",
+      "title": "Fechamento esocial",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-07T11:41:31.923Z"
+    },
+    "-OaaNL7hIHLlJ-xyt9-u": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-10-02T19:23:46.114Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Elaboração e envio do aliquota fap, seu passo a passo para consulta e link de acesso.\nInforme sobre a isenção do IRRF até 5 mil de rendimentos.\nCotação da sala para palestra de SST  e negociação com os palestrantes.\nTR do sst com nadson de madre de deus, ele me mandou um para conferencia e vi que estava dentro do assunto abordado.",
+      "endDate": "2025-10-02T19:00:00.000Z",
+      "id": "-OaaNL7hIHLlJ-xyt9-u",
+      "priority": "medium",
+      "startDate": "2025-10-02T12:00:00.000Z",
+      "status": "completed",
+      "title": "Gestão da H12",
+      "type": "Outros",
+      "updatedAt": "2025-10-02T20:25:23.275Z"
+    },
+    "-Oaa_nglbXzh_R1_VRaN": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-OMwwIi7h8gV0dlw_HO3",
+      "createdAt": "2025-10-02T20:22:34.112Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Marcação de visita para o dia 13 de outubro.\nDeclaração da retenção de INSS de uma empresa, não emitir a guia e os comprovantes devido ao computador da cliente não estar com armazenagem vazia.",
+      "endDate": "2025-10-02T18:00:00.000Z",
+      "id": "-Oaa_nglbXzh_R1_VRaN",
+      "priority": "medium",
+      "startDate": "2025-10-02T17:30:00.000Z",
+      "status": "completed",
+      "title": "EFD-REINF",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-02T20:22:34.112Z"
+    },
+    "-Oaaa9Z1uzx3GbzBXPvd": {
+      "assignedTo": [
+        "KhJE6SzDW5aOO8uNNic4dhsAfDK2"
+      ],
+      "clientId": "-ON2jkVne54d5o2HeNLf",
+      "createdAt": "2025-10-02T20:24:07.761Z",
+      "createdBy": "KhJE6SzDW5aOO8uNNic4dhsAfDK2",
+      "description": "Osmar solicitou que fosse revisado a questão do pis pasep sobre a folha, informei que orgão publico não tem isso, o pis pasep é sobre a receita corrente.",
+      "endDate": "2025-10-02T17:20:00.000Z",
+      "id": "-Oaaa9Z1uzx3GbzBXPvd",
+      "priority": "medium",
+      "startDate": "2025-10-02T17:00:00.000Z",
+      "status": "completed",
+      "title": "Pis pasep",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-02T20:24:07.761Z"
+    },
+    "-Oaabo70laNX6djoCKDM": {
+      "assignedTo": [
+        "TsXlQWHxqNg6r0I9QB7AtxitSJM2"
+      ],
+      "clientId": "-ON7J2TPGMWsRclxxZFS",
+      "createdAt": "2025-10-02T20:31:18.914Z",
+      "createdBy": "TsXlQWHxqNg6r0I9QB7AtxitSJM2",
+      "description": "Checagem dos erros de Morpará e preenchimento da planilha DIRF logo em seguida.",
+      "endDate": "2025-10-02T03:00:00.000Z",
+      "id": "-Oaabo70laNX6djoCKDM",
+      "priority": "medium",
+      "startDate": "2025-10-02T12:30:00.000Z",
+      "status": "completed",
+      "title": "Envios planilha DIRF Morpará",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-02T20:31:18.914Z"
+    },
+    "-Oae-DIqNJFD2cPqe_7h": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OSxcQQUWMjSGd06rIz6",
+      "createdAt": "2025-10-03T12:16:49.683Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Texto de parecer técnico sobre não termos sido informados sobre a notificação da Receita Federal sobre a planilha da DIRF.",
+      "endDate": "2025-10-03T03:00:00.000Z",
+      "id": "-Oae-DIqNJFD2cPqe_7h",
+      "priority": "medium",
+      "startDate": "2025-10-03T11:30:00.000Z",
+      "status": "completed",
+      "title": "Parecer técnico",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-03T12:16:49.683Z"
+    },
+    "-OaeDTtKMhRC8l0d1cEX": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON001wKm_zK1Fol-Nzs",
+      "createdAt": "2025-10-03T13:19:07.635Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Confecção do cornograma de atividades mensais referentes a outubro 2025.",
+      "endDate": "2025-10-03T03:00:00.000Z",
+      "id": "-OaeDTtKMhRC8l0d1cEX",
+      "priority": "medium",
+      "startDate": "2025-10-03T12:30:00.000Z",
+      "status": "completed",
+      "title": "Cronograma atividades do mês",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-03T13:19:07.635Z"
+    },
+    "-Oaesk6DthtJkEfk9Z4N": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-ON2ixcvf99YSReicGyB",
+      "createdAt": "2025-10-03T16:23:48.171Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "lançamento manual das remunerações e pagamentos referentes à 12/2022, que não constam no portal.",
+      "endDate": "2025-10-31T03:00:00.000Z",
+      "id": "-Oaesk6DthtJkEfk9Z4N",
+      "priority": "medium",
+      "startDate": "2025-10-03T16:23:00.000Z",
+      "status": "in-progress",
+      "title": "Envio manual eSocial",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-03T17:54:50.767Z"
+    },
+    "-OaevQk2ZzwFtFz3tTkd": {
+      "assignedTo": [
+        "TsXlQWHxqNg6r0I9QB7AtxitSJM2"
+      ],
+      "clientId": "-ON2kMtbSAYBQ1oBin3S",
+      "createdAt": "2025-10-03T16:35:30.907Z",
+      "createdBy": "TsXlQWHxqNg6r0I9QB7AtxitSJM2",
+      "description": "Checamos os envios da câmara de Uauá. OS valores das Guias estavam 100% de acordo com os totalizadores do esocial.",
+      "endDate": "2025-10-03T03:00:00.000Z",
+      "id": "-OaevQk2ZzwFtFz3tTkd",
+      "priority": "medium",
+      "startDate": "2025-10-03T12:30:00.000Z",
+      "status": "completed",
+      "title": "Envios CM Uauá",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-03T16:35:30.907Z"
+    },
+    "-OauFHADiTYPLtd6IXMW": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-10-06T16:00:56.392Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Acompanhamento do envio do 1210 de Janeiro a Junho, conforme determinação da notificação da Receita Federal.",
+      "endDate": "2025-10-15T03:00:00.000Z",
+      "id": "-OauFHADiTYPLtd6IXMW",
+      "priority": "medium",
+      "startDate": "2025-10-06T11:00:00.000Z",
+      "status": "in-progress",
+      "title": "Acompanhamento 1210 retroativo",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-06T16:00:56.392Z"
+    },
+    "-OauFVe5lz-WvS4gydwS": {
+      "assignedTo": [
+        "ySSzolXOMtXhB51sGR20xotMDPH3"
+      ],
+      "clientId": "-OMwLtydoNcGxDUPWYdc",
+      "createdAt": "2025-10-06T16:01:55.712Z",
+      "createdBy": "ySSzolXOMtXhB51sGR20xotMDPH3",
+      "description": "Verificação da situação esocial de servidores conforme solicitação do município. ",
+      "endDate": "2025-10-06T14:40:00.000Z",
+      "id": "-OauFVe5lz-WvS4gydwS",
+      "priority": "medium",
+      "startDate": "2025-10-06T14:30:00.000Z",
+      "status": "completed",
+      "title": "Verificação esocial",
+      "type": "Consultoria",
+      "updatedAt": "2025-10-06T16:01:55.712Z"
+    },
+    "-OauN8k38rpTcaVq2AZt": {
+      "assignedTo": [
+        "7YtnSxdLG2StUJV1mvNRzfu96zp2"
+      ],
+      "clientId": "-OYXCjUDKZXxaG-InI47",
+      "completedDate": "2025-10-06T23:34:19.037Z",
+      "createdAt": "2025-10-06T16:35:17.655Z",
+      "createdBy": "7YtnSxdLG2StUJV1mvNRzfu96zp2",
+      "description": "Elaboração de relatório de proventos dos profissionais que saíram e entraram na folha de pagamento entre os meses 05, 07 e 08 de 2025.",
+      "endDate": "2025-10-06T19:00:00.000Z",
+      "id": "-OauN8k38rpTcaVq2AZt",
+      "priority": "medium",
+      "startDate": "2025-10-04T11:00:00.000Z",
+      "status": "completed",
+      "title": "Relatório de Proventos de Castro Alves",
+      "type": "Auditoria",
+      "updatedAt": "2025-10-06T23:34:19.036Z"
+    }
     "-OMwF_99R9T3_XvRt4um": {
       "assignedTo": [
         "7YtnSxdLG2StUJV1mvNRzfu96zp2"

@@ -7,6 +7,10 @@ import { useActivityStats } from "@/hooks/useActivityStats";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { useFutureAndOverdueActivities } from "@/hooks/useFutureAndOverdueActivities";
 import { ActivityStatus, getActivities, Activity } from "@/services/firebase/activities";
+import { useAuth } from "@/contexts/AuthContext";
+import { ref, get } from "firebase/database";
+import { db } from "@/lib/firebase";
+import { UserData } from "@/services/firebase/auth";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
@@ -25,7 +29,9 @@ import {
   endOfMonth,
   isPast,
   endOfDay,
-  isToday
+  isToday,
+  parseISO,
+  isSameDay
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -61,6 +67,46 @@ interface BarChartDataItem {
   'Cancelada': number;
   'Atrasada': number;
 }
+
+const isActivityActiveOnDate = (activity: Activity, date: Date): boolean => {
+  const selectedDateStart = startOfDay(date);
+  let startDate: Date;
+  try {
+    // Ensure startDate is valid before proceeding
+    if (!activity.startDate) throw new Error('Missing start date');
+    startDate = startOfDay(parseISO(activity.startDate));
+    if (isNaN(startDate.getTime())) throw new Error('Invalid start date');
+  } catch (e: any) {
+    console.warn(`Invalid or missing start date for activity ${activity.id}: ${activity.startDate}`, e.message);
+    return false; // Cannot determine activity timing without a valid start date
+  }
+
+  // Handle activities without an end date
+  if (!activity.endDate) {
+    // Show only on the start day if no end date
+    return isSameDay(startDate, selectedDateStart);
+  }
+
+  // Handle activities with an end date
+  let endDate: Date;
+  try {
+    endDate = startOfDay(parseISO(activity.endDate));
+    if (isNaN(endDate.getTime())) throw new Error('Invalid end date');
+  } catch (e: any) {
+    console.warn(`Invalid end date for activity ${activity.id}: ${activity.endDate}. Treating as single-day.`, e.message);
+    // Fallback: Treat as a single-day activity on the start date if end date is invalid
+    return isSameDay(startDate, selectedDateStart);
+  }
+
+  // Ensure start date is not after end date
+  if (startDate > endDate) {
+    console.warn(`Activity ${activity.id} has start date after end date. Hiding.`);
+    return false;
+  }
+
+  // Check if the selected date is within the interval [start, end] (inclusive)
+  return isWithinInterval(selectedDateStart, { start: startDate, end: endDate });
+};
 
 const isActivityFuture = (activity: Activity): boolean => {
   if (!activity.startDate) return false;
@@ -131,26 +177,97 @@ const Dashboard = () => {
   const hasError = statsError || recentActivitiesError || futureOverdueError;
   const isLoading = loadingStats || loadingRecentActivities || loadingFutureOverdue;
 
+  const { user } = useAuth();
   const [allActivities, setAllActivities] = useState<Activity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [activitiesError, setActivitiesError] = useState<Error | null>(null);
+  const [allUsersData, setAllUsersData] = useState<Record<string, UserData & { uid: string }>>({});
 
   useEffect(() => {
-    const fetchActivities = async () => {
+    const fetchData = async () => {
+      if (!user) {
+        setLoadingActivities(false);
+        setAllActivities([]);
+        return;
+      }
+
       try {
         setLoadingActivities(true);
+
+        // Buscar dados dos usuários para aplicar filtro de role
+        const fetchedUsersMap: Record<string, UserData & { uid: string }> = {};
+        try {
+          const usersRef = ref(db, 'users');
+          const usersSnapshot = await get(usersRef);
+          if (usersSnapshot.exists()) {
+            const usersData = usersSnapshot.val();
+            Object.entries(usersData).forEach(([uid, userData]) => {
+              const typedUserData = userData as UserData;
+              if (uid && typedUserData && typeof typedUserData === 'object' && typedUserData.role) {
+                fetchedUsersMap[uid] = { ...typedUserData, uid };
+              }
+            });
+            setAllUsersData(fetchedUsersMap);
+          }
+        } catch (userError) {
+          console.error('Erro ao buscar dados dos usuários:', userError);
+        }
+
+        // Buscar atividades
         const activities = await getActivities();
-        setAllActivities(activities);
+
+        // Aplicar filtro de role (igual à página Home)
+        const currentUserRole = user.role;
+        const currentUserId = user.uid;
+        let activitiesToShow: Activity[] = [];
+
+        if (!currentUserRole) {
+          console.error("Role do usuário atual não definido.");
+          activitiesToShow = [];
+        } else if (currentUserRole === 'admin') {
+          activitiesToShow = activities; // Admin vê todas
+        } else if (currentUserRole === 'manager') {
+          // Manager: vê próprias, de outros managers e colaboradores
+          activitiesToShow = activities.filter(activity => {
+            const assignedIds = activity.assignedTo;
+            if (!assignedIds || assignedIds.length === 0) return false;
+
+            if (assignedIds.includes(currentUserId)) return true;
+
+            const assignedUsersData = assignedIds
+                .map(id => fetchedUsersMap[id])
+                .filter((userData): userData is UserData & { uid: string } => !!userData);
+
+            if (assignedUsersData.length === 0 && assignedIds.length > 0) {
+              return false;
+            }
+
+            const hasNonAdminAssignee = assignedUsersData.some(
+                assignee => assignee.role === 'manager' || assignee.role === 'collaborator'
+            );
+            return hasNonAdminAssignee;
+          });
+        } else if (currentUserRole === 'collaborator') {
+          // Collaborator: vê apenas suas próprias atividades
+          activitiesToShow = activities.filter(activity =>
+              activity.assignedTo?.includes(currentUserId)
+          );
+        } else {
+          activitiesToShow = [];
+        }
+
+        console.log('Dashboard - Atividades após filtro de role:', activitiesToShow.length);
+        setAllActivities(activitiesToShow);
       } catch (error) {
-        console.error("Erro ao buscar todas as atividades:", error);
+        console.error("Erro ao buscar dados:", error);
         setActivitiesError(error as Error);
       } finally {
         setLoadingActivities(false);
       }
     };
 
-    fetchActivities();
-  }, []);
+    fetchData();
+  }, [user]);
 
   const [activePeriod, setActivePeriod] = useState<Exclude<Period, 'all'>>('today');
 
@@ -185,54 +302,109 @@ const Dashboard = () => {
 
     if (period === 'today') {
       currentPeriodStart = startOfToday();
-      currentPeriodEnd = startOfToday();
+      currentPeriodEnd = endOfDay(todayDate);
     } else if (period === 'week') {
-      currentPeriodStart = startOfWeek(todayDate, { locale: ptBR });
-      currentPeriodEnd = endOfWeek(todayDate, { locale: ptBR });
+      // Alinhar com a agenda: semana iniciando na segunda-feira
+      currentPeriodStart = startOfWeek(todayDate, { weekStartsOn: 1 });
+      currentPeriodEnd = endOfWeek(todayDate, { weekStartsOn: 1 });
     } else {
       currentPeriodStart = startOfMonth(todayDate);
       currentPeriodEnd = endOfMonth(todayDate);
     }
 
-    const relevantActivities = allActivitiesForChart.filter(activity =>
-      activityOverlapsPeriod(activity, currentPeriodStart, currentPeriodEnd)
-    );
-
-    if (relevantActivities.length === 0) return [];
-
+    // Para cada dia do período, inicializar as estruturas de dados
     const dataMap: Record<string, BarChartDataItem> = {};
-    const sortedRelevantActivities = relevantActivities.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
-    sortedRelevantActivities.forEach(activity => {
-      const startDate = new Date(activity.startDate);
-      let key = '';
-      let label = '';
-
-      if (period === 'today') {
-        if (isToday(startDate)) {
-            key = startDate.getHours().toString();
-            label = `${startDate.getHours()}h`;
-        } else {
-            key = "dia_todo";
-            label = "Hoje";
-        }
-      } else if (period === 'week') {
-        const dayOfWeek = startDate.getDay();
-        const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        key = dayOfWeek.toString();
-        label = days[dayOfWeek];
-      } else if (period === 'month') {
-        const dayOfMonth = startDate.getDate();
-        key = dayOfMonth.toString();
-        label = dayOfMonth.toString();
-      }
-
-      if (!key) return;
-
-      if (!dataMap[key]) {
+    if (period === 'today') {
+      // Para hoje, criar slots de horário de 8h às 18h
+      for (let hour = 8; hour <= 18; hour++) {
+        const key = hour.toString();
+        const label = `${hour}h`;
         dataMap[key] = { label, 'Concluída': 0, 'Em Andamento': 0, 'Futura': 0, 'Cancelada': 0, 'Atrasada': 0 };
       }
+      // Adicionar categoria para atividades sem horário
+      dataMap["sem_horario_hoje"] = { label: "Hoje (sem horário)", 'Concluída': 0, 'Em Andamento': 0, 'Futura': 0, 'Cancelada': 0, 'Atrasada': 0 };
+    } else if (period === 'week') {
+      // Para semana, criar todos os dias da semana (segunda a domingo)
+      const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+      days.forEach((day, index) => {
+        const key = (index + 1).toString(); // Usar 1-7 para segunda a domingo
+        const label = day;
+        dataMap[key] = { label, 'Concluída': 0, 'Em Andamento': 0, 'Futura': 0, 'Cancelada': 0, 'Atrasada': 0 };
+      });
+    } else if (period === 'month') {
+      // Para mês, criar todos os dias do mês
+      const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const key = day.toString();
+        const label = day.toString();
+        dataMap[key] = { label, 'Concluída': 0, 'Em Andamento': 0, 'Futura': 0, 'Cancelada': 0, 'Atrasada': 0 };
+      }
+    }
 
+    // Processar atividades e distribuir pelos dias que cobrem
+    allActivitiesForChart.forEach(activity => {
+      if (!activity.startDate) return;
+
+      try {
+        const activityStartDate = new Date(activity.startDate);
+        const activityEndDate = activity.endDate ? new Date(activity.endDate) : activityStartDate;
+
+        if (isNaN(activityStartDate.getTime()) || isNaN(activityEndDate.getTime())) {
+          console.warn('Data inválida para atividade:', activity.id, activity.startDate, activity.endDate);
+          return;
+        }
+
+        // Para cada slot de tempo/dia no período, verificar se a atividade está ativa nesse momento
+        Object.keys(dataMap).forEach(key => {
+          const slot = dataMap[key];
+
+          if (period === 'today') {
+            // Para hoje, verificar se a atividade está ativa hoje usando a mesma lógica da agenda (por dia)
+            if (isActivityActiveOnDate(activity, todayDate)) {
+              const hasTimeInfo = activity.startDate.includes('T');
+              const startsToday = isSameDay(activityStartDate, todayDate);
+
+              if (startsToday && hasTimeInfo) {
+                // Apenas atividades que INICIAM hoje e têm horário vão para o slot de hora correspondente
+                const activityHour = activityStartDate.getHours();
+                if (key !== "sem_horario_hoje" && activityHour.toString() === key) {
+                  addActivityToSlot(activity, slot, key);
+                }
+              } else {
+                // Demais casos (sem horário, ou não iniciou hoje mas está ativa hoje) agrupam em "Hoje (sem horário)"
+                if (key === "sem_horario_hoje") {
+                  addActivityToSlot(activity, slot, key);
+                }
+              }
+            }
+          } else if (period === 'week') {
+            // Para semana, verificar cada dia da semana
+            const dayIndex = parseInt(key) - 1; // Converter de volta para índice (1-7 -> 0-6)
+            const checkDate = new Date(currentPeriodStart);
+            checkDate.setDate(currentPeriodStart.getDate() + dayIndex);
+
+            if (isActivityActiveOnDate(activity, checkDate)) {
+              addActivityToSlot(activity, slot, key);
+            }
+          } else if (period === 'month') {
+            // Para mês, verificar cada dia do mês
+            const dayOfMonth = parseInt(key);
+            const checkDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), dayOfMonth);
+
+            if (isActivityActiveOnDate(activity, checkDate)) {
+              addActivityToSlot(activity, slot, key);
+            }
+          }
+        });
+
+      } catch (error) {
+        console.warn('Erro ao processar atividade:', activity.id, error);
+      }
+    });
+
+    // Função auxiliar para adicionar atividade ao slot
+    function addActivityToSlot(activity: Activity, slot: BarChartDataItem, key: string) {
       let effectiveStatusName: string;
       if (isActivityOverdue(activity)) {
         effectiveStatusName = STATUS_DISPLAY_NAMES['overdue'];
@@ -241,22 +413,35 @@ const Dashboard = () => {
       } else {
         effectiveStatusName = STATUS_DISPLAY_NAMES[activity.status as ActivityStatus] || activity.status;
       }
-      
+
       const validStatusKeys: (keyof Omit<BarChartDataItem, 'label'>)[] = ['Concluída', 'Em Andamento', 'Futura', 'Cancelada', 'Atrasada'];
       if (validStatusKeys.includes(effectiveStatusName as any)) {
-          dataMap[key][effectiveStatusName as keyof Omit<BarChartDataItem, 'label'>] = (dataMap[key][effectiveStatusName as keyof Omit<BarChartDataItem, 'label'>] || 0) + 1;
+        slot[effectiveStatusName as keyof Omit<BarChartDataItem, 'label'>] = (slot[effectiveStatusName as keyof Omit<BarChartDataItem, 'label'>] || 0) + 1;
       }
-    });
+    }
 
     const chartData = Object.values(dataMap);
 
     if (period === 'today') {
-        chartData.sort((a, b) => parseInt(a.label) - parseInt(b.label));
+      chartData.sort((a, b) => {
+        // Colocar "Hoje (sem horário)" no final
+        if (a.label === "Hoje (sem horário)") return 1;
+        if (b.label === "Hoje (sem horário)") return -1;
+
+        // Para outros itens, ordenar por hora
+        const aHour = parseInt(a.label.replace('h', ''));
+        const bHour = parseInt(b.label.replace('h', ''));
+
+        if (isNaN(aHour) || isNaN(bHour)) {
+          return a.label.localeCompare(b.label);
+        }
+
+        return aHour - bHour;
+      });
     } else if (period === 'week') {
-        const daysOrder = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        chartData.sort((a, b) => daysOrder.indexOf(a.label) - daysOrder.indexOf(b.label));
-    } else if (period === 'month') {
-        chartData.sort((a, b) => parseInt(a.label) - parseInt(b.label));
+      // Ordenar por dia da semana usando rótulos (Seg → Dom)
+      const weekOrder = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+      chartData.sort((a, b) => weekOrder.indexOf(a.label) - weekOrder.indexOf(b.label));
     }
 
     return chartData;
