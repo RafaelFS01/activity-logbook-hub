@@ -604,22 +604,22 @@ const Home = () => {
   // --- Component Rendering ---
   return (
       <div className="flex flex-col gap-6 p-4 md:p-6">
-        {/* Page Header */}
+        {/* Page Header - Melhorado */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold tracking-tight">Agenda de Atividades</h1>
             <p className="text-muted-foreground">
-              Visualize e gerencie as atividades por dia, semana ou mês.
+              Visualize e gerencie suas atividades de forma eficiente através de diferentes perspectivas temporais.
             </p>
           </div>
-          
-          {/* Botão de Exportação PDF */}
+
+          {/* Botão de Exportação PDF - Melhorado */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               onClick={handleExportPdf}
               disabled={loading || getActivitiesForSelectedPeriod().length === 0 || isGeneratingPdf}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200"
             >
               <FileText className="h-4 w-4" />
               {isGeneratingPdf ? 'Gerando PDF...' : `Exportar PDF (${getActivitiesForSelectedPeriod().length})`}
@@ -677,16 +677,16 @@ const Home = () => {
               </Button>
             </div>
 
-            {/* Day/Week/Month Toggle Buttons */}
-            <div className="flex items-center gap-1 rounded-md border bg-muted p-0.5">
+            {/* Day/Week/Month Toggle Buttons - Melhorado */}
+            <div className="flex items-center gap-1 rounded-lg border bg-muted p-1 shadow-inner">
               <Button
-                variant={viewMode === 'day' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'day' ? 'default' : 'ghost'}
                 size="sm"
                 className={cn(
-                  "px-3 h-8 transition-all duration-200",
+                  "px-4 py-2 font-medium transition-all duration-200 rounded-md",
                   viewMode === 'day'
-                    ? "bg-primary text-primary-foreground shadow-md border-2 border-primary/20 hover:bg-primary/90 hover:shadow-lg"
-                    : "hover:bg-accent/80 hover:text-accent-foreground hover:border-accent/50"
+                    ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                    : "hover:bg-background/80 hover:scale-102"
                 )}
                 onClick={() => setViewMode('day')}
                 disabled={loading}
@@ -694,13 +694,13 @@ const Home = () => {
                 Dia
               </Button>
               <Button
-                variant={viewMode === 'week' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'week' ? 'default' : 'ghost'}
                 size="sm"
                 className={cn(
-                  "px-3 h-8 transition-all duration-200",
+                  "px-4 py-2 font-medium transition-all duration-200 rounded-md",
                   viewMode === 'week'
-                    ? "bg-primary text-primary-foreground shadow-md border-2 border-primary/20 hover:bg-primary/90 hover:shadow-lg"
-                    : "hover:bg-accent/80 hover:text-accent-foreground hover:border-accent/50"
+                    ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                    : "hover:bg-background/80 hover:scale-102"
                 )}
                 onClick={() => setViewMode('week')}
                 disabled={loading}
@@ -708,13 +708,13 @@ const Home = () => {
                 Semana
               </Button>
               <Button
-                variant={viewMode === 'month' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'month' ? 'default' : 'ghost'}
                 size="sm"
                 className={cn(
-                  "px-3 h-8 transition-all duration-200",
+                  "px-4 py-2 font-medium transition-all duration-200 rounded-md",
                   viewMode === 'month'
-                    ? "bg-primary text-primary-foreground shadow-md border-2 border-primary/20 hover:bg-primary/90 hover:shadow-lg"
-                    : "hover:bg-accent/80 hover:text-accent-foreground hover:border-accent/50"
+                    ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                    : "hover:bg-background/80 hover:scale-102"
                 )}
                 onClick={() => setViewMode('month')}
                 disabled={loading}
@@ -809,11 +809,29 @@ const Home = () => {
         {/* --- Activity Display Area (Conditional) --- */}
         <div className="mt-6">
           {viewMode === 'day' ? (
-              // --- Daily View ---
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">
-                  Atividades para {selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: pt }) : 'Data não selecionada'}
-                </h2>
+              // --- Daily View - Melhorado ---
+              <div className="space-y-6">
+                {/* Cabeçalho da Visualização Diária */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      Atividades do Dia
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {selectedDate ? format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: pt }) : 'Data não selecionada'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span>{activitiesForSelectedDate.filter(a => a.status === 'completed').length} concluídas</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                      <span>{activitiesForSelectedDate.filter(a => a.status === 'in-progress').length} em progresso</span>
+                    </div>
+                  </div>
+                </div>
                 {/* Loading State */}
                 {loading ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -857,90 +875,182 @@ const Home = () => {
                         return (
                             <Card
                                 key={activity.id}
-                                className="cursor-pointer hover:shadow-md transition-shadow duration-150 flex flex-col justify-between border"
+                                className={cn(
+                                    "group cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm",
+                                    "hover:border-primary/20 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/40"
+                                )}
                                 onClick={() => navigate(`/activities/${activity.id}`)}
-                                role="button" tabIndex={0} aria-label={`Ver detalhes da atividade ${activity.title || 'sem título'}`}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`Ver detalhes da atividade: ${activity.title || 'sem título'}. Status: ${statusLabel}. Cliente: ${clientName || 'não informado'}. Prioridade: ${priorityLabel}`}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/activities/${activity.id}`); }}
                             >
-                              {/* Content Wrapper */}
-                              <div>
-                                <CardHeader className="pb-2 space-y-1">
-                                  <div className="flex justify-between items-start gap-2">
-                                    <CardTitle className="text-base font-semibold line-clamp-2">{activity.title || <span className="italic text-muted-foreground">Sem Título</span>}</CardTitle>
+                              {/* Indicador de Prioridade no Topo */}
+                              {activity.priority === 'high' && (
+                                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full border-2 border-background shadow-lg z-10"></div>
+                              )}
+
+                              <CardHeader className="pb-3 space-y-3">
+                                {/* Título e Prioridade */}
+                                <div className="flex justify-between items-start gap-3">
+                                  <CardTitle className="text-lg font-bold line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                                    {activity.title || <span className="italic text-muted-foreground">Sem título</span>}
+                                  </CardTitle>
+                                  <div className="flex flex-col gap-2 items-end">
                                     {activity.priority && (
-                                        <Badge variant={activity.priority === 'high' ? 'destructive' : activity.priority === 'medium' ? 'default' : 'outline'} className="flex-shrink-0 capitalize text-xs px-1.5 py-0.5">
+                                        <Badge
+                                          variant={activity.priority === 'high' ? 'destructive' : activity.priority === 'medium' ? 'default' : 'outline'}
+                                          className={cn(
+                                              "capitalize text-xs font-medium px-2 py-1 shadow-sm",
+                                              activity.priority === 'high' && "animate-pulse"
+                                          )}
+                                        >
                                           {priorityLabel}
                                         </Badge>
                                     )}
                                   </div>
-                                  <CardDescription className="flex items-center gap-1 text-xs text-muted-foreground pt-0.5">
-                                    <Clock className="h-3 w-3 flex-shrink-0" />
-                                    <span className="whitespace-nowrap">{dateString}</span>
-                                  </CardDescription>
-                                  <Badge
-                                      className="mt-1 w-fit text-xs px-1.5 py-0.5"
-                                      variant={ // Mapeamento Refinado:
-                                        activity.status === 'cancelled' ? 'destructive' : // Cancelada = Destructive
-                                            activity.status === 'completed' ? 'outline' : // Concluída = Outline
-                                                activity.status === 'in-progress' ? 'default' : // Em Progresso = Default
-                                                    'secondary' // Pendente = Secondary
-                                      }
-                                  >
-                                    {statusLabel}
-                                  </Badge>
-                                </CardHeader>
-                                {activity.description && (
-                                    <CardContent className="pb-3 pt-1 text-sm text-muted-foreground">
-                                      <p className="line-clamp-2">{activity.description}</p>
-                                    </CardContent>
+                                </div>
+
+                                {/* Data e Horário */}
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
+                                  <Clock className="h-4 w-4 flex-shrink-0" />
+                                  <span className="font-medium">{dateString}</span>
+                                </div>
+
+                                {/* Status Badge */}
+                                <Badge
+                                    className={cn(
+                                        "w-fit text-xs font-semibold px-3 py-1.5 shadow-sm",
+                                        activity.status === 'cancelled' && "bg-destructive/10 text-destructive border-destructive/20",
+                                        activity.status === 'completed' && "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
+                                        activity.status === 'in-progress' && "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
+                                        activity.status === 'pending' && "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                                    )}
+                                    variant="outline"
+                                >
+                                  {statusLabel}
+                                </Badge>
+                              </CardHeader>
+
+                              {/* Descrição */}
+                              {activity.description && (
+                                  <CardContent className="pb-4 pt-0">
+                                    <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+                                      {activity.description}
+                                    </p>
+                                  </CardContent>
+                              )}
+
+                              {/* Footer com Metadados */}
+                              <CardFooter className="pt-4 pb-5 border-t border-border/50 bg-muted/20 flex flex-wrap gap-2 items-center">
+                                {activity.type && (
+                                    <Badge variant="secondary" className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20">
+                                      {activity.type}
+                                    </Badge>
                                 )}
-                              </div>
-                              {/* Footer always visible but content conditional */}
-                              <CardFooter className="pt-2 pb-3 border-t mt-auto flex flex-wrap gap-1.5 items-center">
-                                {activity.type && <Badge variant="outline" className="text-xs px-1.5 py-0.5">{activity.type}</Badge>}
                                 {clientName && (
-                                    <Badge variant="outline" className="text-xs px-1.5 py-0.5 flex items-center gap-1 max-w-[150px] sm:max-w-[200px]">
+                                    <Badge variant="outline" className="text-xs px-2 py-1 flex items-center gap-1.5 max-w-[180px]">
                                       <Building className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                                       <span className="truncate" title={clientName}>{clientName}</span>
                                     </Badge>
                                 )}
                                 {collaboratorNames.length > 0 && collaboratorNames[0] !== 'Carregando...' && (
-                                    <Badge variant="outline" className="text-xs px-1.5 py-0.5 flex items-center gap-1 max-w-[150px] sm:max-w-[200px]">
+                                    <Badge variant="outline" className="text-xs px-2 py-1 flex items-center gap-1.5 max-w-[180px]">
                                       <UserRound className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                      <span className="truncate" title={collaboratorNames.join(', ')}>{collaboratorNames.join(', ')}</span>
+                                      <span className="truncate" title={collaboratorNames.join(', ')}>
+                                        {collaboratorNames.length === 1
+                                          ? collaboratorNames[0]
+                                          : `${collaboratorNames[0]} +${collaboratorNames.length - 1}`}
+                                      </span>
                                     </Badge>
                                 )}
-                                {/* Show skeleton only if assignees exist but names haven't loaded (shouldn't happen often with new logic) */}
                                 {loading && (activity.assignedTo?.length ?? 0) > 0 && collaboratorNames[0] === 'Carregando...' && (
-                                    <Skeleton className="h-5 w-20 rounded-md" />
+                                    <Skeleton className="h-6 w-24 rounded-full" />
                                 )}
                               </CardFooter>
                             </Card>
                         );
                       })}
                     </div>
-                    // Data Loaded - No Activities
+                    // Data Loaded - No Activities - Melhorado
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg bg-card text-center">
-                      <p className="text-lg font-medium text-muted-foreground mb-2">Nenhuma atividade encontrada.</p>
-                      <p className="text-sm text-muted-foreground mb-4">Não há atividades para {selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: pt }) : 'esta data'} com os filtros selecionados.</p>
-                      <div className="flex gap-2 mt-2">
+                    <div className="flex flex-col items-center justify-center py-20 px-8 border-2 border-dashed border-border/50 rounded-2xl bg-gradient-to-br from-muted/20 to-muted/5 text-center max-w-2xl mx-auto">
+                      <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
+                        <CalendarIcon className="h-10 w-10 text-muted-foreground/60" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-3">Nenhuma atividade encontrada</h3>
+                      <p className="text-muted-foreground mb-6 leading-relaxed max-w-md">
+                        Não há atividades programadas para {selectedDate ? format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: pt }) : 'esta data'}
+                        {selectedClient || selectedCollaborator || (statusFilter.length !== 2) ? ' com os filtros aplicados' : ''}.
+                      </p>
+
+                      <div className="flex flex-col sm:flex-row gap-3">
                         {(statusFilter.length !== 2 || !statusFilter.includes('in-progress') || !statusFilter.includes('completed') || selectedClient || selectedCollaborator) && (
-                            <Button variant="outline" size="sm" onClick={resetFilters}> Limpar filtros </Button>
+                            <Button variant="outline" size="lg" onClick={resetFilters} className="px-6">
+                              <Filter className="h-4 w-4 mr-2" />
+                              Limpar filtros
+                            </Button>
                         )}
-                        <Button variant="default" size="sm" onClick={() => navigate('/activities/new')}>
+                        <Button
+                          variant="default"
+                          size="lg"
+                          onClick={() => navigate('/activities/new')}
+                          className="px-6 shadow-lg hover:shadow-xl transition-all duration-200 group"
+                        >
+                          <span className="mr-2">+</span>
                           Criar nova atividade
                         </Button>
+                      </div>
+
+                      {/* Sugestões úteis */}
+                      <div className="mt-8 pt-6 border-t border-border/30 w-full max-w-md">
+                        <p className="text-sm text-muted-foreground mb-3 font-medium">Dicas rápidas:</p>
+                        <div className="space-y-2 text-left">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                            <span>Use os filtros para encontrar atividades específicas</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                            <span>Alterne entre os modos Dia/Semana/Mês para diferentes perspectivas</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                            <span>Exporte relatórios em PDF para compartilhar informações</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                 )}
               </div>
           ) : viewMode === 'month' ? (
-              // --- Monthly View ---
-              <div className="border rounded-lg overflow-hidden mx-auto">
-                {/* Show loading overlay or skeleton for the whole calendar? */}
-                {/* For now, individual cells handle loading state via CustomDayContent */}
-                <Calendar
+              // --- Monthly View - Melhorado ---
+              <div className="space-y-6">
+                {/* Cabeçalho da Visualização Mensal */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      Calendário Mensal
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {displayMonth ? format(displayMonth, "MMMM 'de' yyyy", { locale: pt }) : 'Mês não selecionado'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-primary"></div>
+                      <span>Hoje</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-accent"></div>
+                      <span>Selecionado</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calendário Mensal Melhorado */}
+                <div className="bg-card/50 rounded-2xl border border-border/50 p-8 backdrop-blur-sm shadow-lg">
+                  <Calendar
                     mode="single"
                     selected={selectedDate}
                     onSelect={handleDayClickInMonthView}
@@ -982,14 +1092,33 @@ const Home = () => {
                     components={{
                       DayContent: CustomDayContent // Inject custom day cell content
                     }}
-                />
+                  />
+                </div>
               </div>
           ) : viewMode === 'week' ? (
-              // --- Weekly View ---
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">
-                  Semana de {format(currentWeekStart, 'dd/MMM', { locale: pt })} a {format(currentWeekEnd, 'dd/MMM yyyy', { locale: pt })}
-                </h2>
+              // --- Weekly View - Melhorado ---
+              <div className="space-y-6">
+                {/* Cabeçalho da Visualização Semanal */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      Semana {format(currentWeekStart, 'dd', { locale: pt })} - {format(currentWeekEnd, 'dd/MM/yyyy', { locale: pt })}
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {format(currentWeekStart, "dd 'de' MMM", { locale: pt })} a {format(currentWeekEnd, "dd 'de' MMM 'de' yyyy", { locale: pt })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-primary"></div>
+                      <span>Hoje</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-accent"></div>
+                      <span>Selecionado</span>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Weekly Grid Wrapper */}
                 <div className="grid grid-cols-1 md:grid-cols-7 border border-b-0 rounded-lg overflow-hidden bg-card shadow-sm"> {/* Add shadow */}
@@ -1090,16 +1219,32 @@ const Home = () => {
                   })}
                 </div>
 
-                {/* Message if no activities found for the entire week */}
+                {/* Estado vazio para toda a semana - Melhorado */}
                 {!loading && activitiesForCurrentWeekView.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg bg-card text-center">
-                      <p className="text-lg font-medium text-muted-foreground mb-2">Nenhuma atividade encontrada.</p>
-                      <p className="text-sm text-muted-foreground mb-4">Não há atividades para a semana de {format(currentWeekStart, "dd/MM", { locale: pt })} a {format(currentWeekEnd, "dd/MM", { locale: pt })} com os filtros selecionados.</p>
-                      <div className="flex gap-2 mt-2">
+                    <div className="flex flex-col items-center justify-center py-20 px-8 border-2 border-dashed border-border/50 rounded-2xl bg-gradient-to-br from-muted/20 to-muted/5 text-center max-w-2xl mx-auto">
+                      <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
+                        <CalendarIcon className="h-10 w-10 text-muted-foreground/60" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-3">Nenhuma atividade nesta semana</h3>
+                      <p className="text-muted-foreground mb-6 leading-relaxed max-w-md">
+                        Não há atividades programadas para a semana de {format(currentWeekStart, "dd/MM", { locale: pt })} a {format(currentWeekEnd, "dd/MM", { locale: pt })}
+                        {selectedClient || selectedCollaborator || (statusFilter.length !== 2) ? ' com os filtros aplicados' : ''}.
+                      </p>
+
+                      <div className="flex flex-col sm:flex-row gap-3">
                         {(statusFilter.length !== 2 || !statusFilter.includes('in-progress') || !statusFilter.includes('completed') || selectedClient || selectedCollaborator) && (
-                            <Button variant="outline" size="sm" onClick={resetFilters}> Limpar filtros </Button>
+                            <Button variant="outline" size="lg" onClick={resetFilters} className="px-6">
+                              <Filter className="h-4 w-4 mr-2" />
+                              Limpar filtros
+                            </Button>
                         )}
-                        <Button variant="default" size="sm" onClick={() => navigate('/activities/new')}>
+                        <Button
+                          variant="default"
+                          size="lg"
+                          onClick={() => navigate('/activities/new')}
+                          className="px-6 shadow-lg hover:shadow-xl transition-all duration-200 group"
+                        >
+                          <span className="mr-2">+</span>
                           Criar nova atividade
                         </Button>
                       </div>

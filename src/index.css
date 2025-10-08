@@ -619,6 +619,216 @@
 }
 
 /* ===============================================
+   RESPONSIVIDADE OTIMIZADA PARA PÁGINA HOME
+   =============================================== */
+
+/* Mobile First - Telas pequenas (320px - 768px) */
+@media (max-width: 768px) {
+  /* Container principal da Home */
+  .home-container {
+    padding: 1rem !important;
+  }
+
+  /* Cabeçalho da Home - Mobile */
+  .home-header {
+    text-align: center !important;
+  }
+
+  .home-header h1 {
+    font-size: 2rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .home-header p {
+    font-size: 0.875rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Barra de ações rápidas - Mobile */
+  .home-actions-bar {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
+  }
+
+  .home-actions-bar > div:first-child {
+    text-align: center !important;
+  }
+
+  /* Controles de navegação - Mobile */
+  .home-controls-section {
+    padding: 1rem !important;
+  }
+
+  .home-controls-section .flex {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  .home-controls-section .flex > div:first-child {
+    order: 2 !important;
+  }
+
+  .home-controls-section .flex > div:last-child {
+    order: 1 !important;
+  }
+
+  /* Modos de visualização - Mobile */
+  .view-mode-buttons {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .view-mode-buttons button {
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Filtros - Mobile */
+  .home-filters-section {
+    padding: 1rem !important;
+  }
+
+  .home-filters-section .flex {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  .home-filters-section .flex > div {
+    width: 100% !important;
+  }
+
+  /* Seletor de data - Mobile */
+  .home-date-picker {
+    min-width: auto !important;
+    width: 100% !important;
+  }
+
+  /* Visualização diária - Mobile */
+  .home-daily-view {
+    gap: 1rem !important;
+  }
+
+  .home-daily-view .grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Cards de atividade - Mobile */
+  .activity-card {
+    margin-bottom: 0 !important;
+  }
+
+  .activity-card .card-header {
+    padding: 1rem !important;
+  }
+
+  .activity-card .card-content {
+    padding: 0 1rem 1rem 1rem !important;
+  }
+
+  .activity-card .card-footer {
+    padding: 0.75rem 1rem !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Visualização semanal - Mobile */
+  .home-weekly-view .grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .home-weekly-view .grid > div {
+    min-height: 200px !important;
+  }
+
+  /* Visualização mensal - Mobile */
+  .home-monthly-view {
+    padding: 1rem !important;
+  }
+
+  /* Estados vazios - Mobile */
+  .empty-state {
+    padding: 2rem 1rem !important;
+    text-align: center !important;
+  }
+
+  .empty-state h3 {
+    font-size: 1.25rem !important;
+  }
+
+  .empty-state p {
+    font-size: 0.875rem !important;
+  }
+
+  .empty-state .flex {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+}
+
+/* Tablets - Telas médias (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Container principal da Home */
+  .home-container {
+    padding: 1.5rem !important;
+  }
+
+  /* Visualização diária - Tablet */
+  .home-daily-view .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Visualização semanal - Tablet */
+  .home-weekly-view .grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  /* Cards de atividade - Tablet */
+  .activity-card {
+    margin-bottom: 0 !important;
+  }
+
+  .activity-card .card-header {
+    padding: 1.25rem !important;
+  }
+
+  .activity-card .card-footer {
+    padding: 1rem 1.25rem !important;
+  }
+}
+
+/* Desktop grande - Telas grandes (1025px+) */
+@media (min-width: 1025px) {
+  /* Visualização diária - Desktop */
+  .home-daily-view .grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* Responsividade para diferentes orientações */
+@media (orientation: landscape) and (max-height: 600px) {
+  /* Otimizações para landscape em dispositivos móveis */
+  .home-container {
+    padding: 0.5rem !important;
+  }
+
+  .home-header {
+    margin-bottom: 1rem !important;
+  }
+
+  .home-controls-section,
+  .home-filters-section {
+    padding: 0.75rem !important;
+  }
+}
+
+/* ===============================================
    RESPONSIVIDADE OTIMIZADA PARA PÁGINA DE LOGIN
    =============================================== */
 
@@ -837,4 +1047,257 @@
 
 .h12-alt .login-container input::placeholder {
   color: rgb(196, 181, 253) !important;
+}
+
+/* ===============================================
+   MELHORIAS VISUAIS PARA PÁGINA HOME - MULTI-TEMA
+   =============================================== */
+
+/* Tema Dark - Melhorias específicas para Home */
+.dark .home-header {
+  color: hsl(var(--foreground));
+}
+
+.dark .home-header h1 {
+  background: linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--muted-foreground)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .home-actions-bar {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+.dark .home-controls-section,
+.dark .home-filters-section {
+  background: rgba(0, 0, 0, 0.15) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+.dark .activity-card {
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card))/80% 100%) !important;
+  border-color: hsl(var(--border))/50% !important;
+}
+
+.dark .activity-card:hover {
+  border-color: hsl(var(--primary))/30% !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .empty-state {
+  background: linear-gradient(135deg, hsl(var(--muted))/10% 0%, hsl(var(--muted))/5% 100%) !important;
+  border-color: hsl(var(--border))/30% !important;
+}
+
+/* Tema H12 - Melhorias específicas para Home */
+.h12 .home-header {
+  color: hsl(var(--foreground));
+}
+
+.h12 .home-header h1 {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.h12 .home-actions-bar {
+  background: rgba(59, 130, 246, 0.05) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.h12 .home-controls-section,
+.h12 .home-filters-section {
+  background: rgba(59, 130, 246, 0.03) !important;
+  border-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.h12 .activity-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%) !important;
+  border-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.h12 .activity-card:hover {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 10px 40px rgba(59, 130, 246, 0.1) !important;
+}
+
+.h12 .empty-state {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(59, 130, 246, 0.01) 100%) !important;
+  border-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Tema H12 Alternative - Melhorias específicas para Home */
+.h12-alt .home-header {
+  color: hsl(var(--foreground));
+}
+
+.h12-alt .home-header h1 {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.h12-alt .home-actions-bar {
+  background: rgba(124, 58, 237, 0.05) !important;
+  border-color: rgba(124, 58, 237, 0.2) !important;
+}
+
+.h12-alt .home-controls-section,
+.h12-alt .home-filters-section {
+  background: rgba(124, 58, 237, 0.03) !important;
+  border-color: rgba(124, 58, 237, 0.15) !important;
+}
+
+.h12-alt .activity-card {
+  background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%) !important;
+  border-color: rgba(124, 58, 237, 0.15) !important;
+}
+
+.h12-alt .activity-card:hover {
+  border-color: rgba(124, 58, 237, 0.3) !important;
+  box-shadow: 0 10px 40px rgba(124, 58, 237, 0.15) !important;
+}
+
+.h12-alt .empty-state {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.02) 0%, rgba(124, 58, 237, 0.01) 100%) !important;
+  border-color: rgba(124, 58, 237, 0.1) !important;
+}
+
+/* Tema Root (padrão) - Melhorias específicas para Home */
+:root .home-header h1 {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary))/80% 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:root .home-actions-bar {
+  background: hsl(var(--card))/50% !important;
+  border-color: hsl(var(--border))/50% !important;
+}
+
+:root .home-controls-section,
+:root .home-filters-section {
+  background: hsl(var(--card))/30% !important;
+  border-color: hsl(var(--border))/50% !important;
+}
+
+:root .activity-card {
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card))/80% 100%) !important;
+  border-color: hsl(var(--border))/30% !important;
+}
+
+:root .activity-card:hover {
+  border-color: hsl(var(--primary))/30% !important;
+  box-shadow: 0 10px 40px hsl(var(--primary))/10% !important;
+}
+
+:root .empty-state {
+  background: linear-gradient(135deg, hsl(var(--muted))/20% 0%, hsl(var(--muted))/5% 100%) !important;
+  border-color: hsl(var(--border))/30% !important;
+}
+
+/* ===============================================
+   ANIMAÇÕES E TRANSIÇÕES MELHORADAS PARA HOME
+   =============================================== */
+
+/* Animações de entrada para elementos da Home */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Aplicar animações em diferentes temas */
+.home-header {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.home-actions-bar {
+  animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+
+.home-controls-section {
+  animation: slideInRight 0.6s ease-out 0.2s both;
+}
+
+.home-filters-section {
+  animation: slideInRight 0.6s ease-out 0.3s both;
+}
+
+.home-daily-view,
+.home-weekly-view,
+.home-monthly-view {
+  animation: fadeInUp 0.6s ease-out 0.4s both;
+}
+
+/* Desabilitar animações para usuários que preferem movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  .home-header,
+  .home-actions-bar,
+  .home-controls-section,
+  .home-filters-section,
+  .home-daily-view,
+  .home-weekly-view,
+  .home-monthly-view {
+    animation: none !important;
+  }
+}
+
+/* ===============================================
+   CORES E CONTRASTES MELHORADOS PARA ACESSIBILIDADE
+   =============================================== */
+
+/* Melhorar contraste em todos os temas */
+.activity-card .card-title {
+  color: hsl(var(--foreground)) !important;
+}
+
+.activity-card .card-description {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+/* Badges com melhor contraste */
+.activity-card .badge {
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* Estados de foco melhorados */
+.activity-card:focus-within {
+  outline: 2px solid hsl(var(--primary)) !important;
+  outline-offset: 2px !important;
+}
+
+/* Tema específico para melhor contraste */
+.dark .activity-card .badge {
+  border-color: hsl(var(--border)) !important;
+  background: hsl(var(--background)) !important;
+}
+
+.h12 .activity-card .badge {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.h12-alt .activity-card .badge {
+  border-color: rgba(124, 58, 237, 0.3) !important;
 }
