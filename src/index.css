@@ -205,7 +205,7 @@
 .dark button[type='submit']:hover,
 .dark button[class*='bg-primary']:hover,
 .dark button[class*='primary']:not([class*='outline']):hover {
-  @apply hover:bg-primary/90;
+  @apply hover:bg-blue-600/70;
 }
 .dark button.border-red-200:hover,
 .dark button.border-green-200:hover,
@@ -528,6 +528,17 @@
 
 .h12-alt .activity-badge {
   border-color: hsl(var(--sidebar-background));
+}
+
+/* Botão Nova Atividade com hover vermelho personalizado */
+.nova-atividade-btn:hover {
+  background-color: rgb(239 68 68) !important; /* red-500 */
+  color: white !important;
+}
+
+.dark .nova-atividade-btn:hover {
+  background-color: rgb(239 68 68 / 0.9) !important; /* red-500 com 90% opacidade */
+  color: white !important;
 }
 
 /* Hover effects para indicadores */
