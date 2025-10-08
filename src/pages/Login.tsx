@@ -123,28 +123,32 @@ const Login = () => {
         return {
           primary: 'text-blue-400',
           accent: 'text-gray-300',
-          button: 'bg-blue-600 hover:bg-blue-700',
+          iconInput: 'text-gray-400',
+          button: 'bg-blue-600 text-white hover:!bg-blue-600/75 hover:!text-white hover:!shadow-blue-500/25',
           input: 'border-gray-600 focus:border-blue-400'
         };
       case 'h12':
         return {
           primary: 'text-blue-600',
           accent: 'text-slate-600',
-          button: 'bg-blue-500 hover:bg-blue-600',
+          iconInput: '!text-blue-600 drop-shadow-[0_2px_4px_rgba(37,99,235,0.3)]',
+          button: 'bg-blue-500 text-white hover:bg-blue-400 hover:text-white hover:shadow-blue-400/50',
           input: 'border-blue-200 focus:border-blue-400'
         };
       case 'h12-alt':
         return {
           primary: 'text-purple-400',
           accent: 'text-purple-200',
-          button: 'bg-purple-600 hover:bg-purple-700',
+          iconInput: 'text-purple-300',
+          button: 'bg-purple-600 text-white hover:!bg-purple-500/75 hover:!text-white hover:!shadow-purple-500/25',
           input: 'border-purple-500 focus:border-purple-400'
         };
       default: // light
         return {
           primary: 'text-blue-600',
           accent: 'text-slate-600',
-          button: 'bg-blue-500 hover:bg-blue-600',
+          iconInput: 'text-slate-500',
+          button: 'bg-blue-500 text-white hover:bg-blue-600 hover:text-white hover:shadow-blue-600/50',
           input: 'border-slate-200 focus:border-blue-400'
         };
     }
@@ -221,7 +225,7 @@ const Login = () => {
                   Email
                 </Label>
                 <div className="relative">
-                  <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${themeColors.accent} transition-colors duration-300`} aria-hidden="true" />
+                  <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 z-10 pointer-events-none ${themeColors.iconInput} transition-colors duration-300`} aria-hidden="true" />
                   <Input
                     id="email"
                     type="email"
@@ -261,7 +265,7 @@ const Login = () => {
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${themeColors.accent} transition-colors duration-300`} aria-hidden="true" />
+                  <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 z-10 pointer-events-none ${themeColors.iconInput} transition-colors duration-300`} aria-hidden="true" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
