@@ -617,3 +617,224 @@
     transform: translateX(0) scale(1);
   }
 }
+
+/* ===============================================
+   RESPONSIVIDADE OTIMIZADA PARA PÁGINA DE LOGIN
+   =============================================== */
+
+/* Mobile First - Telas pequenas (320px - 640px) */
+@media (max-width: 640px) {
+  .login-container {
+    padding: 1rem;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Ajustes para elementos decorativos em mobile */
+  .login-container .absolute {
+    display: none; /* Esconder elementos decorativos em mobile para melhor performance */
+  }
+
+  /* Card responsivo para mobile */
+  .login-container > div {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.5rem;
+  }
+
+  /* Botão de tema posicionado como fixed no canto superior direito */
+  .login-container .fixed.top-4.right-4 {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 50 !important;
+  }
+
+  /* Logo e título em mobile */
+  .login-container h1 {
+    font-size: 1.75rem !important;
+  }
+
+  .login-container .text-3xl {
+    font-size: 1.5rem !important;
+  }
+
+  /* Campos de input em mobile */
+  .login-container input {
+    height: 3rem !important;
+    font-size: 16px !important; /* Previne zoom no iOS */
+  }
+
+  /* Botão de login em mobile */
+  .login-container button[type="submit"] {
+    height: 3rem !important;
+    font-size: 1rem !important;
+  }
+
+  /* Espaçamentos em mobile */
+  .login-container .space-y-6 > * + * {
+    margin-top: 1rem !important;
+  }
+
+  .login-container .space-y-4 > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  /* Footer em mobile */
+  .login-container > div:last-child {
+    margin-top: 2rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Tablets - Telas médias (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .login-container {
+    padding: 2rem;
+  }
+
+  .login-container > div {
+    max-width: 28rem;
+    padding: 1rem;
+  }
+
+  /* Elementos decorativos menores em tablets */
+  .login-container .w-80 {
+    width: 20rem !important;
+    height: 20rem !important;
+  }
+
+  .login-container .-top-40 {
+    top: -10rem !important;
+  }
+
+  .login-container .-bottom-40 {
+    bottom: -10rem !important;
+  }
+}
+
+/* Desktop - Telas grandes (1025px+) */
+@media (min-width: 1025px) {
+  .login-container > div {
+    max-width: 30rem;
+  }
+
+  /* Elementos decorativos em tamanho normal para desktop */
+  .login-container .w-80 {
+    width: 20rem;
+    height: 20rem;
+  }
+}
+
+/* ===============================================
+   MELHORIAS DE PERFORMANCE PARA PÁGINA DE LOGIN
+   =============================================== */
+
+/* Otimizações de performance para animações */
+.login-container * {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+/* Reduzir movimento para usuários que preferem */
+@media (prefers-reduced-motion: reduce) {
+  .login-container * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .login-container .animate-pulse {
+    animation: none !important;
+  }
+
+  .login-container .hover\:scale-\[1\.02\]:hover {
+    transform: none !important;
+  }
+
+  .login-container .hover\:scale-105:hover {
+    transform: none !important;
+  }
+
+  .login-container .hover\:scale-110:hover {
+    transform: none !important;
+  }
+}
+
+/* ===============================================
+   ACESSIBILIDADE MELHORADA PARA PÁGINA DE LOGIN
+   =============================================== */
+
+/* Foco melhorado para acessibilidade */
+.login-container input:focus,
+.login-container button:focus,
+.login-container [role="button"]:focus {
+  outline: 2px solid;
+  outline-offset: 2px;
+}
+
+.login-container .dark input:focus,
+.login-container .dark button:focus {
+  outline-color: rgb(96, 165, 250); /* blue-400 */
+}
+
+.login-container .h12 input:focus,
+.login-container .h12 button:focus {
+  outline-color: rgb(37, 99, 235); /* blue-600 */
+}
+
+.login-container .h12-alt input:focus,
+.login-container .h12-alt button:focus {
+  outline-color: rgb(147, 51, 234); /* purple-600 */
+}
+
+/* Contraste melhorado para textos */
+.login-container .text-muted-foreground {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+/* ===============================================
+   ESTILOS ESPECÍFICOS POR TEMA PARA LOGIN
+   =============================================== */
+
+/* Tema dark - ajustes específicos */
+.dark .login-container {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%);
+}
+
+.dark .login-container input {
+  background-color: rgba(51, 65, 85, 0.5) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(241, 245, 249) !important;
+}
+
+.dark .login-container input::placeholder {
+  color: rgb(148, 163, 184) !important;
+}
+
+/* Tema H12 - ajustes específicos */
+.h12 .login-container {
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 50%, #f1f5f9 100%);
+}
+
+.h12 .login-container input {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgb(59, 130, 246) !important;
+}
+
+/* Tema H12 Alternative - ajustes específicos */
+.h12-alt .login-container {
+  background: linear-gradient(135deg, #581c87 0%, #3730a3 50%, #1e40af 100%);
+}
+
+.h12-alt .login-container input {
+  background-color: rgba(88, 28, 135, 0.5) !important;
+  border-color: rgb(147, 51, 234) !important;
+  color: rgb(243, 232, 255) !important;
+}
+
+.h12-alt .login-container input::placeholder {
+  color: rgb(196, 181, 253) !important;
+}
