@@ -1,20 +1,20 @@
 /**
- * gemini-config.js - Configurações para a integração com a API Gemini
+ * gemini-config.js - Configuraï¿½ï¿½es para a integraï¿½ï¿½o com a API Gemini
  */
 
-// Configuração da API Gemini
+// Configuraï¿½ï¿½o da API Gemini
 const GEMINI_CONFIG = {
     // Sua chave API do Gemini - https://aistudio.google.com/app/apikey
     apiKey: "AIzaSyAzDTgBTQ1xNstzuKVzaNwow7OcKvZY8Wk",
 
     // Endpoint para o modelo Gemini Pro
-    apiEndpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-thinking-exp-01-21:generateContent",
+    apiEndpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
 
-    // Configurações padrão
-    maxTokens: 8192,           // Tamanho máximo da resposta
+    // Configuraï¿½ï¿½es padrï¿½o
+    maxTokens: 8192,           // Tamanho mï¿½ximo da resposta
     temperature: 0.3,          // Criatividade da resposta (0.0 a 1.0)
 
-    // Configurações de segurança
+    // Configuraï¿½ï¿½es de seguranï¿½a
     safetySettings: [
         {
             category: "HARM_CATEGORY_HARASSMENT",
@@ -34,23 +34,23 @@ const GEMINI_CONFIG = {
         }
     ],
 
-    // Configurações da UI
+    // Configuraï¿½ï¿½es da UI
     assistant: {
-        initiallyOpen: false,      // Assistente aberto ao carregar a página
+        initiallyOpen: false,      // Assistente aberto ao carregar a pï¿½gina
         autoInitialize: true,      // Inicializar automaticamente
-        initialDelay: 1500,        // Atraso para inicialização (ms)
-        mobileMinimized: true      // Minimizado em dispositivos móveis
+        initialDelay: 1500,        // Atraso para inicializaï¿½ï¿½o (ms)
+        mobileMinimized: true      // Minimizado em dispositivos mï¿½veis
     },
 
-    // Configurações de insights
+    // Configuraï¿½ï¿½es de insights
     insights: {
         autoRefresh: true,         // Atualizar insights automaticamente
-        refreshInterval: 900000,   // Intervalo de atualização (15 min em ms)
-        maxInsights: 4             // Número máximo de insights exibidos
+        refreshInterval: 900000,   // Intervalo de atualizaï¿½ï¿½o (15 min em ms)
+        maxInsights: 4             // Nï¿½mero mï¿½ximo de insights exibidos
     }
 };
 
-// Exportar a configuração
+// Exportar a configuraï¿½ï¿½o
 export default GEMINI_CONFIG;
 
 // Para uso com scripts regulares
