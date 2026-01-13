@@ -33,6 +33,7 @@ import Settings from "@/pages/Settings";
 import AdminSetup from "@/pages/AdminSetup";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
+import ESocialQuestionsPage from "@/pages/ESocialQuestionsPage.tsx";
 
 // Let's create a QueryClient
 const queryClient = new QueryClient();
@@ -72,6 +73,9 @@ const App = () => (
                 <Route path="activities/new" element={<NewActivityPage />} />
                 <Route path="activities/:id" element={<ActivityDetailsPage />} />
                 <Route path="activities/edit/:id" element={<EditActivityPage />} />
+                
+                {/* Dúvidas eSocial */}
+                <Route path="duvidas-esocial" element={<ESocialQuestionsPage />} />
                 
                 {/* Clientes */}
                 <Route path="clients" element={<ClientsPage />} />

@@ -12,7 +12,7 @@ import {
   useSidebar
 } from "@/components/ui/sidebar";
 import {
-  Activity, BarChart3, Calendar, ClipboardList, Home, LogOut, Moon, Settings, Sun, UserCircle, Users, Palette, Contrast
+  Activity, BarChart3, Calendar, ClipboardList, Home, LogOut, Moon, Settings, Sun, UserCircle, Users, Palette, Contrast, HelpCircle
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -183,6 +183,7 @@ const MainSidebar = () => {
                   {/* Indicador de profissionais ativos */}
                   <SidebarActivityIndicator page="/activities" />
                 </SidebarMenuItem>
+
                 <SidebarMenuItem className="relative">
                   <SidebarMenuButton asChild>
                     <NavLink to="/clients" className={getNavLinkClass} onClick={handleMenuItemClick}>
@@ -206,6 +207,16 @@ const MainSidebar = () => {
                   <SidebarLocationIndicator currentPath="/collaborators" />
                   {/* Indicador de profissionais ativos */}
                   <SidebarActivityIndicator page="/collaborators" />
+                </SidebarMenuItem>
+                <SidebarMenuItem className="relative">
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/duvidas-esocial" className={getNavLinkClass} onClick={handleMenuItemClick}>
+                      <HelpCircle className="h-5 w-5 sidebar-icon-animate" />
+                      <span>Dúvidas eSocial</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                  <SidebarLocationIndicator currentPath="/duvidas-esocial" />
+                  <SidebarActivityIndicator page="/duvidas-esocial" />
                 </SidebarMenuItem>
 
               </SidebarMenu>
