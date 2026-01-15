@@ -1,5 +1,5 @@
 import { db } from '@/lib/firebase';
-import { get, push, ref, set, update } from 'firebase/database';
+import { get, push, ref, set, update, remove } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ESocialQuestion {
@@ -97,4 +97,33 @@ export const updateQuestion = async (
   };
 
   await update(questionRef, updated);
+};
+
+export const deleteTag = async (tagId: string): Promise<void> => {
+  // Encontra a tag pelo id
+  const tags = await getTags();
+  const tag = tags.find(t => t.id === tagId);
+  if (!tag) return;
+
+  // Remove a tag no nó principal
+  await remove(ref(db, `esocialTags/${tagId}`));
+
+  // Remove a tag de todas as perguntas que a contenham
+  const snapshot = await get(questionsRef);
+  if (!snapshot.exists()) return;
+
+  const value = snapshot.val() as Record<string, ESocialQuestion>;
+  const updates = Object.entries(value)
+    .filter(([, question]) => question.tags?.includes(tag.name))
+    .map(([questionId, question]) => {
+      const filteredTags = question.tags.filter(t => t !== tag.name);
+      return update(ref(db, `esocialQuestions/${questionId}`), {
+        tags: filteredTags,
+        updatedAt: nowIso()
+      });
+    });
+
+  if (updates.length > 0) {
+    await Promise.all(updates);
+  }
 };

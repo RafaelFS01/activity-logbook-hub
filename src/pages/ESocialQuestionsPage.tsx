@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import EmptyState from "@/components/ui/empty-state";
 import { toast } from "@/components/ui/use-toast";
-import { ESocialQuestion, ESocialTag, createQuestion, createTagIfNotExists, getQuestions, getTags, updateQuestion } from "@/services/firebase/esocial-questions";
-import { Check, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Search, Tag, X } from "lucide-react";
+import { ESocialQuestion, ESocialTag, createQuestion, createTagIfNotExists, deleteTag, getQuestions, getTags, updateQuestion } from "@/services/firebase/esocial-questions";
+import { Check, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Search, Tag, Trash2, X } from "lucide-react";
 
 const PAGE_SIZES = [10, 20, 50];
 
@@ -44,6 +44,7 @@ const ESocialQuestionsPage = () => {
   const [form, setForm] = useState<QuestionForm>(initialForm);
   const [tagSearch, setTagSearch] = useState("");
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+  const [deletingTagId, setDeletingTagId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -230,6 +231,36 @@ const ESocialQuestionsPage = () => {
     if (!term) return tags;
     return tags.filter(tag => tag.name.toLowerCase().includes(term));
   }, [tagSearch, tags]);
+
+  const handleDeleteTag = async (tagId: string) => {
+    if (deletingTagId) return;
+    const targetTag = tags.find(t => t.id === tagId);
+    if (!targetTag) return;
+    setDeletingTagId(tagId);
+    try {
+      await deleteTag(tagId);
+      setTags(prev => prev.filter(t => t.id !== tagId));
+      setQuestions(prev =>
+        prev.map(q => (q.tags?.includes(targetTag.name)
+          ? { ...q, tags: q.tags.filter(t => t !== targetTag.name) }
+          : q))
+      );
+      setForm(prev => ({
+        ...prev,
+        tags: prev.tags.filter(t => t !== targetTag.name)
+      }));
+      toast({ title: "Tag excluída", description: `A tag "${targetTag.name}" foi removida.` });
+    } catch (error) {
+      console.error("Erro ao excluir tag", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir tag",
+        description: "Não foi possível excluir a tag."
+      });
+    } finally {
+      setDeletingTagId(null);
+    }
+  };
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -439,11 +470,31 @@ const ESocialQuestionsPage = () => {
                               key={tag.id}
                               value={tag.name}
                               onSelect={() => toggleTagSelection(tag.name)}
+                              className="flex items-center justify-between gap-2"
                             >
-                              <Check
-                                className={`mr-2 h-4 w-4 ${form.tags.includes(tag.name) ? "opacity-100" : "opacity-0"}`}
-                              />
-                              {tag.name}
+                              <div className="flex items-center gap-2">
+                                <Check
+                                  className={`h-4 w-4 ${form.tags.includes(tag.name) ? "opacity-100" : "opacity-0"}`}
+                                />
+                                {tag.name}
+                              </div>
+                              <button
+                                type="button"
+                                className="text-red-500 hover:text-red-600 disabled:opacity-50"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDeleteTag(tag.id);
+                                }}
+                                disabled={deletingTagId === tag.id}
+                                title="Excluir tag"
+                              >
+                                {deletingTagId === tag.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </button>
                             </CommandItem>
                           ))}
                           {tagSearch && !tags.some(t => t.name.toLowerCase() === tagSearch.trim().toLowerCase()) && (
