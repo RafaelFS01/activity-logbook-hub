@@ -55,8 +55,10 @@ import {
   // Activity // Não é mais necessário importar Activity se usamos o tipo inferido
 } from "@/services/firebase/activities";
 import { getClients, Client } from "@/services/firebase/clients";
+import { getCollaborators, CollaboratorData } from "@/services/firebase/collaborators";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Combobox } from "@/components/ui/combobox";
 
 // --- MODIFICAÇÃO 1: Schema Zod ---
 // endDate agora é sempre obrigatório e não vazio
@@ -97,6 +99,7 @@ const formSchema = z.object({
       .optional()
       .or(z.literal("")), // Permite vazio ou formato HH:MM (mantido opcional)
   type: z.string().optional(),
+  assignedTo: z.string().optional(),
 });
 
 // Inferir o tipo do schema atualizado
@@ -109,6 +112,7 @@ const EditActivityPage = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const [collaborators, setCollaborators] = useState<CollaboratorData[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   // const [openCombobox, setOpenCombobox] = useState(false); // Se usar Combobox para cliente
 
@@ -118,6 +122,7 @@ const EditActivityPage = () => {
       title: "",
       description: "",
       clientId: "",
+      assignedTo: "",
       priority: "medium",
       status: "pending",
       startDate: "",
@@ -147,9 +152,10 @@ const EditActivityPage = () => {
 
       try {
         setIsLoadingData(true);
-        const [fetchedActivity, fetchedClients] = await Promise.all([
+        const [fetchedActivity, fetchedClients, fetchedCollaborators] = await Promise.all([
           getActivityById(id),
-          getClients()
+          getClients(),
+          getCollaborators()
         ]);
 
         if (!fetchedActivity) {
@@ -159,6 +165,7 @@ const EditActivityPage = () => {
         }
 
         setClients(fetchedClients);
+        setCollaborators(fetchedCollaborators);
 
         // Helper para formatar data/hora de forma segura
         const formatDate = (dateString: string | undefined | null): string => {
@@ -191,6 +198,7 @@ const EditActivityPage = () => {
           endDate: endDateStr,
           endTime: endTimeStr,
           type: fetchedActivity.type || "",
+          assignedTo: fetchedActivity.assignedTo && fetchedActivity.assignedTo.length > 0 ? fetchedActivity.assignedTo[0] : "",
         });
 
       } catch (error) {
@@ -236,7 +244,7 @@ const EditActivityPage = () => {
       }
 
       // Objeto com os dados a serem atualizados
-      const updatedData = {
+      const updatedData: any = {
         title: data.title,
         description: data.description,
         clientId: data.clientId,
@@ -249,6 +257,10 @@ const EditActivityPage = () => {
         // updatedAt: new Date().toISOString(),
         // updatedBy: user.uid,
       };
+
+      if (user?.role === 'admin' && data.assignedTo) {
+        updatedData.assignedTo = [data.assignedTo];
+      }
 
       await updateActivity(id, updatedData);
 
@@ -469,6 +481,30 @@ const EditActivityPage = () => {
                     )}
                 />
 
+                {/* Responsável (Apenas Admin) */}
+                {user?.role === 'admin' && (
+                    <FormField
+                        control={form.control}
+                        name="assignedTo"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Responsável</FormLabel>
+                                <FormControl>
+                                    <Combobox
+                                        options={collaborators.map(c => ({ value: c.uid, label: c.name }))}
+                                        selectedValue={field.value}
+                                        onSelect={(value) => form.setValue("assignedTo", value || "", { shouldValidate: true })}
+                                        placeholder="Selecione um responsável..."
+                                        searchPlaceholder="Buscar responsável..."
+                                        noResultsText="Nenhum responsável encontrado."
+                                    />
+                                </FormControl>
+                                <FormDescription>Selecione o colaborador responsável pela atividade.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
 
                 {/* Prioridade e Status (usando Select normal) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

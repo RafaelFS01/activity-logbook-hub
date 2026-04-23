@@ -31,6 +31,27 @@ export const getCollaboratorById = async (id: string): Promise<CollaboratorData 
   }
 };
 
+// Get all collaborators
+export const getCollaborators = async (): Promise<CollaboratorData[]> => {
+  try {
+    const usersRef = ref(db, 'users');
+    const snapshot = await get(usersRef);
+    
+    if (snapshot.exists()) {
+      const usersData = snapshot.val();
+      return Object.entries(usersData).map(([uid, data]) => ({
+        ...(data as any),
+        uid
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Erro ao obter colaboradores:', error);
+    throw error;
+  }
+};
+
 // Update collaborator status
 export const updateCollaboratorStatus = async (
   id: string, 

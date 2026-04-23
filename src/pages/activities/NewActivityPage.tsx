@@ -55,7 +55,9 @@ import {
     getActivityTypes // <<< Importa função para buscar tipos
 } from "@/services/firebase/activities";
 import { getClients, Client } from "@/services/firebase/clients"; // Importa Client type
+import { getCollaborators, CollaboratorData } from "@/services/firebase/collaborators";
 import { useAuth } from "@/contexts/AuthContext";
+import { Combobox } from "@/components/ui/combobox";
 
 // --- Schema Zod (sem alterações necessárias para 'type') ---
 const formSchema = z.object({
@@ -77,6 +79,7 @@ const formSchema = z.object({
         .or(z.literal("")),
     // Tipo agora pode ser qualquer string (existente ou nova) ou vazio/undefined
     type: z.string().optional(),
+    assignedTo: z.string().optional(),
 });
 
 const NewActivityPage = () => {
@@ -86,6 +89,8 @@ const NewActivityPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [clients, setClients] = useState<Client[]>([]);
     const [isLoadingClients, setIsLoadingClients] = useState(true); // Estado para carregamento de clientes
+    const [collaborators, setCollaborators] = useState<CollaboratorData[]>([]);
+    const [isLoadingCollaborators, setIsLoadingCollaborators] = useState(true);
 
     // --- Estados para o Combobox de Tipo ---
     const [activityTypes, setActivityTypes] = useState<string[]>([]);
@@ -106,6 +111,7 @@ const NewActivityPage = () => {
             endTime: "",
             type: "", // Valor inicial do tipo continua vazio
             clientId: "",
+            assignedTo: user?.uid || "", // Default para o usuário logado
         },
     });
 
@@ -114,13 +120,16 @@ const NewActivityPage = () => {
         const fetchData = async () => {
             setIsLoadingClients(true);
             setIsLoadingTypes(true);
+            setIsLoadingCollaborators(true);
             try {
                 // Busca clientes e tipos em paralelo
-                const [fetchedClients, fetchedTypes] = await Promise.all([
+                const [fetchedClients, fetchedTypes, fetchedCollaborators] = await Promise.all([
                     getClients(),
-                    getActivityTypes()
+                    getActivityTypes(),
+                    getCollaborators()
                 ]);
                 setClients(fetchedClients);
+                setCollaborators(fetchedCollaborators);
                 // Garante que os tipos sejam únicos e ordena alfabeticamente
                 setActivityTypes([...new Set(fetchedTypes)].sort((a, b) => a.localeCompare(b)));
             } catch (error) {
@@ -128,15 +137,17 @@ const NewActivityPage = () => {
                 toast({
                     variant: "destructive",
                     title: "Erro ao Carregar Dados",
-                    description: "Não foi possível carregar clientes ou tipos de atividade."
+                    description: "Não foi possível carregar clientes, colaboradores ou tipos de atividade."
                 });
                 // Mesmo com erro em um, podemos ter carregado o outro, então finalizamos ambos loadings
                 setClients([]); // Limpa para evitar dados inconsistentes
                 setActivityTypes([]);
+                setCollaborators([]);
             } finally {
                 // Finaliza ambos os loadings independentemente do resultado
                 setIsLoadingClients(false);
                 setIsLoadingTypes(false);
+                setIsLoadingCollaborators(false);
             }
         };
 
@@ -161,7 +172,7 @@ const NewActivityPage = () => {
                 title: data.title,
                 description: data.description,
                 clientId: data.clientId,
-                assignedTo: [user.uid],
+                assignedTo: user.role === 'admin' && data.assignedTo ? [data.assignedTo] : [user.uid],
                 priority: data.priority as ActivityPriority,
                 status: data.status as ActivityStatus,
                 // Inclui o tipo (seja ele existente ou novo, removendo espaços extras)
@@ -460,6 +471,34 @@ const NewActivityPage = () => {
                             </FormItem>
                         )}
                     />
+
+                    {/* Responsável (Apenas Admin) */}
+                    {user?.role === 'admin' && (
+                        <FormField
+                            control={form.control}
+                            name="assignedTo"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Responsável</FormLabel>
+                                    <FormControl>
+                                        <Combobox
+                                            options={collaborators.map(c => ({ value: c.uid, label: c.name }))}
+                                            selectedValue={field.value}
+                                            onSelect={(value) => form.setValue("assignedTo", value || "", { shouldValidate: true })}
+                                            placeholder="Selecione um responsável..."
+                                            searchPlaceholder="Buscar responsável..."
+                                            noResultsText="Nenhum responsável encontrado."
+                                            disabled={isLoadingCollaborators}
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Selecione o colaborador que será responsável por esta atividade.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
 
                     {/* Prioridade e Status */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
