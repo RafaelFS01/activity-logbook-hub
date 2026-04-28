@@ -155,7 +155,10 @@ const EditActivityPage = () => {
         const [fetchedActivity, fetchedClients, fetchedCollaborators] = await Promise.all([
           getActivityById(id),
           getClients(),
-          getCollaborators()
+          user?.role === 'admin' ? getCollaborators().catch(err => {
+              console.error("Erro ao buscar colaboradores (permissão negada?):", err);
+              return [];
+          }) : Promise.resolve([])
         ]);
 
         if (!fetchedActivity) {

@@ -126,7 +126,10 @@ const NewActivityPage = () => {
                 const [fetchedClients, fetchedTypes, fetchedCollaborators] = await Promise.all([
                     getClients(),
                     getActivityTypes(),
-                    getCollaborators()
+                    user?.role === 'admin' ? getCollaborators().catch(err => {
+                        console.error("Erro ao buscar colaboradores (permissão negada?):", err);
+                        return [];
+                    }) : Promise.resolve([])
                 ]);
                 setClients(fetchedClients);
                 setCollaborators(fetchedCollaborators);
