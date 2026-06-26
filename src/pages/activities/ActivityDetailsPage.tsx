@@ -21,6 +21,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import GenerateESocialQuestionModal from "./components/GenerateESocialQuestionModal";
+import { Sparkles } from "lucide-react";
 
 // Tipos (se não importados)
 type ActivityStatus = "pending" | "in-progress" | "completed" | "cancelled";
@@ -87,6 +89,7 @@ const ActivityDetailsPage = () => {
   const [statusLoading, setStatusLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [assigneesLoading, setAssigneesLoading] = useState(false);
+  const [isESocialModalOpen, setIsESocialModalOpen] = useState(false);
 
   // --- Funções Auxiliares (dentro do componente para acessar variáveis) ---
 
@@ -314,7 +317,17 @@ const ActivityDetailsPage = () => {
               </div>
             </div>
 
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex gap-2 w-full sm:w-auto flex-wrap">
+            {activity && (
+                <Button
+                  variant="outline"
+                  onClick={() => setIsESocialModalOpen(true)}
+                  className="flex-1 sm:flex-none border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 dark:border-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-950/50"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  <span>Gerar Dúvida eSocial</span>
+                </Button>
+            )}
             {activity && activity.status !== "completed" && activity.status !== "cancelled" && (
                 <Button variant="outline" onClick={() => navigate(`/activities/edit/${id}`)} className="flex-1 sm:flex-none">
                   <FileEdit className="h-4 w-4 mr-2" />
@@ -1258,6 +1271,12 @@ const ActivityDetailsPage = () => {
             </Card>
           </div>
         </div>
+
+        <GenerateESocialQuestionModal
+          isOpen={isESocialModalOpen}
+          onClose={() => setIsESocialModalOpen(false)}
+          activity={activity}
+        />
       </div>
   );
 };

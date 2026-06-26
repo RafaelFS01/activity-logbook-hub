@@ -1,15 +1,18 @@
+import { db } from '@/lib/firebase';
+import { ref, get } from 'firebase/database';
+
 /**
- * gemini-service.js - Servi�o para integra��o com a API Gemini
- * Este servi�o gerencia a comunica��o com a API Gemini e processa as respostas
+ * gemini-service.js - Servio para integrao com a API Gemini
+ * Este servio gerencia a comunicao com a API Gemini e processa as respostas
  */
 
-// Configura��o da API Gemini
+// Configurao da API Gemini
 const GEMINI_CONFIG = {
     apiKey: "AIzaSyAzDTgBTQ1xNstzuKVzaNwow7OcKvZY8Wk",
     apiEndpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
     maxTokens: 8192,
     temperature: 0.3,
-    systemInstruction: "Responda diretamente às perguntas do usu�rio sem mostrar seu processo de pensamento. Forne�a apenas a resposta final.",
+    systemInstruction: "Responda diretamente às perguntas do usurio sem mostrar seu processo de pensamento. Fornea apenas a resposta final.",
     safetySettings: [
         {
             category: "HARM_CATEGORY_HARASSMENT",
@@ -30,13 +33,38 @@ const GEMINI_CONFIG = {
     ]
 };
 
-// Classe para gerenciar a comunica��o com a API Gemini
+// Classe para gerenciar a comunicao com a API Gemini
 class GeminiService {
     constructor() {
         this.apiKey = GEMINI_CONFIG.apiKey;
         this.apiEndpoint = GEMINI_CONFIG.apiEndpoint;
         this.conversation = [];
         this.systemContext = this._generateSystemContext();
+    }
+
+    /**
+     * Carrega dinamicamente as configurações do Gemini do Firebase
+     * @private
+     */
+    async _loadConfig() {
+        try {
+            const snapshot = await get(ref(db, 'settings/gemini'));
+            if (snapshot.exists()) {
+                const settings = snapshot.val();
+                if (settings.apiKey && settings.apiKey.trim()) {
+                    this.apiKey = settings.apiKey.trim();
+                    const model = settings.model ? settings.model.trim() : "gemini-2.5-flash";
+                    this.apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+                    return;
+                }
+            }
+        } catch (error) {
+            console.warn("Não foi possível carregar as configurações dinâmicas do Firebase, utilizando padrões estáticos:", error);
+        }
+
+        // Fallback para os valores locais caso não existam configurações gravadas no Firebase
+        this.apiKey = GEMINI_CONFIG.apiKey;
+        this.apiEndpoint = GEMINI_CONFIG.apiEndpoint;
     }
 
     /**
@@ -49,22 +77,22 @@ class GeminiService {
             role: "user",
             parts: [
                 {
-                    text: `Voc� � o assistente virtual do sistema SecureLab RFID, um sistema de controle de acesso.
+                    text: `Voc  o assistente virtual do sistema SecureLab RFID, um sistema de controle de acesso.
 
                     Conhecimentos:
-                    - Voc� tem conhecimento sobre o sistema SecureLab, incluindo gest�o de usu�rios, portas, dispositivos RFID e logs de acesso.
-                    - Voc� pode analisar dados de acesso, identificar padr�es an�malos e fornecer recomenda��es.
-                    - Voc� pode responder perguntas t�cnicas sobre o sistema e ajudar a resolver problemas.
+                    - Voc tem conhecimento sobre o sistema SecureLab, incluindo gesto de usurios, portas, dispositivos RFID e logs de acesso.
+                    - Voc pode analisar dados de acesso, identificar padres anmalos e fornecer recomendaes.
+                    - Voc pode responder perguntas tcnicas sobre o sistema e ajudar a resolver problemas.
 
                     Comportamento:
                     - Seja conciso e direto em suas respostas.
-                    - Quando apropriado, forne�a insights baseados em dados.
-                    - Voc� pode executar comandos no sistema quando solicitado por um administrador.
-                    - Para a��es cr�ticas, confirme antes de executar.
+                    - Quando apropriado, fornea insights baseados em dados.
+                    - Voc pode executar comandos no sistema quando solicitado por um administrador.
+                    - Para aes crticas, confirme antes de executar.
 
-                    Limita��es:
-                    - Voc� n�o deve compartilhar informa��es sens�veis com usu�rios n�o autorizados.
-                    - Voc� n�o deve modificar configura��es cr�ticas de seguran�a sem confirma��o.`
+                    Limitaes:
+                    - Voc no deve compartilhar informaes sensveis com usurios no autorizados.
+                    - Voc no deve modificar configuraes crticas de segurana sem confirmao.`
                 }
             ]
         };
@@ -72,18 +100,19 @@ class GeminiService {
 
     /**
      * Envia uma mensagem para a API Gemini e processa a resposta
-     * @param {string} message - Mensagem do usu�rio
+     * @param {string} message - Mensagem do usurio
      * @param {Object} context - Contexto adicional (opcional)
-     * @param {Object} options - Op��es adicionais
-     * @param {boolean} options.isConversation - Se � uma conversa natural (n�o estruturada)
+     * @param {Object} options - Opes adicionais
+     * @param {boolean} options.isConversation - Se  uma conversa natural (no estruturada)
      * @returns {Promise<string>} Resposta do Gemini
      */
     async sendMessage(message, context = {}, options = {}) {
         try {
-            // Definir se � uma conversa natural ou uma solicita��o estruturada
-            const isConversation = options.isConversation !== false; // Por padr�o, assumir que � conversa
+            await this._loadConfig();
+            // Definir se  uma conversa natural ou uma solicitao estruturada
+            const isConversation = options.isConversation !== false; // Por padro, assumir que  conversa
 
-            // Adicionar mensagem do usu�rio � conversa
+            // Adicionar mensagem do usurio  conversa
             this.conversation.push({
                 role: "user",
                 parts: [{ text: message }]
@@ -215,6 +244,7 @@ class GeminiService {
      */
     async generateSummariesSingleRequest(activities) {
         try {
+            await this._loadConfig();
             const prompt = `Você é um assistente especializado em gestão de atividades profissionais. Analise cada atividade e crie descrições detalhadas, profissionais e informativas que combinem o título e a descrição de forma abrangente.
 
             INSTRUÇÕES IMPORTANTES:
@@ -313,6 +343,160 @@ class GeminiService {
         } catch (error) {
             console.error('Erro ao gerar resumos em lote:', error);
             throw error; // Re-lançar o erro para ser tratado no componente
+        }
+    }
+
+    /**
+     * Gera uma pergunta e resposta do eSocial com base em uma atividade
+     * @param {Object} activity - A atividade
+     * @param {Array<Object>} existingTags - Tags já cadastradas no sistema
+     * @returns {Promise<Object>} Pergunta, resposta e tags sugeridas
+     */
+    async generateESocialQuestion(activity, existingTags) {
+        try {
+            await this._loadConfig();
+            const standardTags = [
+                "S-1000 - Informações do Empregador/Contribuinte/Órgão Público",
+                "S-1005 - Tabela de Estabelecimentos, Obras ou Unidades de Órgãos Públicos",
+                "S-1010 - Tabela de Rubricas",
+                "S-1020 - Tabela de Lotações Tributárias",
+                "S-1070 - Tabela de Processos Administrativos/Judiciais",
+                "S-1200 - Remuneração de Trabalhador vinculado ao Regime Geral de Previd. Social",
+                "S-1202 - Remuneração de Servidor vinculado ao Regime Próprio de Previd. Social",
+                "S-1207 - Benefícios - Entes Públicos",
+                "S-1210 - Pagamentos de Rendimentos do Trabalho",
+                "S-1260 - Comercialização da Produção Rural Pessoa Física",
+                "S-1270 - Contratação de Trabalhadores Avulsos Não Portuários",
+                "S-1280 - Informações Complementares aos Eventos Periódicos",
+                "S-1298 - Reabertura dos Eventos Periódicos",
+                "S-1299 - Fechamento dos Eventos Periódicos",
+                "S-2190 - Registro Preliminar de Trabalhador",
+                "S-2200 - Cadastramento Inicial do Vínculo e Admissão/Ingresso de Trabalhador",
+                "S-2205 - Alteração de Dados Cadastrais do Trabalhador",
+                "S-2206 - Alteração de Contrato de Trabalho/Relação Estatutária",
+                "S-2210 - Comunicação de Acidente de Trabalho",
+                "S-2220 - Monitoramento da Saúde do Trabalhador",
+                "S-2221 - Exame Toxicológico do Motorista Profissional Empregado",
+                "S-2230 - Afastamento Temporário",
+                "S-2231 - Cessão/Exercício em Outro Órgão",
+                "S-2240 - Condições Ambientais do Trabalho - Agentes Nocivos",
+                "S-2298 - Reintegração/Outros Provimentos",
+                "S-2299 - Desligamento",
+                "S-2300 - Trabalhador Sem Vínculo de Emprego/Estatutário - Início",
+                "S-2306 - Trabalhador Sem Vínculo de Emprego/Estatutário - Alteração Contratual",
+                "S-2399 - Trabalhador Sem Vínculo de Emprego/Estatutário - Término",
+                "S-2400 - Cadastro de Beneficiário - Entes Públicos - Início",
+                "S-2405 - Cadastro de Beneficiário - Entes Públicos - Alteração",
+                "S-2410 - Cadastro de Benefício - Entes Públicos - Início",
+                "S-2416 - Cadastro de Benefício - Entes Públicos - Alteração",
+                "S-2418 - Reativação de Benefício - Entes Públicos",
+                "S-2420 - Cadastro de Benefício - Entes Públicos - Término",
+                "S-2500 - Processo Trabalhista",
+                "S-2501 - Informações de Tributos Decorrentes de Processo Trabalhista",
+                "S-2555 - Solicitação de Consolidação das Informações de Tributos Decorrentes de Processo Trabalhista",
+                "S-3000 - Exclusão de Eventos",
+                "S-3500 - Exclusão de Eventos - Processo Trabalhista",
+                "S-5001 - Informações das Contribuições Sociais por Trabalhador",
+                "S-5002 - Imposto de Renda Retido na Fonte por Trabalhador",
+                "S-5003 - Informações do FGTS por Trabalhador",
+                "S-5011 - Informações das Contribuições Sociais Consolidadas por Contribuinte",
+                "S-5012 - Imposto de Renda Retido na Fonte Consolidado por Contribuinte",
+                "S-5013 - Informações do FGTS Consolidadas por Contribuinte",
+                "S-5501 - Informações Consolidadas de Tributos Decorrentes de Processo Trabalhista",
+                "S-5503 - Informações do FGTS por Trabalhador em Processo Trabalhista",
+                "S-8200 - Anotação Judicial do Vínculo",
+                "S-8299 - Baixa Judicial do Vínculo"
+            ];
+
+            const prompt = `Você é um assistente especialista em eSocial e relações trabalhistas brasileiras.
+Sua tarefa é ler os detalhes de uma atividade realizada por um colaborador e gerar uma Pergunta Frequente (FAQ) técnica adequada para o eSocial, contendo uma pergunta, uma resposta e as tags associadas.
+
+Detalhes da Atividade:
+- Título: ${activity.title}
+- Descrição: ${activity.description || 'Não especificada'}
+- Tipo: ${activity.type || 'Não especificado'}
+- Prioridade: ${activity.priority || 'Não especificada'}
+
+Lista de Tags Padrão do eSocial (Eventos):
+${standardTags.join('\n')}
+
+Tags já cadastradas no sistema:
+${existingTags.map(t => t.name).join(', ')}
+
+Instruções para geração:
+1. Pergunta (question): Crie uma pergunta direta, objetiva e clara que represente a dúvida teórica ou prática que motivou ou resolveu a atividade descrita. Exemplo: "Como deve ser feita a reabertura de eventos periódicos no eSocial?"
+2. Resposta (answer): Crie uma resposta detalhada, formal e instrutiva com base nas regras do eSocial ou nas diretrizes oficiais correspondentes à atividade descrita. Seja útil e forneça orientações práticas.
+3. Tags associadas (tags): Escolha as tags mais adequadas. Você DEVE:
+   - Identificar e associar eventos padrão do eSocial apropriados da lista acima (use apenas o código do evento, ex: "S-2200", "S-1298", etc.).
+   - Identificar e associar tags já cadastradas no sistema que façam sentido.
+   - Indicar tags novas conceituais para criação caso melhorem a categorização (ex: "Processamento de Folha", "Férias", "Abono"), mas use bom senso conceitual sem delírios ou alucinações.
+   - Retorne uma lista de strings contendo de 1 a 5 tags no total.
+
+Responda APENAS com um JSON válido no seguinte formato, sem nenhum texto explicativo antes ou depois:
+{
+  "question": "Texto da pergunta gerada...",
+  "answer": "Texto da resposta gerada...",
+  "tags": ["Tag1", "Tag2"]
+}`;
+
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }],
+                generationConfig: {
+                    temperature: 0.2,
+                    maxOutputTokens: GEMINI_CONFIG.maxTokens,
+                    topP: 0.95,
+                    topK: 64
+                },
+                safetySettings: GEMINI_CONFIG.safetySettings
+            };
+
+            const timeoutDuration = 120000;
+            const response = await fetch(`${this.apiEndpoint}?key=${this.apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload),
+                signal: AbortSignal.timeout(timeoutDuration)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Erro na API Gemini ao gerar dúvida: ${errorData.error?.message || 'Erro desconhecido'}`);
+            }
+
+            const data = await response.json();
+            if (!data.candidates || data.candidates.length === 0) {
+                throw new Error('Resposta sem conteúdo do eSocial');
+            }
+
+            const geminiResponseText = data.candidates[0].content.parts[0].text;
+
+            try {
+                return JSON.parse(geminiResponseText);
+            } catch (firstParseError) {
+                try {
+                    const jsonMatch = geminiResponseText.match(/```json\n([\s\S]*?)\n```/) ||
+                                      geminiResponseText.match(/```([\s\S]*?)```/) ||
+                                      geminiResponseText.match(/\{[\s\S]*\}/);
+
+                    if (jsonMatch) {
+                        const jsonContent = jsonMatch[0].startsWith('{') ? jsonMatch[0] : jsonMatch[1];
+                        return JSON.parse(jsonContent);
+                    }
+                    console.error('JSON não encontrado na resposta:', geminiResponseText);
+                    throw new Error('Formato de resposta da IA inválido.');
+                } catch (secondParseError) {
+                    console.error('Erro ao extrair e analisar JSON:', secondParseError);
+                    throw new Error('Erro ao processar a resposta JSON da IA.');
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao gerar dúvida do eSocial:', error);
+            throw error;
         }
     }
 
