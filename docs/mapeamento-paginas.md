@@ -156,7 +156,7 @@ Este documento mapeia todas as páginas e rotas da aplicação React, detalhando
 
 ### 20. `src/pages/ESocialQuestionsPage.tsx` (Dúvidas do eSocial)
 *   **Propósito:** Base de dados interna sobre diretrizes do eSocial.
-*   **Funcionalidades:** Visualização de perguntas e respostas em acordeões colapsáveis, filtragem avançada por tags, busca rápida textual por palavras-chave e tela de inclusão/edição/deleção de perguntas e criação de tags (acessível para administradores e gerentes).
+*   **Funcionalidades:** Visualização de perguntas e respostas em acordeões colapsáveis (com suporte a formatação rica estilo Markdown para negrito, itálico, links e listas de marcadores), filtragem avançada por tags, busca rápida textual por palavras-chave e tela de inclusão/edição/deleção de perguntas e criação de tags (acessível para administradores e gerentes).
 *   **Comunicação com o Banco:**
     *   **Leitura:** Consome os nós `esocialQuestions` e `esocialTags`.
     *   **Escrita:** Cria, edita e remove perguntas (`esocialQuestions`) e tags (`esocialTags`).

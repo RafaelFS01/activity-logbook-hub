@@ -426,6 +426,11 @@ ${existingTags.map(t => t.name).join(', ')}
 Instruções para geração:
 1. Pergunta (question): Crie uma pergunta direta, objetiva e clara que represente a dúvida teórica ou prática que motivou ou resolveu a atividade descrita. Exemplo: "Como deve ser feita a reabertura de eventos periódicos no eSocial?"
 2. Resposta (answer): Crie uma resposta detalhada, formal e instrutiva com base nas regras do eSocial ou nas diretrizes oficiais correspondentes à atividade descrita. Seja útil e forneça orientações práticas.
+   - A resposta PODE (e deve quando apropriado) incluir formatação rica estilo Markdown para melhorar a legibilidade:
+     * Use **negrito** (asteriscos duplos) para termos importantes, prazos ou códigos de tabelas.
+     * Use *itálico* (asteriscos simples) para estrangeirismos ou termos técnicos específicos.
+     * Use listas com marcadores iniciados por "- " para sequências de passos ou requisitos.
+     * Use links formatados como [texto](url) se citar portais governamentais ou manuais oficiais (ex: [Portal do eSocial](https://www.gov.br/esocial)).
 3. Tags associadas (tags): Escolha as tags mais adequadas. Você DEVE:
    - Identificar e associar eventos padrão do eSocial apropriados da lista acima (use apenas o código do evento, ex: "S-2200", "S-1298", etc.).
    - Identificar e associar tags já cadastradas no sistema que façam sentido.

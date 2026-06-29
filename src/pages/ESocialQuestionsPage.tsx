@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import EmptyState from "@/components/ui/empty-state";
 import { toast } from "@/components/ui/use-toast";
 import { ESocialQuestion, ESocialTag, createQuestion, createTagIfNotExists, deleteTag, getQuestions, getTags, updateQuestion } from "@/services/firebase/esocial-questions";
-import { Check, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Search, Tag, Trash2, X } from "lucide-react";
+import { Bold, Check, ChevronLeft, ChevronRight, Italic, Link, List, Loader2, Pencil, Plus, Search, Tag, Trash2, X } from "lucide-react";
+import { FormattedText } from "@/components/ui/formatted-text";
 
 const PAGE_SIZES = [10, 20, 50];
 
@@ -45,6 +46,60 @@ const ESocialQuestionsPage = () => {
   const [tagSearch, setTagSearch] = useState("");
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [deletingTagId, setDeletingTagId] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertFormatting = (type: "bold" | "italic" | "link" | "list") => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = form.answer;
+    const selectedText = text.substring(start, end);
+
+    let replacement = "";
+    let cursorOffset = 0;
+
+    switch (type) {
+      case "bold":
+        replacement = `**${selectedText || "texto"}**`;
+        cursorOffset = selectedText ? replacement.length : 2;
+        break;
+      case "italic":
+        replacement = `*${selectedText || "texto"}*`;
+        cursorOffset = selectedText ? replacement.length : 1;
+        break;
+      case "link":
+        replacement = `[${selectedText || "texto"}](url)`;
+        cursorOffset = selectedText ? replacement.length : 1;
+        break;
+      case "list":
+        const needsNewLine = start > 0 && text.charAt(start - 1) !== "\n";
+        replacement = `${needsNewLine ? "\n" : ""}- ${selectedText || "item"}`;
+        cursorOffset = replacement.length;
+        break;
+    }
+
+    const newAnswer = text.substring(0, start) + replacement + text.substring(end);
+    setForm(prev => ({ ...prev, answer: newAnswer }));
+
+    setTimeout(() => {
+      textarea.focus();
+      if (selectedText) {
+        textarea.setSelectionRange(start + replacement.length, start + replacement.length);
+      } else {
+        if (type === "bold") {
+          textarea.setSelectionRange(start + 2, start + 2 + 5);
+        } else if (type === "italic") {
+          textarea.setSelectionRange(start + 1, start + 1 + 5);
+        } else if (type === "link") {
+          textarea.setSelectionRange(start + 1, start + 1 + 5);
+        } else if (type === "list") {
+          textarea.setSelectionRange(start + (needsNewLine ? 3 : 2), start + (needsNewLine ? 3 : 2) + 4);
+        }
+      }
+    }, 0);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -379,9 +434,9 @@ const ESocialQuestionsPage = () => {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-4">
-                <p className="text-sm text-muted-foreground whitespace-pre-line">
-                  {question.answer}
-                </p>
+                <div className="text-sm text-muted-foreground">
+                  <FormattedText text={question.answer} />
+                </div>
               </AccordionContent>
             </AccordionItem>
           ))}
@@ -414,13 +469,58 @@ const ESocialQuestionsPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="answer">Resposta</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="answer">Resposta</Label>
+                <div className="flex items-center gap-1 border rounded-md p-0.5 bg-muted/20">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => insertFormatting("bold")}
+                    title="Negrito (**)"
+                  >
+                    <Bold className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => insertFormatting("italic")}
+                    title="Itálico (*)"
+                  >
+                    <Italic className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => insertFormatting("link")}
+                    title="Inserir Link [texto](url)"
+                  >
+                    <Link className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => insertFormatting("list")}
+                    title="Lista (- item)"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               <Textarea
                 id="answer"
+                ref={textareaRef}
                 rows={6}
                 value={form.answer}
                 onChange={(e) => setForm(prev => ({ ...prev, answer: e.target.value }))}
-                placeholder="Detalhe a resposta para a dúvida"
+                placeholder="Detalhe a resposta para a dúvida. Dica: use os botões acima ou digite marcações estilo Markdown simples."
               />
             </div>
             <div className="space-y-2">
