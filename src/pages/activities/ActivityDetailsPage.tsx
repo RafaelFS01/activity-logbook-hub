@@ -307,7 +307,7 @@ const ActivityDetailsPage = () => {
                   <Eye className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight truncate">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight break-words">
             {activity?.title}
           </h1>
                   <p className="text-sm sm:text-base text-muted-foreground mt-1 leading-relaxed truncate">
@@ -405,7 +405,7 @@ const ActivityDetailsPage = () => {
                           }`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h1 className={`text-xl sm:text-2xl font-bold mb-2 sm:mb-5 ${
+                          <h1 className={`text-xl sm:text-2xl font-bold mb-2 sm:mb-5 break-words ${
                             theme === 'dark' ? 'text-slate-100' :
                             theme === 'h12' ? 'text-slate-900' :
                             theme === 'h12-alt' ? 'text-slate-200' :

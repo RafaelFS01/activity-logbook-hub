@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/components/ui/use-toast";
 import { createQuestion, createTagIfNotExists, getTags, ESocialTag } from "@/services/firebase/esocial-questions";
 import { Activity } from "@/services/firebase/activities";
-import { Check, Loader2, Plus, Sparkles, Tag, X, AlertCircle } from "lucide-react";
+import { Check, Loader2, Plus, Sparkles, Tag, X, AlertCircle, Bold, Italic, Link, List } from "lucide-react";
 import geminiService from "@/services/gemini-service";
 import { useNavigate } from "react-router-dom";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { FormattedText } from "@/components/ui/formatted-text";
 
 interface GenerateESocialQuestionModalProps {
   isOpen: boolean;
@@ -47,6 +49,61 @@ export default function GenerateESocialQuestionModal({
   
   const [tagSearch, setTagSearch] = useState("");
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertFormatting = (type: "bold" | "italic" | "link" | "list") => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = form.answer;
+    const selectedText = text.substring(start, end);
+
+    let replacement = "";
+    let cursorOffset = 0;
+    let needsNewLine = false;
+
+    switch (type) {
+      case "bold":
+        replacement = `**${selectedText || "texto"}**`;
+        cursorOffset = selectedText ? replacement.length : 2;
+        break;
+      case "italic":
+        replacement = `*${selectedText || "texto"}*`;
+        cursorOffset = selectedText ? replacement.length : 1;
+        break;
+      case "link":
+        replacement = `[${selectedText || "texto"}](url)`;
+        cursorOffset = selectedText ? replacement.length : 1;
+        break;
+      case "list":
+        needsNewLine = start > 0 && text.charAt(start - 1) !== "\n";
+        replacement = `${needsNewLine ? "\n" : ""}- ${selectedText || "item"}`;
+        cursorOffset = replacement.length;
+        break;
+    }
+
+    const newAnswer = text.substring(0, start) + replacement + text.substring(end);
+    setForm(prev => ({ ...prev, answer: newAnswer }));
+
+    setTimeout(() => {
+      textarea.focus();
+      if (selectedText) {
+        textarea.setSelectionRange(start + replacement.length, start + replacement.length);
+      } else {
+        if (type === "bold") {
+          textarea.setSelectionRange(start + 2, start + 2 + 5);
+        } else if (type === "italic") {
+          textarea.setSelectionRange(start + 1, start + 1 + 5);
+        } else if (type === "link") {
+          textarea.setSelectionRange(start + 1, start + 1 + 5);
+        } else if (type === "list") {
+          textarea.setSelectionRange(start + (needsNewLine ? 3 : 2), start + (needsNewLine ? 3 : 2) + 4);
+        }
+      }
+    }, 0);
+  };
 
   // Carregar tags existentes do banco
   const loadTags = async () => {
@@ -254,15 +311,83 @@ export default function GenerateESocialQuestionModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="generated-answer" className="text-sm font-semibold">Resposta</Label>
-              <Textarea
-                id="generated-answer"
-                rows={6}
-                value={form.answer}
-                onChange={(e) => setForm(prev => ({ ...prev, answer: e.target.value }))}
-                placeholder="Escreva as diretrizes teóricas ou passo-a-passo técnico."
-                className="w-full resize-none"
-              />
+              <Tabs defaultValue="write" className="w-full">
+                <div className="flex items-center justify-between border-b pb-1.5 mb-1.5">
+                  <Label htmlFor="generated-answer" className="text-sm font-semibold">Resposta</Label>
+                  <TabsList className="h-8 p-0.5 bg-slate-100 dark:bg-slate-800">
+                    <TabsTrigger value="write" className="text-xs h-7 px-2.5">Escrever</TabsTrigger>
+                    <TabsTrigger value="preview" className="text-xs h-7 px-2.5">Visualizar</TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                <TabsContent value="write" className="space-y-2 mt-0">
+                  <div className="flex items-center gap-1 border rounded-md p-1 bg-slate-50 dark:bg-slate-900/50">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={() => insertFormatting("bold")}
+                      title="Negrito (**)"
+                    >
+                      <Bold className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={() => insertFormatting("italic")}
+                      title="Itálico (*)"
+                    >
+                      <Italic className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={() => insertFormatting("link")}
+                      title="Inserir Link [texto](url)"
+                    >
+                      <Link className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={() => insertFormatting("list")}
+                      title="Lista (- item)"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Textarea
+                    id="generated-answer"
+                    ref={textareaRef}
+                    rows={6}
+                    value={form.answer}
+                    onChange={(e) => setForm(prev => ({ ...prev, answer: e.target.value }))}
+                    placeholder="Escreva as diretrizes teóricas ou passo-a-passo técnico."
+                    className="w-full resize-none font-sans"
+                  />
+                </TabsContent>
+                
+                <TabsContent value="preview" className="mt-0">
+                  <div className="border rounded-md p-3.5 bg-slate-50/50 dark:bg-slate-900/20 min-h-[224px] max-h-[300px] overflow-y-auto">
+                    {form.answer ? (
+                      <div className="prose dark:prose-invert max-w-none text-slate-800 dark:text-slate-200">
+                        <FormattedText text={form.answer} />
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic text-center py-12">
+                        Nada para visualizar. Digite algo na aba "Escrever".
+                      </p>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="space-y-2">

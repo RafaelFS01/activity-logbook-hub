@@ -16,6 +16,7 @@ import { toast } from "@/components/ui/use-toast";
 import { ESocialQuestion, ESocialTag, createQuestion, createTagIfNotExists, deleteTag, getQuestions, getTags, updateQuestion } from "@/services/firebase/esocial-questions";
 import { Bold, Check, ChevronLeft, ChevronRight, Italic, Link, List, Loader2, Pencil, Plus, Search, Tag, Trash2, X } from "lucide-react";
 import { FormattedText } from "@/components/ui/formatted-text";
+import { Combobox } from "@/components/ui/combobox";
 
 const PAGE_SIZES = [10, 20, 50];
 
@@ -47,6 +48,14 @@ const ESocialQuestionsPage = () => {
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [deletingTagId, setDeletingTagId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [selectedFilterTag, setSelectedFilterTag] = useState<string | null>(null);
+
+  const tagOptions = useMemo(() => {
+    return tags.map(tag => ({
+      value: tag.name,
+      label: tag.name
+    }));
+  }, [tags]);
 
   const insertFormatting = (type: "bold" | "italic" | "link" | "list") => {
     const textarea = textareaRef.current;
@@ -59,6 +68,7 @@ const ESocialQuestionsPage = () => {
 
     let replacement = "";
     let cursorOffset = 0;
+    let needsNewLine = false;
 
     switch (type) {
       case "bold":
@@ -74,7 +84,7 @@ const ESocialQuestionsPage = () => {
         cursorOffset = selectedText ? replacement.length : 1;
         break;
       case "list":
-        const needsNewLine = start > 0 && text.charAt(start - 1) !== "\n";
+        needsNewLine = start > 0 && text.charAt(start - 1) !== "\n";
         replacement = `${needsNewLine ? "\n" : ""}- ${selectedText || "item"}`;
         cursorOffset = replacement.length;
         break;
@@ -136,14 +146,24 @@ const ESocialQuestionsPage = () => {
 
   const filteredQuestions = useMemo(() => {
     const term = debouncedSearch.trim().toLowerCase();
-    if (!term) return questions;
+    let result = questions;
 
-    return questions.filter(question => {
-      const inQuestion = question.question.toLowerCase().includes(term);
-      const inTags = question.tags.some(tag => tag.toLowerCase().includes(term));
-      return inQuestion || inTags;
-    });
-  }, [questions, debouncedSearch]);
+    if (selectedFilterTag) {
+      result = result.filter(question =>
+        question.tags?.some(tag => tag.toLowerCase() === selectedFilterTag.toLowerCase())
+      );
+    }
+
+    if (term) {
+      result = result.filter(question => {
+        const inQuestion = question.question.toLowerCase().includes(term);
+        const inTags = question.tags?.some(tag => tag.toLowerCase().includes(term));
+        return inQuestion || inTags;
+      });
+    }
+
+    return result;
+  }, [questions, debouncedSearch, selectedFilterTag]);
 
   const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
 
@@ -334,8 +354,8 @@ const ESocialQuestionsPage = () => {
 
       <Card className="mb-4">
         <CardContent className="py-4 flex flex-col gap-4">
-          <div className="flex flex-col lg:flex-row gap-3">
-            <div className="relative flex-1 min-w-[240px]">
+          <div className="flex flex-col lg:flex-row gap-3 items-end lg:items-center">
+            <div className="relative flex-1 min-w-[240px] w-full">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por pergunta ou tag..."
@@ -345,8 +365,21 @@ const ESocialQuestionsPage = () => {
                 disabled={isLoading}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Itens por página</Label>
+            <div className="w-full lg:w-[250px] flex items-center gap-2">
+              <Combobox
+                options={tagOptions}
+                selectedValue={selectedFilterTag}
+                onSelect={setSelectedFilterTag}
+                placeholder="Filtrar por tag..."
+                searchPlaceholder="Buscar tag..."
+                noResultsText="Nenhuma tag encontrada."
+                allowClear
+                disabled={isLoading}
+                className="w-full"
+              />
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Label className="text-sm text-muted-foreground whitespace-nowrap">Itens por página</Label>
               <Select
                 value={String(pageSize)}
                 onValueChange={(value) => {
